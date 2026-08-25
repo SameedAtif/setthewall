@@ -1,0 +1,43 @@
+<div class="max-w-3xl mx-auto p-6">
+  <div class="mb-4">
+    <%= link_to "← Back", reviews_path, class: "text-blue-600 hover:underline" %>
+  </div>
+
+  <h1 class="text-2xl font-semibold">Piece #<%= @piece.id %> — Step <%= @gate.step_id %></h1>
+  <p class="text-gray-600 mt-1"><%= @gate.notes %></p>
+
+  <h2 class="text-lg font-semibold mt-6">Agent proposal</h2>
+  <pre class="bg-gray-50 border rounded p-3 text-sm overflow-auto"><%= JSON.pretty_generate(@agent_proposal) %></pre>
+
+  <h2 class="text-lg font-semibold mt-6">Piece context</h2>
+  <dl class="mt-2 text-sm grid grid-cols-2 gap-2">
+    <dt class="text-gray-500">style/scene</dt>
+    <dd><%= @piece.style_spec_slug %> / <%= @piece.scene_spec_id %></dd>
+    <dt class="text-gray-500">mood / content / role</dt>
+    <dd><%= @piece.mood %> / <%= @piece.content_type %> / <%= @piece.color_role %></dd>
+    <dt class="text-gray-500">kb_version</dt>
+    <dd class="font-mono text-xs"><%= @piece.kb_version %></dd>
+  </dl>
+
+  <%= form_with url: human_gate_path(@gate), method: :patch, local: true, class: "mt-6 space-y-4" do |f| %>
+    <div>
+      <%= f.label :notes, "Reviewer notes (optional — module 07 reads these)", class: "block text-sm font-medium" %>
+      <%= f.text_area :notes, rows: 3, class: "mt-1 w-full border rounded p-2" %>
+    </div>
+
+    <div>
+      <%= f.label :reviewer_edits, "Edits (JSON) — leave blank to approve as-is", class: "block text-sm font-medium" %>
+      <%= f.text_area :reviewer_edits, rows: 4, class: "mt-1 w-full font-mono text-sm border rounded p-2" %>
+      <p class="text-xs text-gray-500 mt-1">If you edit the proposal, paste replacement JSON here. Keys will be merged into context on resume.</p>
+    </div>
+
+    <div class="flex gap-2">
+      <%= f.submit "Approve", name: "decision", value: "approved",
+                    class: "bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700" %>
+      <%= f.submit "Approve with edits", name: "decision", value: "edited",
+                    class: "bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700" %>
+      <%= f.submit "Reject", name: "decision", value: "rejected",
+                    class: "bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700" %>
+    </div>
+  <% end %>
+</div>

@@ -1,5 +1,6 @@
 class PieceRecord < ApplicationRecord
   has_many :performance_snapshots, dependent: :destroy
+  has_many :human_gates, dependent: :destroy
 
   STATUSES = %w[pending running awaiting_human complete failed].freeze
 
@@ -14,6 +15,13 @@ class PieceRecord < ApplicationRecord
   def scene_spec = style_spec.scene(scene_spec_id)
 
   def dirty_run? = kb_version.to_s.start_with?("dirty:")
+
+  def open_gate = human_gates.open.order(:opened_at).last
+
+  def gate_history(step_id: nil)
+    scope = human_gates.order(:opened_at)
+    step_id ? scope.where(step_id: step_id) : scope
+  end
 
   # Copy the nine axis values in at creation time.
   def apply_spec!(spec, scene)

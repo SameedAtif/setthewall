@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_08_25_141513) do
+ActiveRecord::Schema[8.0].define(version: 2026_08_25_142248) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -19,6 +19,26 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_25_141513) do
     t.datetime "updated_at", null: false
     t.bigint "model_id"
     t.index ["model_id"], name: "index_chats_on_model_id"
+  end
+
+  create_table "human_gates", force: :cascade do |t|
+    t.bigint "piece_record_id", null: false
+    t.string "step_id", null: false
+    t.string "gate_kind", null: false
+    t.string "status", default: "open", null: false
+    t.text "agent_proposal"
+    t.text "reviewer_decision"
+    t.jsonb "context_snapshot", default: {}, null: false
+    t.jsonb "reviewer_edits", default: {}, null: false
+    t.text "notes"
+    t.datetime "opened_at"
+    t.datetime "closed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["opened_at"], name: "index_human_gates_on_opened_at"
+    t.index ["piece_record_id", "status"], name: "index_human_gates_on_piece_record_id_and_status"
+    t.index ["piece_record_id"], name: "index_human_gates_on_piece_record_id"
+    t.index ["step_id", "status"], name: "index_human_gates_on_step_id_and_status"
   end
 
   create_table "messages", force: :cascade do |t|
@@ -138,6 +158,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_25_141513) do
   end
 
   add_foreign_key "chats", "models"
+  add_foreign_key "human_gates", "piece_records"
   add_foreign_key "messages", "chats"
   add_foreign_key "messages", "models"
   add_foreign_key "messages", "tool_calls"

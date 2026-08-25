@@ -1,0 +1,36 @@
+<div class="max-w-4xl mx-auto p-6">
+  <h1 class="text-2xl font-semibold mb-4">Awaiting review</h1>
+
+  <% if @open_gates.empty? %>
+    <p class="text-gray-500">No pieces awaiting review.</p>
+  <% else %>
+    <div class="space-y-3">
+      <% @open_gates.each do |gate| %>
+        <%= link_to human_gate_path(gate), class: "block border rounded-lg p-4 hover:bg-gray-50" do %>
+          <div class="flex justify-between">
+            <div>
+              <div class="font-mono text-sm text-gray-600">Step <%= gate.step_id %></div>
+              <div class="mt-1"><%= gate.notes.to_s.truncate(140) %></div>
+            </div>
+            <div class="text-right text-sm text-gray-500">
+              Piece #<%= gate.piece_record_id %><br>
+              <%= time_ago_in_words(gate.opened_at) %> ago
+            </div>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <% if @failed_pieces.any? %>
+    <h2 class="text-xl font-semibold mt-8 mb-3">Failed pieces</h2>
+    <div class="space-y-2">
+      <% @failed_pieces.each do |p| %>
+        <div class="border-l-4 border-red-500 pl-3 py-1">
+          <span class="font-mono">Piece #<%= p.id %></span>
+          at step <%= p.current_step %>: <span class="text-red-700"><%= p.last_error.to_s.truncate(180) %></span>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>
