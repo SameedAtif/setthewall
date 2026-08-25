@@ -23,6 +23,22 @@ module Etsy
       JSON.parse(response.body)["results"]
     end
 
+    # Added in module 07 — pulls per-listing metrics + shop search terms.
+    # Verify exact endpoints against developers.etsy.com before running (same caveat as module 05).
+    def fetch_listing_stats(listing_id:, date: Date.current)
+      response = connection.get("application/shops/#{ENV.fetch('ETSY_SHOP_ID')}/listings/#{listing_id}/stats")
+      raise ApiError, "Etsy stats fetch failed (HTTP #{response.status})" unless response.success?
+
+      body = JSON.parse(response.body)
+      {
+        views: body.dig("views") || 0,
+        favorites: body.dig("favorites") || 0,
+        orders: body.dig("orders") || 0,
+        revenue: body.dig("revenue") || 0,
+        search_terms: Array(body.dig("search_terms"))
+      }
+    end
+
     private
 
     def connection

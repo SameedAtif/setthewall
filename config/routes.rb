@@ -7,5 +7,8 @@ Rails.application.routes.draw do
 
   resources :reviews, only: [:index]
   resources :human_gates, only: [:show, :update]
+  resources :kb_proposals, only: [:index, :show, :update] do
+    member { post :apply }
+  end
   root "reviews#index"    # localhost:3000 opens the reviewer's task list
 end

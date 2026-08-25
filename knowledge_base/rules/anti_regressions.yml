@@ -1,0 +1,50 @@
+meta:
+  source: "Module 07 §5 — proposal safeguards"
+  citation: "Cross-cutting; sources the anti-pattern content from Phase 3 §2.6 (etsy_antipatterns.yml)"
+  volatility: static
+  note: >
+    This file exists to prevent Claude's evolution loop from "discovering" a false pattern in
+    a short data window and proposing an edit that walks the pipeline into an Etsy-documented
+    anti-pattern. Read by Proposer at proposal-generation time (via the prompt) and by the
+    reviewer UI (via the auto-flag on incoming proposals).
+
+rules:
+  hard_blocks:
+    - name: renewal_chasing
+      description: "Proposals suggesting renewing listings to chase the Etsy 'new listing' boost"
+      pattern_indicators:
+        - "renew"
+        - "relist"
+        - "refresh listing"
+      source_rule: "etsy_antipatterns.yml → renewal_chasing"
+
+    - name: self_search_verification
+      description: "Proposals suggesting judging ranking by searching own shop"
+      pattern_indicators:
+        - "search my own"
+        - "verify by searching"
+      source_rule: "etsy_antipatterns.yml → self_search_verification"
+
+    - name: plus_starseller_ads_assumed_ranking
+      description: "Proposals assuming Etsy Plus, Star Seller, or Etsy Ads affect organic ranking"
+      pattern_indicators:
+        - "etsy plus"
+        - "star seller"
+        - "etsy ads for ranking"
+      source_rule: "etsy_antipatterns.yml → plus_starseller_ads_assumed_ranking"
+
+  soft_flags:
+    - name: single_piece_generalisation
+      description: "Proposal cites only one piece as evidence"
+      trigger: "evidence.piece_ids.size < 3"
+      surface_as: warning
+      reasoning: >
+        Per proposer prompt rule 5, N=1 isn't a pattern. Flag but don't hard-block — the
+        reviewer might still see something worth acting on.
+
+    - name: sweeping_replace_file
+      description: "change_type=replace_file, rewriting an entire rule file"
+      surface_as: warning
+      reasoning: >
+        Per proposer prompt rule 4, small changes beat sweeping ones. Not blocked — sometimes
+        a rewrite is warranted — but every one gets a second look.

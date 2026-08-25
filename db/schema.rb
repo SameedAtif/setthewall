@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_08_25_142248) do
+ActiveRecord::Schema[8.0].define(version: 2026_08_25_142807) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -39,6 +39,27 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_25_142248) do
     t.index ["piece_record_id", "status"], name: "index_human_gates_on_piece_record_id_and_status"
     t.index ["piece_record_id"], name: "index_human_gates_on_piece_record_id"
     t.index ["step_id", "status"], name: "index_human_gates_on_step_id_and_status"
+  end
+
+  create_table "kb_proposals", force: :cascade do |t|
+    t.string "cycle_id", null: false
+    t.string "target_path", null: false
+    t.string "change_type", null: false
+    t.text "old_snippet"
+    t.text "new_snippet", null: false
+    t.text "rationale", null: false
+    t.jsonb "evidence", default: {}, null: false
+    t.string "status", default: "open", null: false
+    t.text "reviewer_edits"
+    t.text "reviewer_notes"
+    t.datetime "opened_at"
+    t.datetime "closed_at"
+    t.datetime "applied_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["cycle_id", "status"], name: "index_kb_proposals_on_cycle_id_and_status"
+    t.index ["status"], name: "index_kb_proposals_on_status"
+    t.index ["target_path"], name: "index_kb_proposals_on_target_path"
   end
 
   create_table "messages", force: :cascade do |t|
