@@ -1,0 +1,261 @@
+# Canonical registry of every pipeline step.
+# ownership: verbatim from the source phase docs — do not paraphrase.
+# mechanism: what code actually runs (see module 00 §1.3)
+# cadence:   per_style | per_scene | daily | weekly
+
+phase_1:
+  track_a:
+    cadence: per_style
+    steps:
+      - id: A0
+        title: "Validate the style is worth pursuing"
+        ownership: "[AGENT-READY for the research — human confirms the go/no-go]"
+        mechanism: llm_text
+        human_gate: true
+        klass: "Steps::TrackA::ValidateStyle"
+      - id: A1
+        title: "Build a reference set"
+        ownership: "[AGENT-ASSISTED — human curates]"
+        mechanism: llm_text
+        human_gate: true
+        klass: "Steps::TrackA::BuildReferenceSet"
+      - id: A2
+        title: "Sort into Mood"
+        ownership: "[AGENT-ASSISTED — human confirms]"
+        mechanism: llm_vision
+        human_gate: true
+        klass: "Steps::TrackA::SortMood"
+      - id: A3
+        title: "Sort into Content Type"
+        ownership: "[AGENT-ASSISTED — human confirms]"
+        mechanism: llm_vision
+        human_gate: true
+        klass: "Steps::TrackA::SortContentType"
+      - id: A4
+        title: "Sort into Frame Form"
+        ownership: "[AGENT-ASSISTED — human confirms]"
+        mechanism: llm_vision
+        human_gate: true
+        klass: "Steps::TrackA::SortFrameForm"
+      - id: A5
+        title: "Lock the style-level entry"
+        ownership: "[HUMAN ONLY]"
+        mechanism: human
+        human_gate: true
+        klass: "Steps::TrackA::LockStyleEntry"
+
+  track_b:
+    cadence: per_scene
+    steps:
+      - id: B0
+        title: "Confirm the scene template is fixed"
+        ownership: "[HUMAN ONLY]"
+        mechanism: human
+        human_gate: true
+        klass: "Steps::TrackB::ConfirmSceneTemplate"
+      - id: B1
+        title: "Wall Condition"
+        ownership: "[AGENT-READY]"
+        mechanism: llm_vision
+        human_gate: false
+        klass: "Steps::TrackB::WallCondition"
+      - id: B2
+        title: "Furniture Weight"
+        ownership: "[AGENT-READY]"
+        mechanism: llm_vision
+        human_gate: false
+        klass: "Steps::TrackB::FurnitureWeight"
+      - id: B3
+        title: "Room Type"
+        ownership: "[AGENT-READY]"
+        mechanism: llm_vision
+        human_gate: false
+        klass: "Steps::TrackB::RoomType"
+      - id: B4
+        title: "Room Shape/Proportion"
+        ownership: "[AGENT-READY]"
+        mechanism: llm_vision
+        human_gate: false
+        klass: "Steps::TrackB::RoomShape"
+      - id: B5
+        title: "Space Math"
+        ownership: "[AGENT-READY]"
+        mechanism: llm_vision
+        human_gate: false
+        klass: "Steps::TrackB::SpaceMath"
+      - id: B6
+        title: "Color Role"
+        ownership: "[AGENT-READY for steps 1 & 3 — human confirms the override call in step 2]"
+        mechanism: llm_vision
+        human_gate: true
+        klass: "Steps::TrackB::ColorRole"
+      - id: B7
+        title: "Lock the per-scene entry"
+        ownership: "[HUMAN ONLY]"
+        mechanism: human
+        human_gate: true
+        klass: "Steps::TrackB::LockSceneEntry"
+
+  track_c:
+    cadence: daily
+    steps:
+      - id: C1
+        title: "Generate art"
+        ownership: "[AGENT-ASSISTED — human enforces batch cap]"
+        mechanism: image_gen
+        human_gate: false
+        klass: "Steps::TrackC::GenerateArt"
+      - id: C2
+        title: "Cull to finalists"
+        ownership: "[AGENT-ASSISTED — human makes final pick]"
+        mechanism: human
+        human_gate: true
+        klass: "Steps::TrackC::CullToFinalists"
+
+phase_2:
+  cadence: daily
+  steps:
+    - id: P2_0
+      title: "Load the style spec"
+      ownership: "[HUMAN ONLY]"
+      mechanism: human
+      cadence: weekly
+      human_gate: true
+      klass: "Steps::Phase2::LoadStyleSpec"
+    - id: P2_1
+      title: "Measure the scene, choose the placement branch"
+      ownership: "[AGENT-READY]"
+      mechanism: lookup
+      human_gate: false
+      klass: "Steps::Phase2::MeasureScene"
+    - id: P2_2a
+      title: "Single piece: confirm focal treatment"
+      ownership: "[AGENT-READY]"
+      mechanism: lookup
+      human_gate: false
+      branch_of: P2_1
+      klass: "Steps::Phase2::SingleFocalTreatment"
+    - id: P2_2b
+      title: "Multi-piece set: grouping form and count"
+      ownership: "[AGENT-READY]"
+      mechanism: lookup
+      human_gate: false
+      branch_of: P2_1
+      klass: "Steps::Phase2::SetGroupingAndCount"
+    - id: P2_2c
+      title: "Split-wall: zone the wall"
+      ownership: "[AGENT-READY]"
+      mechanism: lookup
+      human_gate: false
+      branch_of: P2_1
+      klass: "Steps::Phase2::SplitWallZoning"
+    - id: P2_2d
+      title: "Architectural nook: fit to the space"
+      ownership: "[AGENT-READY]"
+      mechanism: lookup
+      human_gate: false
+      branch_of: P2_1
+      klass: "Steps::Phase2::NookFit"
+    - id: P2_2e
+      title: "Surface/propped display: height and lean"
+      ownership: "[AGENT-READY]"
+      mechanism: lookup
+      human_gate: false
+      branch_of: P2_1
+      klass: "Steps::Phase2::SurfaceDisplay"
+    - id: P2_3
+      title: "Unify by theme"
+      ownership: "[AGENT-ASSISTED — vision check, human confirms]"
+      mechanism: llm_vision
+      human_gate: true
+      conditional: "only when branch produces a multi-piece set"
+      klass: "Steps::Phase2::UnifyByTheme"
+    - id: P2_4
+      title: "Assign frame material and contour"
+      ownership: "[AGENT-READY]"
+      mechanism: lookup
+      human_gate: false
+      klass: "Steps::Phase2::AssignFrame"
+    - id: P2_4b
+      title: "Color function check"
+      ownership: "[AGENT-READY]"
+      mechanism: lookup
+      human_gate: false
+      klass: "Steps::Phase2::ColorFunctionCheck"
+    - id: P2_5
+      title: "Check weight balance"
+      ownership: "[AGENT-READY]"
+      mechanism: lookup
+      human_gate: false
+      klass: "Steps::Phase2::WeightBalance"
+    - id: P2_6
+      title: "Composite into the scene"
+      ownership: "[NOT AN AGENT/LLM TASK — deterministic template tool required]"
+      mechanism: deterministic_tool
+      human_gate: false
+      klass: "Steps::Phase2::Composite"
+    - id: P2_7
+      title: "Weekly review gate"
+      ownership: "[HUMAN ONLY — agent may summarize data, not decide]"
+      mechanism: human
+      cadence: weekly
+      human_gate: true
+      klass: "Steps::Phase2::WeeklyReview"
+
+phase_3_module_1:
+  cadence: daily
+  steps:
+    - id: P3_1
+      title: "Pull inputs from Phase 2"
+      ownership: "[AGENT-READY]"
+      mechanism: lookup
+      human_gate: false
+      klass: "Steps::Phase3::PullInputs"
+    - id: P3_1b
+      title: "Generate the missing photo types"
+      ownership: "[AGENT-ASSISTED — human confirms]"
+      mechanism: image_gen
+      human_gate: true
+      klass: "Steps::Phase3::GeneratePhotoTypes"
+    - id: P3_2
+      title: "Select and order photos"
+      ownership: "[AGENT-ASSISTED — human confirms hero shot]"
+      mechanism: llm_vision
+      human_gate: true
+      klass: "Steps::Phase3::SelectAndOrderPhotos"
+    - id: P3_3
+      title: "Draft title"
+      ownership: "[AGENT-READY]"
+      mechanism: llm_text
+      human_gate: false
+      klass: "Steps::Phase3::DraftTitle"
+    - id: P3_4
+      title: "Fill tags"
+      ownership: "[AGENT-READY]"
+      mechanism: llm_text
+      human_gate: false
+      klass: "Steps::Phase3::FillTags"
+    - id: P3_5
+      title: "Fill attributes and category"
+      ownership: "[AGENT-READY]"
+      mechanism: lookup
+      human_gate: false
+      klass: "Steps::Phase3::FillAttributes"
+    - id: P3_6
+      title: "Write description"
+      ownership: "[AGENT-ASSISTED — human confirms tone]"
+      mechanism: llm_text
+      human_gate: true
+      klass: "Steps::Phase3::WriteDescription"
+    - id: P3_7
+      title: "Set shipping and return policy"
+      ownership: "[HUMAN ONLY — pricing/policy strategy]"
+      mechanism: human
+      human_gate: true
+      klass: "Steps::Phase3::ShippingAndReturns"
+    - id: P3_8
+      title: "Publish and log baseline"
+      ownership: "[AGENT-ASSISTED]"
+      mechanism: lookup
+      human_gate: false
+      klass: "Steps::Phase3::PublishAndLog"

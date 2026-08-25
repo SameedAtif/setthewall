@@ -42,6 +42,20 @@ gem "thruster", require: false
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 # gem "image_processing", "~> 1.2"
 
+# --- Pipeline (module 00) ---
+# LLM provider abstraction
+gem "ruby_llm"
+gem "ruby_llm-schema"
+
+# Local env var loading
+gem "dotenv-rails", groups: [:development, :test]
+
+# HTTP for the image-generation and Etsy APIs
+gem "faraday"
+
+# Image compositing (Step 6) — deterministic, not an LLM
+gem "ruby-vips"
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
