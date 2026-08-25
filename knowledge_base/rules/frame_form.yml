@@ -1,0 +1,27 @@
+meta:
+  source: "Phase 1, Step A4 — Sort into Frame Form"
+  citation: "how_to_arrange_pictures / at_home_with_pictures, p. 19"
+  volatility: static
+
+rules:
+  axis: frame_form
+  values: [angular, rounded]
+
+  definitions:
+    angular:
+      description: "Angular / straight-edged — crisp, geometric perimeter"
+      reads_as: "more modern / minimalist"
+    rounded:
+      description: "Rounded / softer — curved, gentler perimeter"
+      reads_as: "softer / more traditional"
+
+  determination:
+    rule: >
+      Look at how the style is typically framed across the reference set — angular or rounded.
+    consistency_check: "Consistent across most references, or mixed?"
+    tiebreaker: >
+      If mixed, Mood is the tiebreaker. Bold moods more often tolerate mixed / salon-style
+      framing; calm moods should converge on one form.
+    note: >
+      The book does not hard-gate this axis. Treat it as a style-spec choice made once per
+      style, not a per-piece decision.

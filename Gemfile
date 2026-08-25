@@ -45,7 +45,10 @@ gem "thruster", require: false
 # --- Pipeline (module 00) ---
 # LLM provider abstraction
 gem "ruby_llm"
-gem "ruby_llm-schema"
+# Pin to the pre-schematist release: ruby_llm-schema 1.0.0 forwards to `schematist` and
+# returns a Draft 2020-12 document from `to_json_schema`, which is incompatible with the
+# `RubyLLM::Schema` envelope that `ruby_llm`'s `with_schema` consumes.
+gem "ruby_llm-schema", "~> 0.4"
 
 # Local env var loading
 gem "dotenv-rails", groups: [:development, :test]

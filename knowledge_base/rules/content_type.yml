@@ -1,0 +1,30 @@
+meta:
+  source: "Phase 1, Step A3 — Sort into Content Type"
+  citation: "how_to_arrange_pictures / at_home_with_pictures, p. 19"
+  volatility: static
+
+rules:
+  axis: content_type
+  values: [detailed_representational, minimalist_modern, portrait_still_life]
+
+  definitions:
+    detailed_representational:
+      description: "Landscapes, dense imagery, representational subject matter with detail"
+      predicted_contour: inward_sloping_beveled
+    minimalist_modern:
+      description: "Line work, negative space, abstract composition"
+      predicted_contour: flush_level_plane
+    portrait_still_life:
+      description: "Portrait or still-life subject matter"
+      predicted_contour: outward_sloping
+
+  validation:
+    rule: >
+      Re-check the frame contour prediction against what the references actually show framed.
+      If the predicted contour does not match what you see in the reference images, the
+      Content Type call is probably wrong.
+    note: >
+      The contour rule itself lives in module 04 (rules/frame_form_contour.yml, Phase 2 §2.2).
+      The predicted_contour values above are duplicated here ONLY as a validation cross-check
+      for A3. Module 04's file is authoritative for actual frame decisions. If the two ever
+      disagree, module 04 wins and this file must be corrected.

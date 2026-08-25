@@ -1,0 +1,75 @@
+meta:
+  source: "Phase 1, Step A1 — Build a reference set"
+  citation: >
+    Not grounded in the project's book corpus (arrangement book or business books) — this is
+    a research methodology, not a book-derived rule. It IS source-disciplined in its own
+    right: every output image requires attribution from 2+ independent live web sources
+    (retailer style guide, design publication, or attributed Pinterest pin), with a per-source
+    cap of 3-4 images. See image_requirements below.
+  volatility: static
+  note: >
+    This step is explicitly flagged in the source doc as practical guidance rather than a
+    documented rule from the arrangement books or the business books. Treat it as a working
+    convention, not a cited rule. Distinct from "unsourced" in the sense of ungrounded —
+    A1's OUTPUT is held to a stricter sourcing bar (2+ independent live sources per image)
+    than most rules in this project, which cite a single book passage.
+
+rules:
+  search_process:
+    - order: 1
+      action: "Search retailer style guides first"
+      detail: >
+        e.g. "West Elm [STYLE NAME] style guide", "CB2 [STYLE NAME]", "IKEA [STYLE NAME]".
+        These are authoritative named-style descriptions, not merely visually-similar-but-
+        mislabeled content.
+    - order: 2
+      action: "Search Pinterest with three separate queries"
+      detail: >
+        "[STYLE NAME] wall art", "[STYLE NAME] gallery wall", and "[STYLE NAME] living room"
+        (or the relevant space). Three separate queries, not one, to catch both product-only
+        and in-situ shots.
+    - order: 3
+      action: "Search 1-2 interior design blogs or magazines"
+      detail: >
+        Look for written characteristic descriptions of the style (palette, materials, mood
+        words) to cross-check what the images seem to show against what is explicitly named.
+    - order: 4
+      action: "Cap any single source at roughly 3-4 images"
+      detail: >
+        One shop, one blog, or one Pinterest board contributes at most 3-4 images to the final
+        set. Mirrors the A0 principle of not trusting one source's signal.
+
+  # Four requirements an image must meet to enter the reference set.
+  image_requirements:
+    - id: framed_in_situ
+      requirement: >
+        Shows the piece actually framed and/or hung in a room, not just a flat product photo
+        on a white background.
+      why: >
+        Frame Form (A4) and Mood (A2) cannot be judged without seeing how the piece is
+        actually framed and styled.
+    - id: closeup_proportion
+      requirement: >
+        At least a third of the set is close-up / product-only shots of the art itself.
+      why: >
+        Needed to judge Content Type (A3) — representational vs. minimalist vs. portrait/
+        still-life detail can be hard to read in a full room shot.
+    - id: multi_source_attribution
+      requirement: >
+        Attributed to the target style by more than one independent source — appears under
+        that style's name in at least 2 of the searches above, not just one shop's own
+        product tagging.
+      why: >
+        A single shop's SEO-tagged listing is not reliable evidence the piece actually reads
+        as that style. Same logic as not trusting one bestseller badge in A0.
+    - id: traceable_source
+      requirement: >
+        Source is a retailer, a design publication, or a Pinterest pin with a real
+        originating source — not an unattributed re-post.
+      why: "Keeps the reference set traceable if it needs rechecking later."
+
+  validation:
+    rule: >
+      References span multiple independent sources (per the cap above), include both in-situ
+      and close-up shots, and each image is attributable to the style by more than one source
+      — not assembled from a single board or shop.

@@ -1,0 +1,60 @@
+meta:
+  source: "Phase 1, Step A2 — Sort into Mood"
+  citation: "how_to_arrange_pictures / at_home_with_pictures — p. 27-28, p. 68-69, p. 74, p. 81, p. 88, p. 89"
+  volatility: static
+  provenance_warning: >
+    The book's own mood passage (p. 56-57, framed around "Are you a rule-follower or a
+    rule-breaker?") is a personal gut-check rather than an observable checklist, AND p. 56
+    carries OCR noise in the source scan. Its exact wording is directionally reliable only,
+    not a verbatim quote. The four markers below are used INSTEAD, drawn from cleaner-OCR
+    passages elsewhere in the same book.
+
+rules:
+  axis: mood
+  values: [calm_ordered, bold_active]
+
+  # Four concrete, observable markers. Score each reference image against all four.
+  markers:
+    - id: wall_art_color_relationship
+      name: "Wall/art color relationship"
+      calm_ordered: "Complementary or softened-intensity pairing"
+      bold_active: >
+        Deliberate tension — wall and art colors that are not complementary, creating
+        "vibration" / energy
+      citation: "p. 88"
+    - id: display_density
+      name: "Density of the display"
+      calm_ordered: >
+        One vivid centerpiece with everything else quieted down (p. 89), or a formal cluster
+        with an anchoring central piece (p. 74)
+      bold_active: >
+        Salon-style — many pieces and frames of different styles "poured onto the wall"
+        (p. 74, p. 81)
+      citation: "p. 74, p. 81, p. 89"
+    - id: arrangement_symmetry
+      name: "Arrangement symmetry"
+      calm_ordered: "Precise, symmetric alignment"
+      bold_active: "Slightly off-kilter, asymmetric arrangement"
+      citation: "p. 68-69"
+    - id: framing_weight
+      name: "Framing weight"
+      calm_ordered: "Quiet, subtle frames even on a focal piece"
+      bold_active: "Oversized / impressive frames used to command attention"
+      citation: "p. 27-28"
+
+  scoring:
+    rule: >
+      Score each reference image against the four markers. A set that lands mostly in one
+      column supports that Mood value.
+    mixed_result: >
+      A genuinely mixed scorecard means the reference set itself is not focused enough yet.
+      Narrow it (return to A1) rather than forcing a call.
+
+  validation:
+    rule: >
+      Can you point to 3+ reference images that clearly support the chosen mood against at
+      least TWO of the four markers, not just a general impression?
+    on_fail: "Return to A1 and narrow the reference set before locking."
+    grounding: >
+      The Paradox of Choice — satisficer principle: commit to a bar, do not keep the option
+      open indefinitely.
