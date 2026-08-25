@@ -1,6 +1,4 @@
 module KbEvolution
-  class ProposalGenerationError < StandardError; end
-
   class Proposer
     def self.call(cycle_id:)
       new(cycle_id: cycle_id).call

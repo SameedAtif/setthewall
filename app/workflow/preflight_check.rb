@@ -1,6 +1,4 @@
 module Workflow
-  class DirtyKnowledgeBaseError < StandardError; end
-
   class PreflightCheck
     WATCHED_PATHS = %w[knowledge_base/].freeze
 
@@ -12,7 +10,7 @@ module Workflow
     #   allow_dirty: true            — local iteration. Stamps "dirty:<sha>" so the run is
     #                                  identifiable as untrustworthy in later analysis.
     def self.call!(allow_dirty: false)
-      status = `git status --porcelain #{WATCHED_PATHS.join(' ')}`.strip
+      status = `git status --porcelain #{WATCHED_PATHS.join(" ")}`.strip
       sha    = `git rev-parse HEAD`.strip
 
       raise DirtyKnowledgeBaseError, "git not available or not a repo" if sha.empty?

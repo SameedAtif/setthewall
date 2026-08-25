@@ -1,6 +1,4 @@
 module Compositor
-  class TemplateError < StandardError; end
-
   Result = Struct.new(:output_path, :measurements, keyword_init: true)
 
   class Runner
@@ -71,10 +69,10 @@ module Compositor
       target_w = if furn_w.present?
                    # 2/3 to 3/4 of furniture width is the "single-piece fills" rule (§2.5)
                    (furn_w * 0.7).to_i
-                 else
+      else
                    # No furniture (hallway/split-wall/etc.) — use wall_zone width
                    (m.dig("wall_zone", "width").to_i * 0.5)
-                 end
+      end
 
       # Naïvely square unless the source art has a known aspect ratio; leave the art's own
       # aspect ratio in place by scaling proportionally.
@@ -111,9 +109,9 @@ module Compositor
                    inches_above = by_room["formula_inches"].to_f
                    furniture_top_y = anchor_y.to_i
                    furniture_top_y - (inches_above * ppi).to_i - (art_dims[:h] / 2)
-                 else
+      else
                    anchor_y.to_i
-                 end
+      end
 
       # Apply the general drop rule (P2-P14): drop 3-4" — "most people hang too high"
       drop_px = (eye_rules["general_drop"]["formula_inches"].to_f.abs * ppi).to_i

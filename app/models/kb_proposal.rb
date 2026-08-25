@@ -4,7 +4,10 @@ class KbProposal < ApplicationRecord
 
   validates :status, inclusion: { in: STATUSES }
   validates :change_type, inclusion: { in: CHANGE_TYPES }
-  validates :target_path, format: { with: %r{\Aknowledge_base/} }   # locked to KB directory
+  # First-pass guard. The real traversal defense is KbEvolution::Applier's
+  # expand_path + start_with?(ALLOWED_ROOT) check at write time; this regex just
+  # rejects obviously out-of-tree targets early.
+  validates :target_path, format: { with: %r{\Aknowledge_base/.*\z} }
 
   scope :open,      -> { where(status: "open") }
   scope :for_cycle, ->(id) { where(cycle_id: id) }

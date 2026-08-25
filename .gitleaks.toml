@@ -1,0 +1,24 @@
+# gitleaks — validation config.
+# Inherits the upstream default rule pack (AWS, GCP, Stripe, Slack, generic API
+# keys, private keys, etc.) and allowlists generated/gitignored paths that are
+# not secret-bearing.
+
+title = "Set The Wall gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Generated/gitignored paths and placeholder-key false positives"
+paths = [
+  '''^tmp/''',
+  '''^log/''',
+  '''^storage/''',
+  '''^vendor/''',
+  '''^node_modules/''',
+  '''^\.git/''',
+]
+regexes = [
+  # Placeholder/example keys in .env.example and docs are not real secrets.
+  '''(?i)(your|example|placeholder|dummy|fake)[-_ ](api[-_ ]?key|token|secret)''',
+]

@@ -18,7 +18,7 @@ module Steps
                 "the search process and per-image requirements given below exactly.",
           question: text,
           max_rounds: 8   # 1 retailer-guide search + 3 distinct Pinterest queries + 1-2 blog
-                           # searches, per the source's own 4-step process
+          # searches, per the source's own 4-step process
         )
         result = search_result[:content]
         issues = validate_set(result)

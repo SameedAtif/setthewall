@@ -13,9 +13,9 @@ module Steps
                           piece.mat_intensity.to_s.include?("dark")
 
         pass = case piece.furniture_weight
-               when "dark"  then !art_reads_heavy
-               when "light" then true
-               end
+        when "dark"  then !art_reads_heavy
+        when "light" then true
+        end
 
         piece.update!(weight_balance_pass: pass)
 

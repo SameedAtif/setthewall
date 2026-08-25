@@ -1,0 +1,6 @@
+# .shellcheckrc — pipeline validation scripts
+# SC2164 — "use cd ... || exit": every tools/scripts/*.sh runs under
+# `set -euo pipefail`, so a failed `cd` already aborts the script. The
+# `|| exit` boilerplate shellcheck wants is redundant here and would
+# add noise to every script.
+disable=SC2164

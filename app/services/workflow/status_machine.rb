@@ -1,6 +1,4 @@
 module Workflow
-  class InvalidTransition < StandardError; end
-
   class StatusMachine
     # Legal transitions.
     # Any → failed is always allowed (any step can raise). failed → running requires an

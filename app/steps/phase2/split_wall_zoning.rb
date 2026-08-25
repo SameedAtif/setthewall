@@ -17,7 +17,7 @@ module Steps
         zone_results = zones.map do |z|
           {
             branch: z[:branch],
-            piece_count: z[:piece_count],
+            piece_count: z[:piece_count]
             # Focal/grouping recorded per zone; the actual sub-step (2a or 2b) doesn't run
             # separately here — the compositor treats each zone as its own placement region.
           }

@@ -1,6 +1,4 @@
 module Etsy
-  class ApiError < StandardError; end
-
   Result = Struct.new(:listing_id, :status, :raw_response, keyword_init: true)
 
   class Adapter

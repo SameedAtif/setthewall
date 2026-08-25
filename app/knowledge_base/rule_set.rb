@@ -1,7 +1,4 @@
 module KnowledgeBase
-  class RuleNotFoundError < StandardError; end
-  class MissingCitationError < StandardError; end
-
   class RuleSet
     attr_reader :name, :meta, :rules
 

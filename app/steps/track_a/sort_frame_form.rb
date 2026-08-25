@@ -17,9 +17,9 @@ module Steps
         note = if result["consistency"] == "mixed"
                  "Framing was mixed across references; resolved using the mood tiebreaker " \
                  "(mood=#{mood}). Bold moods tolerate mixed framing; calm moods should converge."
-               else
+        else
                  "Framing was consistent across references."
-               end
+        end
 
         needs_human("Confirm frame form: #{result['frame_form']}. #{note}",
                     { result: result, note: note, recommended_action: "confirm" })

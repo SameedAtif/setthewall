@@ -43,11 +43,12 @@ gem "thruster", require: false
 # gem "image_processing", "~> 1.2"
 
 # --- Pipeline (module 00) ---
-# LLM provider abstraction
+# LLM provider abstraction. ruby_llm 1.16.x is the latest release; it depends on
+# ruby_llm-schema ~> 0 (the pre-schematist envelope format), so pin the schema gem to
+# 0.4.x to keep bundler from pulling ruby_llm-schema 1.0.0 (a forwarding shim to
+# `schematist` whose `to_json_schema` returns a Draft 2020-12 document that ruby_llm's
+# `with_schema` does not consume).
 gem "ruby_llm"
-# Pin to the pre-schematist release: ruby_llm-schema 1.0.0 forwards to `schematist` and
-# returns a Draft 2020-12 document from `to_json_schema`, which is incompatible with the
-# `RubyLLM::Schema` envelope that `ruby_llm`'s `with_schema` consumes.
 gem "ruby_llm-schema", "~> 0.4"
 
 # Local env var loading
@@ -68,15 +69,24 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
+
+  # Audit Gemfile.lock for known-vulnerable gems [https://github.com/rubysec/bundler-audit]
+  gem "bundler-audit", require: false
 end
 
 group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
+
+  # Lint ERB templates [https://github.com/Shopify/erb-lint]
+  gem "erb_lint", require: false
 end
 
 group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
   gem "selenium-webdriver"
+
+  # Code coverage for the test suite
+  gem "simplecov", require: false
 end

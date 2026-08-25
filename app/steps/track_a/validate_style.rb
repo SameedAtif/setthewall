@@ -15,7 +15,7 @@ module Steps
           task: "You are validating whether a wall-art style is worth committing production to.",
           question: brief,
           max_rounds: 8   # A0's methodology needs: 1 style search + 2-3 adjacent terms +
-                           # 1 cross-check platform + competition-density lookups
+          # 1 cross-check platform + competition-density lookups
         )
 
         needs_human(

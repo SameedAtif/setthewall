@@ -80,6 +80,13 @@ GEM
     bcrypt_pbkdf (1.1.2-arm64-darwin)
     bcrypt_pbkdf (1.1.2-x86_64-darwin)
     benchmark (0.5.0)
+    better_html (2.2.0)
+      actionview (>= 7.0)
+      activesupport (>= 7.0)
+      ast (~> 2.0)
+      erubi (~> 1.4)
+      parser (>= 2.4)
+      smart_properties
     bigdecimal (4.1.2)
     bindex (0.8.1)
     bootsnap (1.25.0)
@@ -87,6 +94,9 @@ GEM
     brakeman (8.0.6)
       racc
     builder (3.3.0)
+    bundler-audit (0.9.3)
+      bundler (>= 1.2.0)
+      thor (~> 1.0)
     capybara (3.40.0)
       addressable
       matrix
@@ -110,6 +120,13 @@ GEM
     drb (2.2.3)
     ed25519 (1.4.0)
     erb (6.0.7)
+    erb_lint (0.9.0)
+      activesupport
+      better_html (>= 2.0.1)
+      parser (>= 2.7.1.4)
+      rainbow
+      rubocop (>= 1)
+      smart_properties
     erubi (1.13.1)
     et-orbi (1.4.1)
       tzinfo
@@ -346,6 +363,8 @@ GEM
       rexml (~> 3.2, >= 3.2.5)
       rubyzip (>= 1.2.2, < 4.0)
       websocket (~> 1.0)
+    simplecov (1.1.1)
+    smart_properties (1.17.0)
     solid_cable (4.0.2)
       actioncable (>= 7.2)
       activejob (>= 7.2)
@@ -427,9 +446,11 @@ PLATFORMS
 DEPENDENCIES
   bootsnap
   brakeman
+  bundler-audit
   capybara
   debug
   dotenv-rails
+  erb_lint
   faraday
   importmap-rails
   jbuilder
@@ -443,6 +464,7 @@ DEPENDENCIES
   ruby_llm
   ruby_llm-schema (~> 0.4)
   selenium-webdriver
+  simplecov
   solid_cable
   solid_cache
   solid_queue

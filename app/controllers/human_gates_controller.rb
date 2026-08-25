@@ -9,7 +9,7 @@ class HumanGatesController < ApplicationController
     @gate = HumanGate.find(params[:id])
     decision = params[:decision]   # "approved" | "rejected" | "edited"
 
-    edits = params[:reviewer_edits].to_unsafe_h rescue {}
+    edits = parse_edits(params[:reviewer_edits])
     notes = params[:notes]
 
     @gate.update!(
@@ -26,5 +26,17 @@ class HumanGatesController < ApplicationController
     ResumePieceJob.perform_later(gate_id: @gate.id) if %w[approved edited].include?(decision)
 
     redirect_to reviews_path, notice: "Gate ##{@gate.id} → #{decision}."
+  end
+
+  private
+
+  # The review form posts `reviewer_edits` as a JSON string in a textarea; a programmatic
+  # client may post a hash instead. Accept both.
+  def parse_edits(raw)
+    return {} if raw.blank?
+    return raw.to_unsafe_h if raw.respond_to?(:to_unsafe_h)
+    JSON.parse(raw)
+  rescue JSON::ParserError
+    {}
   end
 end

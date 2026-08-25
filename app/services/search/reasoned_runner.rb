@@ -1,6 +1,4 @@
 module Search
-  class NoSearchPerformedError < StandardError; end
-
   class ReasonedRunner
     DEFAULT_MAX_ROUNDS = 6
 
@@ -42,9 +40,9 @@ module Search
 
       chat = if Pipeline::SearchCapability.server_side_web_search_available?
                chat.with_server_tools(:web_search)
-             else
+      else
                chat.with_tool(Tools::WebSearch.new)
-             end
+      end
 
       chat.with_instructions(reasoning_instructions)
     end

@@ -32,12 +32,12 @@
     </div>
 
     <div class="flex gap-2">
-      <%= f.submit "Approve", name: "decision", value: "approved",
-                    class: "bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700" %>
-      <%= f.submit "Approve with edits", name: "decision", value: "edited",
-                    class: "bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700" %>
-      <%= f.submit "Reject", name: "decision", value: "rejected",
-                    class: "bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700" %>
+      <button type="submit" name="decision" value="approved"
+              class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Approve</button>
+      <button type="submit" name="decision" value="edited"
+              class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Approve with edits</button>
+      <button type="submit" name="decision" value="rejected"
+              class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Reject</button>
     </div>
   <% end %>
 </div>

@@ -23,7 +23,6 @@ class CreateModels < ActiveRecord::Migration[8.0]
 
       t.index :capabilities, using: :gin
       t.index :modalities, using: :gin
-
     end
 
     # Load models from JSON

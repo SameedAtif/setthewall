@@ -1,0 +1,146 @@
+[tools]
+# Ruby toolchain — matches .ruby-version. Rails 8.0.x requires Ruby >= 3.2.
+ruby = "3.3.6"
+
+# Validation/security tools that ship as standalone binaries. Resolved through
+# mise's aqua backend so the same versions land on every dev machine and in CI.
+"aqua:gitleaks/gitleaks"   = "8.30.1"
+"aqua:rhysd/actionlint"    = "1.7.12"
+"aqua:koalaman/shellcheck" = "0.11.0"
+"aqua:mvdan/sh"            = "3.13.1"
+"aqua:evilmartians/lefthook" = "2.1.9"
+
+# ── setup ────────────────────────────────────────────────────────────────────
+[tasks.setup]
+description = "Install Ruby deps, prepare the test DB, and wire the lefthook git hooks."
+run = [
+  "bundle install",
+  "bin/rails db:prepare",
+  "bin/rails db:test:prepare",
+  # Wire pre-commit / pre-push hooks (see lefthook.yml). Lands LAST so .git/
+  # and the bundle both exist by now.
+  "lefthook install",
+]
+
+# ── validate (meta-task) ─────────────────────────────────────────────────────
+# Canonical full oracle. Runs every validate:* sub-task. Required before merge
+# (CI mirrors it). `validate:fast` is the pre-push subset.
+[tasks.validate]
+description = "Deterministic validation chain: format, syntax, autoload, registry, knowledge base, YAML, shell, security, secrets, actions, DB, build, unit + system tests, doctor."
+depends = [
+  "validate:format",
+  "validate:syntax",
+  "validate:zeitwerk",
+  "validate:registry",
+  "validate:kb",
+  "validate:yaml",
+  "validate:shell",
+  "validate:security",
+  "validate:semgrep",
+  "validate:secrets",
+  "validate:actions",
+  "validate:db",
+  "validate:build",
+  "validate:test:unit",
+  "validate:test:system",
+  "validate:doctor",
+]
+run = "echo 'validate: all sub-tasks green'"
+
+# Pre-push subset: every check from `validate` minus the slow/external ones
+# (system tests, semgrep, security scan). CI still runs the full `validate`.
+[tasks."validate:fast"]
+description = "Pre-push subset of `validate`. Excludes test:system / semgrep / security (run by CI)."
+depends = [
+  "validate:format",
+  "validate:syntax",
+  "validate:zeitwerk",
+  "validate:registry",
+  "validate:kb",
+  "validate:yaml",
+  "validate:shell",
+  "validate:secrets",
+  "validate:actions",
+  "validate:db",
+  "validate:build",
+  "validate:test:unit",
+  "validate:doctor",
+]
+run = "echo 'validate:fast: all sub-tasks green'"
+
+# ── style / format ───────────────────────────────────────────────────────────
+[tasks."validate:format"]
+description = "RuboCop (Omakase) over Ruby + erb_lint over ERB templates."
+run = "bash tools/scripts/validate/format.sh"
+
+[tasks."validate:syntax"]
+description = "ruby -c syntax check over every .rb file in the tree."
+run = "bash tools/scripts/validate/syntax.sh"
+
+# ── architecture / autoload ──────────────────────────────────────────────────
+[tasks."validate:zeitwerk"]
+description = "bin/rails zeitwerk:check — verifies autoloading conventions (every app/* file defines its expected constant)."
+run = "bin/rails zeitwerk:check"
+
+[tasks."validate:registry"]
+description = "Step-registry parity: all 38 steps in config/step_registry.yml resolve to a class whose step_id + ownership match verbatim, and no step class is missing from the registry."
+run = "bin/rails runner tools/scripts/validate/registry_parity.rb"
+
+[tasks."validate:kb"]
+description = "Knowledge-base integrity: every rules/*.yml carries meta.source + meta.citation, every prompt renders, and every style_specs/*.yml validates."
+run = "bin/rails runner tools/scripts/validate/kb_integrity.rb"
+
+[tasks."validate:yaml"]
+description = "Parse every hand-written YAML file (knowledge_base rules, config, workflows, lefthook, mise) and fail on syntax errors."
+run = "bash tools/scripts/validate/yaml.sh"
+
+# ── security / secrets ───────────────────────────────────────────────────────
+[tasks."validate:security"]
+description = "brakeman (Rails static security) + bundler-audit (known-vulnerable gems)."
+run = "bash tools/scripts/validate/security.sh"
+
+[tasks."validate:semgrep"]
+description = "Semgrep over the working tree. Skips cleanly when the semgrep binary is not installed."
+run = "bash tools/scripts/validate/semgrep.sh"
+
+[tasks."validate:secrets"]
+description = "gitleaks across the working tree (and history when GITLEAKS_HISTORY=1)."
+run = "bash tools/scripts/validate/secrets.sh"
+
+[tasks."validate:actions"]
+description = "actionlint over .github/workflows/*.yml. Skips cleanly when no workflows exist."
+run = "bash tools/scripts/validate/actions.sh"
+
+# ── shell ────────────────────────────────────────────────────────────────────
+[tasks."validate:shell"]
+description = "shellcheck + shfmt over bin/ and tools/scripts/."
+run = "bash tools/scripts/validate/shell.sh"
+
+# ── database ─────────────────────────────────────────────────────────────────
+[tasks."validate:db"]
+description = "Prepare the test DB and fail on pending migrations / stale schema."
+run = "bash tools/scripts/validate/db.sh"
+
+# ── build ────────────────────────────────────────────────────────────────────
+[tasks."validate:build"]
+description = "Precompile assets in production mode to prove the app builds."
+run = "bash tools/scripts/validate/build.sh"
+
+# ── tests ────────────────────────────────────────────────────────────────────
+[tasks."validate:test:unit"]
+description = "Minitest unit + integration tests (everything except system tests), with SimpleCov coverage."
+depends = ["validate:db"]
+run = "bash tools/scripts/validate/test-unit.sh"
+
+[tasks."validate:test:system"]
+description = "Capybara system tests (headless Chrome). Skips cleanly when Chrome is unavailable."
+depends = ["validate:db"]
+# Serialize behind unit tests: both run `db:test:prepare` against the shared
+# test database, and concurrent schema loads would race.
+wait_for = ["validate:test:unit"]
+run = "bash tools/scripts/validate/test-system.sh"
+
+# ── environment ──────────────────────────────────────────────────────────────
+[tasks."validate:doctor"]
+description = "Diagnose local environment (ruby/rails/postgres/vips versions, .env presence, API-key gaps)."
+run = "bash tools/scripts/doctor.sh"

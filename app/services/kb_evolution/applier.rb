@@ -1,6 +1,4 @@
 module KbEvolution
-  class ApplyError < StandardError; end
-
   class Applier
     ALLOWED_ROOT = Rails.root.join("knowledge_base").to_s
 
