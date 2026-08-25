@@ -1,0 +1,10 @@
+.DS_Store
+
+# Local environment — never commit real keys
+.env
+
+# Rails (generated in-place; expanded below)
+/log/*
+/tmp/*
+!/log/.keep
+!/tmp/.keep
