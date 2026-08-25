@@ -1,0 +1,58 @@
+meta:
+  source: "Phase 2 §2.7 and §2.7a and §2.7b — Arrangement forms, mood modifier, subject-energy override"
+  citation: "p. 58-59 (forms); p. 68-69 (subject energy); p. 74, p. 81 (mood modifier)"
+  volatility: static
+
+rules:
+  # Table P2-T13 — 6 forms, mood-neutral
+  standard_forms:
+    tops_bottoms_alignment:
+      what: "Align all tops or all bottoms of various-size pictures along one imaginary horizontal line"
+      when: "Simple groups of mixed sizes that still need one clean line to anchor them"
+    combination_alignment:
+      what: "Divide into two-plus rows; align top-row tops and bottom-row bottoms on horizontal lines, then align sides too"
+      when: "Larger groups of various sizes needing more structure than a single alignment line"
+    mosaic:
+      what: "No fixed grid — balance by aligning some frame bottoms with others' tops, and/or centering some pictures over others; round/octagonal frames can soften a rigid mosaic"
+      when: "Varied sizes/shapes with no natural row structure"
+    four_corners:
+      what: "Place the four largest pictures at the corners of the defined space; fill the middle with smaller ones"
+      when: "A defined rectangular area with a strong size range in the set"
+    gallery_style:
+      what: "Identical-size pictures in one long, neat row (horizontal or vertical); a taut string + pushpins can serve as a hanging guide"
+      when: "Sets where every piece is the same size"
+    stair_stepping:
+      what: "Align picture center points diagonally, following the line of a staircase"
+      when_scenario_specific: staircase_wall
+      note: "Use ONLY when the scene is a staircase wall — this form is scenario-specific, not a general option"
+
+  # Table P2-T14 — mood-driven layer applied ON TOP of a chosen form
+  mood_modifier:
+    calm_ordered:
+      modifier: >
+        Favor tight, symmetric spacing; keep to one dominant frame style across the set;
+        include an anchoring central piece.
+      allow_mixed_frames: false
+    bold_active:
+      modifier: >
+        Salon-style is available — pictures and frames of deliberately different styles/weights/
+        colors "poured onto the wall," bottom layer filling first (this is the one case where
+        mixed frame language, normally forbidden in Step 4, is allowed); or a staggered Block
+        style (vertical-horizontal-vertical-horizontal) for gentle rotational movement instead
+        of full salon chaos.
+      allow_mixed_frames: true
+      only_when: salon_style_chosen
+
+  # Prose rule P2-P12 — subject energy overrides mood on the symmetry question
+  subject_energy_override:
+    citation: "p. 68-69"
+    rule: >
+      Independent of mood, check the content itself: dynamic/in-motion subject matter (action
+      shots, energetic compositions) suits a slightly off-kilter, asymmetric arrangement;
+      formal/still subject matter (portraits, posed or static compositions) suits precise,
+      symmetric alignment.
+    conflict_resolution: >
+      If mood and subject energy conflict (e.g. calm mood but energetic subject), SUBJECT ENERGY
+      WINS on the symmetry question. Use a symmetric bookend element (matching pieces at the
+      ends) to keep an off-kilter arrangement from feeling out of hand.
+    priority: overrides_mood_on_symmetry_only

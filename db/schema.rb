@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_08_25_134814) do
+ActiveRecord::Schema[8.0].define(version: 2026_08_25_141513) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -118,6 +118,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_25_134814) do
     t.text "last_error"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "color_role_confirmed"
     t.index ["etsy_listing_id"], name: "index_piece_records_on_etsy_listing_id", unique: true
     t.index ["kb_version"], name: "index_piece_records_on_kb_version"
     t.index ["status"], name: "index_piece_records_on_status"

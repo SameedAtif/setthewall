@@ -1,0 +1,23 @@
+meta:
+  source: "Phase 2 §2.8 — Count and focal dynamic within a set"
+  citation: "p. 63, p. 74"
+  volatility: static
+
+rules:
+  # Table P2-T15 — 3 rows
+  by_desired_effect:
+    one_dominant_anchor:
+      count: odd            # canonical: 3
+      canonical_n: 3
+      notes: >
+        Name the anchor explicitly — usually the largest or strongest composition. The book
+        calls this "an anchoring central piece."
+    no_hierarchy_unified_block:
+      count: even           # canonical: 2 or 4
+      canonical_n: [2, 4]
+      notes: "Reads calmer, more ordered"
+    flip_even_to_odd:
+      technique: wild_card_element
+      detail: "Add one wild-card element — a mirror, carving, or hanging tile"
+      citation: "p. 63"
+      optional: true

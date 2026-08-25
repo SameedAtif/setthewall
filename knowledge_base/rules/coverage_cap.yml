@@ -1,0 +1,25 @@
+meta:
+  source: "Phase 2 §2.5c — Wall coverage cap"
+  citation: "p. 51"
+  volatility: static
+
+rules:
+  # Prose rule P2-P10
+  cap:
+    citation: "p. 51"
+    default_max_fraction: 0.6667             # two-thirds of a blank wall
+    exception:
+      name: fully_maximalist
+      rule: "Cover the wall (near-)completely and consistently — reads as a deliberate style choice"
+    rule: >
+      Binary: stay UNDER two-thirds, or commit FULLY. A partial overreach past two-thirds reads
+      as a mistake. There is no in-between.
+    validation:
+      allowed_regions:
+        - "coverage_fraction <= 0.6667"
+        - "coverage_fraction >= 0.95"          # fully maximalist
+      forbidden_region: "0.6667 < coverage_fraction < 0.95"
+      on_forbidden: fail_step
+      reasoning: >
+        The forbidden band is the "landed in between" case the source doc explicitly warns
+        against. Enforced in code, not left as prose.

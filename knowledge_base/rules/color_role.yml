@@ -1,0 +1,54 @@
+meta:
+  source: "Phase 2 §2.2a — Color function"
+  citation: "p. 82 (accent), p. 84 (unifier + mat intensity + wall/light), p. 88 (complementary vs. tension), p. 91 (color-burst, saturator), p. 97 (line-only)"
+  volatility: static
+  note: >
+    This is the ROLE→SUPPORTING-TECHNIQUE table plus three embedded prose rules from §2.2a.
+    The observation-side (how B6 assigns the role) lives in module 02's color_role_observation.yml —
+    this file is what Phase 2 does with the role once it's set.
+
+rules:
+  role:
+    accent_highlighter:
+      does: "Brings out an accent color already in the room that would otherwise fade"
+      supporting_technique: "Echo the accent in the mat or a nearby accessory"
+      citation: "p. 82"
+    color_burst:
+      does: "Provides the room's single splash of saturated color in an otherwise neutral space"
+      supporting_technique: "One saturated piece stimulates a whole muted room, making its understated colors feel more alive by contrast"
+      citation: "p. 91"
+    unifier:
+      does: "Ties together touches of color already scattered through the room"
+      supporting_technique: "Use a thin, subtle mat so the picture's colors interact freely with its surroundings"
+      citation: "p. 84"
+    saturator:
+      does: "Repeats and reinforces the room's existing dominant color theme"
+      supporting_technique: "A muted piece in a muted room reinforces calm rather than introducing tension"
+      citation: "p. 91"
+    line_only:
+      does: "Removes color tension entirely so line, pattern, and light/dark contrast carry the piece"
+      supporting_technique: "Black/white/gray display, minimal or no color in mat/frame — allows the lines to sing. Default color role for a minimalist/Japandi-type spec."
+      citation: "p. 97"
+
+  # Prose rule P2-P1 — mat intensity, from §2.2a
+  mat_intensity:
+    citation: "p. 84"
+    rule: >
+      A dark mat intensifies a picture's colors; a thin/subtle or off-white mat lets the picture's
+      colors interact more openly with the room. Pick mat darkness based on the color role above.
+    per_role_default:
+      accent_highlighter: dark_or_colored     # can echo the accent
+      color_burst: dark_acceptable            # piece commands attention regardless
+      unifier: subtle                          # per p. 84 supporting technique above
+      saturator: subtle_or_matched
+      line_only: none_or_off_white
+
+  # Prose rule P2-P3 — complementary vs. tension pairing, from §2.2a
+  pairing_by_mood:
+    citation: "p. 88"
+    rule: >
+      Matching or softening the art's color intensity to the wall reads serene; deliberately
+      non-complementary wall/picture color creates energy. calm_ordered mood → complementary;
+      bold_active mood → tension is acceptable.
+    calm_ordered: complementary
+    bold_active: tension_acceptable

@@ -1,0 +1,50 @@
+meta:
+  source: "Phase 2 §2.12 — Theme unification"
+  citation: "p. 101 (all six bullets); p. 116-117 (shape dominance)"
+  volatility: static
+  note: >
+    This is the rule content Step 3's LLM vision check tests a set against.
+
+rules:
+  # Prose rule P2-P15 — 6 bullets from §2.12
+  criteria:
+    limit_count:
+      rule: "Fewer pieces make the shared thread clearer and differences less distracting"
+    similarity_beyond_subject:
+      rule: >
+        Similarity isn't only subject matter. Texture, color, shape, size, intensity, or
+        balance can all be the unifying thread instead of/alongside subject matter.
+    proximity:
+      rule: "Proximity reinforces the connection — see spacing.yml (tight/touching spacing for theme sets)"
+    repeat_dont_duplicate:
+      rule: >
+        Repeat an element (frame shape, medium, palette) across the set, but avoid exact
+        duplication — echo, don't clone.
+    shape_dominance:
+      citation: "p. 116-117"
+      rule: >
+        If the set mixes varied shapes/formats, pick one dominant shape (e.g. rectangle) and
+        let the others play a supporting role — this hints at hierarchy so a mixed set reads
+        as rich rather than jumbled.
+    subdivision_strategies:
+      rule: >
+        The book's own example is a big box of family photos, but the subdivision logic
+        generalises to any oversized collection: by phase/generation, by sub-category,
+        chronologically, by specific occasion/event, by room, or by season. Use one of these
+        to cut a theme down to a coherent, limited set rather than trying to represent the
+        whole theme in one grouping.
+      subdivision_options:
+        - phase_or_generation
+        - sub_category
+        - chronological
+        - specific_occasion
+        - by_room
+        - by_season
+
+  # Step 3's LLM vision check reads from this
+  vision_check_prompt_criteria:
+    - "Could a viewer tell at a glance this is one collection?"
+    - "Is the count limited enough that the shared thread reads clearly?"
+    - "What is the shared thread (subject / texture / color / shape / size / intensity / balance)?"
+    - "Is the shared element REPEATED (echoed) across pieces without exact duplication?"
+    - "If the set mixes shapes, is one shape clearly dominant?"

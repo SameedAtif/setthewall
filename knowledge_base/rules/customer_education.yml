@@ -1,0 +1,65 @@
+meta:
+  source: "Phase 2 §5 — Additional notes (not part of the daily decision tree)"
+  citation: "p. 22-24 (mat colored), p. 23-24 (safekeeping), p. 24 (framer checklist), p. 37 (easel), p. 40-41 (hardware), p. 51 (fully-maximalist), p. 57 (no-holes), p. 60 (happy surprises), p. 85 (conservation lighting)"
+  volatility: static
+  note: >
+    Content for module 05 (Etsy listing descriptions, engagement content) and future modules.
+    NOT read by any Phase 2 daily-run step. Isolating here so it's clearly non-pipeline material.
+
+rules:
+  # Note P2-N1
+  happy_surprises:
+    citation: "p. 60"
+    rule: >
+      The expected spot (above the couch, over the mantel) isn't the only option — under an
+      eave, a small cupboard door, inside a closet, or the patch of wall beneath a window are
+      called out as good unconventional placements. Worth offering as an alternate scene
+      template or a customer-facing styling tip, not a rule to enforce.
+
+  # Note P2-N2
+  no_holes_planning:
+    citation: "p. 57"
+    rule: >
+      For customers physically hanging a print: trace each piece onto paper, mark the hanger
+      point from the actual wire/hook measurement, tape the templates to the wall, and
+      rearrange until satisfied before hammering anything. Customer-education content.
+
+  # Note P2-N3 — 4 bullets
+  safekeeping_checklist:
+    citation: "p. 23-24, p. 85"
+    bullets:
+      - "Use acid-free materials for mat and backing (labeled conservation/museum/archival quality) — acid degrades paper-based images over time."
+      - "Avoid displaying in rooms with heavy temperature/humidity swings (kitchens, bathrooms) or near heat sources (radiators, fireplaces, air ducts)."
+      - "Avoid direct sunlight; strong light fades and dries out art."
+      - "For especially valuable pieces: UV-filtering (conservation or museum-grade) glass, a UV window filter, and incandescent over fluorescent lighting all reduce fade risk."
+
+  # Note P2-N4 — 4 bullets
+  professional_framer_checklist:
+    citation: "p. 24"
+    bring_to_framer:
+      - "Paint chips of the wall color (and nearby walls) the piece will hang on."
+      - "Fabric swatches from the room's furniture/accessories."
+      - "Color samples for the mat/frame if they already have ideas."
+      - "Size specs (or photos) of the room and open wall area, for proportion."
+
+  # Note P2-N5
+  easel_display:
+    citation: "p. 37"
+    rule: >
+      A piece placed on an easel rather than hung reads as more important/elevated, and gives
+      full placement flexibility — it can move to the center of a room, off to the side, or
+      to a different space. Worth a scene template if your product suits a freestanding,
+      non-wall-mounted presentation (distinct from the leaning/propped surface display in
+      §2.5 — the easel is fully mobile floor placement).
+
+  # Note P2-N6
+  hanging_hardware:
+    citation: "p. 40-41"
+    by_weight:
+      small_light: "Sawtooth hangers — single central point"
+      standard: "Traditional hangers or screw-eyes-with-wire"
+      heavier: "Frame hangers on both top corners for extra stability"
+      especially_heavy_or_hollow_masonry: "Wall anchors (screws + expanding anchor)"
+    rule: >
+      Matching hardware to actual print weight (especially framed or canvas formats) is a
+      legitimate trust-building tip.

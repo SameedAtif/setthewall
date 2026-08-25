@@ -1,0 +1,28 @@
+meta:
+  source: "Phase 2 §2.10 — Eye level"
+  citation: "p. 63"
+  volatility: static
+
+rules:
+  # Table P2-T16 — 3 rows by room_type
+  by_room_type:
+    seated_room:
+      rule: "Center 5-6″ above the back of the couch/chairs"
+      formula_inches: 5.5           # midpoint of the 5-6" range
+      anchor: furniture_top_edge_y_px
+    hallway:
+      rule: "At or just above eye level (no furniture-back reference)"
+      formula: standing_eye_level
+      anchor: standing_eye_level_y_px
+    no_furniture_wall:
+      rule: "At or just above eye level (no furniture-back reference)"
+      formula: standing_eye_level
+      anchor: standing_eye_level_y_px
+
+  # Prose rule P2-P14 — general drop rule
+  general_drop:
+    citation: "p. 63"
+    rule: >
+      Whatever height you land on, drop it 3-4″ — most people hang pictures too high.
+    formula_inches: -3.5             # midpoint of the 3-4" drop
+    applied_by: compositor           # Step 6 applies this on top of the anchor

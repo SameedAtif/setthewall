@@ -1,0 +1,32 @@
+meta:
+  source: "Phase 2 §2.5b — Location suitability"
+  citation: "p. 42-43"
+  volatility: static
+  note: >
+    Relevant when recommending unglazed/textured/fiber-based print formats. Step 1 checks these
+    against the scene template.
+
+rules:
+  # Table P2-T12 — 5 factors
+  humidity:
+    rule: >
+      Avoid bathrooms/kitchens for pieces not sealed behind glass; fiber-textured or unsealed
+      prints belong in the driest room available; glass-sealed pieces tolerate humid rooms fine.
+    unsafe_rooms: [bathroom, kitchen]
+  heat:
+    rule: >
+      Avoid hanging over a fireplace in active use; avoid near heating vents (heat + dust
+      circulation); avoid over stoves/ovens.
+  airborne_pollutants:
+    rule: >
+      Kitchens carry cooking residue in the air, not just heat — another reason to avoid
+      unsealed/uncovered pieces there.
+  furniture_traffic_clearance:
+    rule: >
+      Don't place pictures where moving furniture (e.g. a recliner) will strike them, in
+      high-traffic paths already crowded with obstacles, or low enough to contact the head of
+      someone seated on a couch below.
+  children_pets:
+    rule: >
+      Keep delicate or valuable pieces up out of reach of a child's arms/toys or a pet's
+      tail/claws — treat "up high" as the default in any scene with kids or pets present.

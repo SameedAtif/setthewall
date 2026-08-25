@@ -1,0 +1,64 @@
+meta:
+  source: "Phase 2 §2.2b — Lighting"
+  citation: "p. 85 (fixtures + bulbs); p. 84 (wall/light interaction); p. 86 (color-choreography); p. 23-24, p. 85 (conservation)"
+  volatility: static
+  note: >
+    Contains 2 tables (fixtures, bulbs) + 3 prose rules from §2.2b (wall/light, conservation,
+    color-choreography). Step 6 reads bulb tone; Phase 3 module 05 can surface fixture guidance
+    to customer content.
+
+rules:
+  fixture:
+    picture_lights:
+      description: "Attach to the frame or wall directly above/below/alongside a single piece"
+      best_for: "Individual pieces, especially where a lens-style light can spotlight black-and-white work"
+    portable_floor_lights:
+      description: "Low canisters casting light upward from the floor"
+      best_for: "A dramatic uplit spotlight effect on what's hanging above"
+    track_lights:
+      description: "Ceiling-mounted, angled to strike specific pieces or bathe the whole wall"
+      best_for: "Multiple pictures at once, flexible re-angling if a piece moves"
+    recessed_lights:
+      description: "Built into ceiling/wall/furniture, unobtrusive"
+      best_for: "Individual piece lighting where a clean look matters more than cost"
+
+  bulb:
+    incandescent:
+      effect: "Warm, unobtrusive glow that brings out richness and depth"
+      tone: warm
+    halogen:
+      effect: "Bright, intense illumination; burns hot — keep distance, use a dimmer"
+      tone: bright_neutral
+    compact_fluorescent:
+      effect: "Efficient, long-lasting; straight-tube versions work well in recessed fixtures"
+      tone: cool_neutral
+    specialty:
+      effect: "Frosted diffuses; cool-colored enhances blues/grays; warm-colored amplifies yellow/red/wood tones; full-spectrum for accuracy"
+      tone: variable
+
+  # Prose rule P2-P2 — wall/light interaction, from §2.2a p. 84 (but grouped here since it's about lighting)
+  wall_light_interaction:
+    citation: "p. 84"
+    rule: >
+      Light direction and time-of-use matter — morning light reads cooler, north-facing rooms
+      read colder/darker, artificial evening light shifts color again. Cool bulbs enhance
+      blues/grays; warm bulbs amplify yellows/reds/wood tones; frosted diffuses. This mainly
+      matters for how a mockup scene is lit for photography — keep it consistent across a
+      style's scene templates.
+
+  # Prose rule P2-P5 — color-choreography, from §2.2b
+  color_choreography:
+    citation: "p. 86"
+    rule: >
+      In a space with sightlines across multiple rooms, deliberately stripping color from most
+      of the space and placing one or two bold-color pieces at key points can direct where
+      people look first and how they move through the space — a scaled-up color-burst applied
+      to a whole entry/hallway sightline rather than one wall.
+
+  # Bulb tone matching to color role for Step 6 lighting check
+  bulb_tone_by_color_role:
+    line_only: neutral_or_cool          # warm undercuts a stark black/white piece
+    color_burst: neutral                # avoid tinting the piece's one saturated color
+    accent_highlighter: match_accent
+    unifier: warm                        # per p. 84 general warmth
+    saturator: match_dominant_theme

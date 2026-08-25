@@ -1,0 +1,26 @@
+meta:
+  source: "Phase 2 §2.6 — Focal point, isolation vs. cluster"
+  citation: "p. 27-28"
+  volatility: static
+
+rules:
+  # Prose rule P2-P11 — the two-bullet focal mechanism
+  mechanism:
+    citation: "p. 27-28"
+    principle: >
+      Focal is about placement, not mood: a piece hung off by itself, in an oversized/impressive
+      frame, reads as the center of attention — even the simplest, sparest image will "happily
+      act as center of attention" in isolation. The same piece placed as part of a cluster, in
+      a thin/subtle frame, will instead "blend politely and quietly into the crowd."
+    single_isolated:
+      focal_by_default: true
+      mood_amplification:
+        bold_active: "amplify with an oversized/impressive frame"
+        calm_ordered: "keep the frame quiet — let the piece carry the statement on its own"
+    piece_inside_set:
+      lever: frame_weight   # frame size/subtlety
+      rule: >
+        Same lever is how you reinforce the anchor-vs-supporting hierarchy from §2.8 — give the
+        named anchor piece the more impressive/oversized frame treatment, and deliberately
+        thinner/subtler frames to the supporting pieces, so the visual weight matches the
+        intended focal structure rather than fighting it.

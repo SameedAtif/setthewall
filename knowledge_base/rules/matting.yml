@@ -1,0 +1,43 @@
+meta:
+  source: "Phase 2 §2.4a and §2.4b — Mat sizing and technique"
+  citation: "p. 21-24 (sizing + technique); p. 22 (colored mat); p. 100 (multi-opening)"
+  volatility: static
+
+rules:
+  # Prose rule P2-P9 — mat sizing (§2.4a)
+  sizing:
+    citation: "p. 21-22"
+    rule: >
+      The mat should measure VISIBLY WIDER than the frame's width. If mat width and frame width
+      are equal, the effect reads as flat and predictable. An oversize mat around even a small
+      piece intensifies drama; a slightly uneven mat (e.g. more area below the image than above)
+      adds a bit of visual movement.
+    validation:
+      must: "mat_width_px > frame_width_px * 1.10"     # at least 10% wider — 'visibly'
+      fail_reading: "flat_and_predictable"
+
+  # Table P2-T9 (§2.4b) — conditional technique selection, 7 rows
+  technique:
+    - condition: "Want to add depth or accentuate one color in the piece"
+      technique: double_stepped_mat
+      detail: "Layer one mat on top of another, revealing about ¾″–1″ of the inner mat"
+    - condition: "Picture's shape isn't a standard rectangle, or you want to emphasize its contour"
+      technique: shape_cut_mat
+      detail: "Circle, oval, or elongated strips instead of the standard rectangle"
+    - condition: "Want to intensify the picture's presence generally, no specific reason needed"
+      technique: no_mat
+      detail: >
+        Omitting a mat entirely tends to intensify the look of whatever's being framed (p. 22).
+        Distinct from close_framing below — a general option available for any content type.
+    - condition: "Content is specifically an oil-painting style/texture"
+      technique: close_framing
+      detail: "Technical term — the specific combination of NO MAT AND NO GLASS, standard practice for oil-painting-style work (p. 23-24)"
+    - condition: "Set is a narrative/chronological sequence meant to be read in order"
+      technique: multi_opening_mat
+      detail: "One mat with a series of openings, containing the whole sequence within a single frame rather than separate pieces (p. 100)"
+    - condition: "Want to punctuate or strengthen a color already present in the piece"
+      technique: colored_mat
+      detail: "Pair with a mat that echoes/reinforces that color, rather than a neutral one (p. 22)"
+    - condition: "None of the above apply"
+      technique: standard_single_mat
+      detail: "Standard single mat, sized per sizing rule above"

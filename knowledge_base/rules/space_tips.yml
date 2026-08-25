@@ -1,0 +1,20 @@
+meta:
+  source: "Phase 2 §2.5a — Space tips, line orientation and content"
+  citation: "p. 62"
+  volatility: static
+
+rules:
+  # Table P2-T11 — 3 rows by room_shape
+  by_room_shape:
+    narrow:
+      technique: horizontal_lines
+      detail: "Favor art with strong horizontal lines — reads as calming and visually widens the room"
+    low_ceilinged:
+      technique: vertical_lines
+      detail: "Favor art with strong vertical lines — visually raises the ceiling"
+    small_closed_in:
+      technique: distant_vista
+      detail: "A landscape with a distant/faraway vista acts as a window and opens the room up"
+    none:
+      technique: none
+      detail: "No space-tip constraint applies. Skip the modifier."

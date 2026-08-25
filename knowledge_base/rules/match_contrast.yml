@@ -1,0 +1,43 @@
+meta:
+  source: "Phase 2 §2.3 — Match vs. contrast"
+  citation: "p. 20-21, p. 61"
+  volatility: static
+
+rules:
+  # Base table
+  by_wall_condition:
+    neutral:
+      approach: match
+      detail: "Match the frame to the room's materials"
+    busy:
+      approach: contrast
+      detail: "Contrast — pick a frame that reads distinctly against the pattern; don't try to blend"
+
+  # Prose rule P2-P6 — the governing principle. This OVERRIDES the table when they conflict.
+  governing_principle:
+    citation: "p. 20"
+    rule: >
+      Choose a frame that brings out what's interesting about the PICTURE ITSELF — its drama,
+      its tranquility, some other quality — rather than one that simply matches the room's
+      decor. The wall-condition table above is a TIEBREAKER for execution, not the primary
+      driver of frame choice.
+    priority: overrides_table
+    note: >
+      In practice: if the wall-condition table produces a frame that doesn't serve the piece,
+      the piece wins. Flag for human review rather than defaulting.
+
+  # Prose rule P2-P7 — single piece vs. group conditional
+  single_vs_group_conditional:
+    citation: "p. 21"
+    rule: >
+      Matching a frame to its surroundings matters MORE when hanging a single piece — since a
+      lone piece is meant to make one specific decorative contribution to the room, its frame
+      is doing more relational work than a frame inside a busier multi-piece grouping, where
+      the group's internal unity (theme_unification.yml §2.12) matters more than any one
+      piece's relationship to the room.
+    weight_by_branch:
+      single: high        # match/contrast rule fully applies
+      set: medium         # internal group unity partially outweighs it
+      split_wall: high    # each zone is treated as a separate wall
+      nook: high
+      surface: medium

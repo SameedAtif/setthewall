@@ -1,0 +1,16 @@
+meta:
+  source: "Phase 2 §2.4 — Frame-to-piece sizing"
+  citation: "p. 28-29"
+  volatility: static
+
+rules:
+  # Prose rule P2-P8
+  sizing:
+    citation: "p. 28-29"
+    default_bigger: "Bigger art → bigger, more substantial frame."
+    default_smaller: "Smaller art → normally a delicate, smaller frame."
+    exception: >
+      UNLESS deliberately using an oversized/ornate frame to elevate a small piece's presence —
+      an intentional exception, not a default. Requires explicit human decision; not applied
+      by default logic.
+    exception_flag: oversized_intentional

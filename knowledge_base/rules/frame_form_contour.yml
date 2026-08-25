@@ -1,0 +1,28 @@
+meta:
+  source: "Phase 2 §2.2 — Frame form and contour"
+  citation: "how_to_arrange_pictures / at_home_with_pictures, p. 19"
+  volatility: static
+  note: >
+    Form is set ONCE per style (Track A A4). Contour is per-piece by content_type. Both apply
+    regardless of material category.
+
+rules:
+  form:
+    angular:
+      description: "Angular / straight-edged — crisp, geometric perimeter"
+      reads_as: "more modern / minimalist"
+    rounded:
+      description: "Rounded / softer — curved, gentler perimeter"
+      reads_as: "softer / more traditional"
+    determination: >
+      Pick form to match mood/content_type same way as material — but the book doesn't hard-gate
+      this one. Treat it as a style-spec choice made once per style, not a per-piece decision.
+
+  contour:
+    detailed_representational:
+      contour: inward_sloping_beveled
+      reasoning: "Leads the eye into the image"
+    minimalist_modern:
+      contour: flush_level_plane
+    portrait_still_life:
+      contour: outward_sloping

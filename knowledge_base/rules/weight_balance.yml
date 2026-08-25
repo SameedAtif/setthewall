@@ -1,0 +1,27 @@
+meta:
+  source: "Phase 2 §2.9 — Weight balance"
+  citation: "p. 63"
+  volatility: static
+
+rules:
+  # Prose rule P2-P13 — 3 bullets
+  rule:
+    citation: "p. 63"
+    dark_furniture: >
+      furniture_weight = dark → keep art/frame visually LIGHTER than the furniture beneath it.
+      Required.
+    light_furniture: >
+      furniture_weight = light → art CAN carry more visual weight without unbalancing the scene.
+      Allowed, not required.
+    heaviness_driver: >
+      Heaviness is driven by size AND color/frame material — a small dark piece in a heavy
+      frame can outweigh a larger pale, unframed one. Check both signals.
+
+  # Machine-readable version for Step 5
+  check:
+    dark:
+      required: "art_weight_score < furniture_weight_score"
+      on_fail: fail_step
+    light:
+      required: null   # allowed, not required
+      on_over: warn     # heavier art with light furniture is fine, but flag heavy dark frame just in case

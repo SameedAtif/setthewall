@@ -1,0 +1,50 @@
+meta:
+  source: "Phase 2 §2.1 — Frame material"
+  citation: "how_to_arrange_pictures / at_home_with_pictures, p. 16-19"
+  volatility: static
+  lookup_strategy: >
+    Two-step lookup: first pick material_category by content_type and mood; then, if metal, apply
+    the metal_finish sub-table by mood and palette.
+
+rules:
+  material_category:
+    metal:
+      character: "Spare, streamlined, affordable, most popular"
+      best_fit: "Default for content_type = minimalist_modern; apply metal_finish sub-table"
+    wood:
+      character: "Ranges from plain/untreated and bleached/pickled (understated, modern) to natural/plain (folksy, rustic) to richly stained/polished (time-honored, classic)"
+      best_fit: "Pick the sub-finish to match mood — light/bleached for calm-minimalist, rich stain for calm-traditional"
+    no_frame_canvas:
+      character: "Painted canvas stretched over wood supports; fresh-from-the-studio look, lets the piece speak for itself"
+      best_fit: "mood = calm AND content_type = minimalist_modern, or when the product itself is a canvas print"
+    clip_frame:
+      character: "Clear holder, not a true frame; simple, unadorned, casual"
+      best_fit: "Casual print formats (posters, prints); no-nonsense/minimal styling"
+    colored_painted:
+      character: "Intensifies the picture's color, coordinates or contrasts with the wall, or adds a splash in a neutral room"
+      best_fit: "Cross-reference color_role (color_role.yml §2.2a) — this is a frame-material way to execute a color-burst or accent-highlighter role"
+    ornate_carved:
+      character: "Heavy, robust outline; gilded or richly colored"
+      best_fit: "mood = bold_active AND content_type = detailed_representational or portrait_still_life"
+    novelty_whimsical:
+      character: "Shape-based (suns, moons, stars) or handcrafted material (polymer clay, tin, tramp art)"
+      best_fit: "Situational — not mood-driven, use for deliberately playful/one-off pieces rather than a repeatable style spec"
+
+  # Metal sub-table — applies ONLY when material_category is metal
+  metal_finish:
+    calm_warm:
+      condition: "mood = calm_ordered AND palette = warm"
+      finish: gold
+    calm_cool:
+      condition: "mood = calm_ordered AND palette = cool | pastel | abstract"
+      finish: silver_aluminum
+    calm_neutral:
+      condition: "mood = calm_ordered AND palette = neutral | monochrome"
+      finish: black_metal
+    bold:
+      condition: "mood = bold_active"
+      finish: follows_accent_color
+      note: >
+        Material follows the accent color the piece is meant to introduce (e.g. a warm pure-yellow
+        or red frame can make a piece the room's focal point, p. 26). This sub-table doesn't
+        apply — pick the color from the piece's accent role.

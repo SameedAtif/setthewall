@@ -1,0 +1,41 @@
+meta:
+  source: "Phase 2 §2.5 — Single vs. multi vs. split-wall vs. nook vs. surface"
+  citation: "p. 56, p. 61, p. 63, p. 72-73, p. 80, p. 103, p. 119"
+  volatility: static
+
+rules:
+  # Table P2-T10 — 5 branches by space_math value
+  by_space_math:
+    single:
+      condition: "Furniture-anchored, one piece at 2/3-3/4 furniture width fills it"
+      action: "Single piece"
+      step_2x: "2a"
+    set:
+      condition: "Furniture-anchored, one piece doesn't fill it, or furniture is minimal"
+      action: "Multi-piece set"
+      step_2x: "2b"
+    split_wall:
+      condition: "Wide-open wall, no furniture to anchor against (e.g. hallway)"
+      action: >
+        Split-wall technique (two options): (a) bisect the wall visually with a chair rail,
+        border, or paint line, creating two smaller zones, each sized independently (p. 61);
+        or (b) mount a contrasting-color backing panel behind a small cluster to carve out
+        a smaller space within the enormity — a wall-within-a-wall (p. 72-73)
+      step_2x: "2c"
+      citation: "p. 61, p. 72-73"
+    nook:
+      condition: "Architectural nook (window surround, chimney jog, built-in, other wall quirk)"
+      action: "Fit a single piece shaped to the nook, or a small group, sized to the space rather than a standard wall run (p. 56)"
+      step_2x: "2d"
+      citation: "p. 56"
+    surface:
+      condition: "Horizontal surface (mantel, shelf, console, windowsill) — not wall-mounted at all"
+      action: >
+        Surface/propped display: lean pieces against the wall on the surface rather than hanging
+        (no nails needed, freely rearrangeable — gallery-style work in progress, p. 80, p. 103);
+        vary the height of pieces using stands, pedestals, risers, or stacked objects rather than
+        lining them up flat (p. 119); for a multi-piece surface set, a loose triangle composition
+        (taller/larger pieces at the back/tip, smaller in front) is a classic way to let pieces
+        play off each other (p. 104)
+      step_2x: "2e"
+      citation: "p. 80, p. 103, p. 104, p. 119"

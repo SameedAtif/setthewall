@@ -1,0 +1,34 @@
+meta:
+  source: "Phase 2 §2.11 — Spacing, four distinct rules"
+  citation: "p. 63 (three of them); p. 101 (theme-tribute variant)"
+  volatility: static
+  note: >
+    Four distinct rules. Do NOT merge them. Step 6 applies rules 1, 3, and 4 as pixel math;
+    rule 2 (piece-to-piece within general grouping) is enforced by the compositor's
+    piece-to-piece minimum-clearance check.
+
+rules:
+  # Table P2-T17 — 4 rows
+  rules:
+    group_to_furniture:
+      situation: "Group of pictures to furniture below"
+      spacing_inches: [8, 10]
+      citation: "p. 63"
+    piece_to_piece_general:
+      situation: "Piece-to-piece within a general logical grouping"
+      spacing: "several_inches"
+      detail: "Too close loses individuality, too far apart loses unity"
+      citation: "p. 63"
+    piece_to_piece_theme:
+      situation: "Piece-to-piece within a theme/tribute grouping"
+      spacing: "touching_or_overlapping"
+      detail: "Tighter — pieces should appear to touch or even overlap, to visually reinforce the connection"
+      citation: "p. 101"
+    group_width_vs_furniture:
+      situation: "Group width vs. furniture"
+      rule: >
+        Group no wider than the furniture below it; if narrower, at least half the furniture's
+        length.
+      max_fraction: 1.0
+      min_fraction: 0.5
+      citation: "p. 63"
