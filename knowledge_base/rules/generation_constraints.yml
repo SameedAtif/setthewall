@@ -1,0 +1,31 @@
+meta:
+  source: "Phase 1, Steps C1 & C2 — Generate art / Cull to finalists"
+  citation: >
+    Grounding for the batch cap and cull rule: *The Paradox of Choice*, Ch. 5 "When Only the
+    Best Will Do" and Ch. 6 "Why We Suffer" (the maximizer trap); *This Is Marketing*, Ch. 12
+    "Trust and Tension Create Forward Motion" (the finalist is a commitment). The specific
+    numbers below are working conventions in this project's C1/C2 source doc, not values the
+    books prescribe — they operationalise the principle for this pipeline.
+  volatility: static
+
+rules:
+  batch:
+    max_candidates_per_scene: 10
+    reasoning: >
+      Cap on generation output per scene per day. Higher numbers do not produce better
+      finalists — they produce longer culls and more regret. Enforced in code because a
+      generation loop with no upper bound is a real risk (API cost and an unbounded cull
+      queue).
+
+  finalist_cull:
+    max_finalists_per_scene: 3
+    reasoning: >
+      From C2's cull rule — narrow to a small set the human can compare side by side. Three
+      is the working number; four is acceptable when the batch is very strong.
+    absolute_max: 4
+
+  chosen:
+    count: 1
+    reasoning: >
+      C2 ends with ONE chosen piece per scene per day. This becomes PieceRecord.chosen_url
+      and flows into Phase 2.

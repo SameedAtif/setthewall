@@ -1,0 +1,70 @@
+meta:
+  source: "Phase 1, Step C1 — Generate art"
+  citation: >
+    Content Type, Frame Form, Mood, and Color Role feed the prompt from the arrangement book's
+    §2.1 (frame material by content type, p. 16-19), §2.2 (frame contour by content type, p. 19)
+    and §2.7a (mood-driven arrangement modifier, p. 68-69). Space tips modifier from p. 51.
+    Track C composes these; module 04 authoritative for the underlying rules.
+  volatility: static
+  note: >
+    This is the RULE FILE for prompt construction. The actual per-day prompt is SYNTHESISED by
+    an LLM using c1_generation_prompt_synthesis.md — that meta-prompt reads THIS file's
+    directive_axes and constraints, and the current PieceRecord's spec, and produces the
+    image-gen prompt. This indirection exists so tweaks to prompt style (module 07's
+    performance loop will propose these) become file edits, not code edits.
+
+rules:
+  directive_axes:
+    # What each axis contributes to the image-gen prompt. Order matters — earlier axes are
+    # earlier in the constructed prompt.
+    - axis: content_type
+      contributes: "primary subject matter and rendering approach"
+      values:
+        detailed_representational: "landscape, dense composition, representational detail"
+        minimalist_modern: "line work, negative space, abstract composition, minimalist"
+        portrait_still_life: "portrait or still-life subject"
+    - axis: mood
+      contributes: "energy and colour intensity"
+      values:
+        calm_ordered: "calm, ordered, softened palette, restrained composition"
+        bold_active: "bold, high-energy, saturated palette, dynamic composition"
+    - axis: color_role
+      contributes: "colour treatment specific to the scene role"
+      values:
+        color_burst: "one saturated hero colour, otherwise restrained"
+        accent_highlighter: "colour palette that highlights a single accent tone"
+        unifier: "cohesive multi-colour palette that could tie scattered tones together"
+        saturator: "reinforces one dominant colour theme with variations"
+        line_only: "black, white, grey — no colour; lines and pattern carry the piece"
+    - axis: frame_form
+      contributes: "compositional shape hint (for how the piece will sit in the frame)"
+      values:
+        angular: "composition suited to a straight-edged, angular frame"
+        rounded: "composition tolerant of or suited to a rounded frame"
+
+  space_tips_modifier:
+    citation: "p. 51 (module 04 §2.5a)"
+    rule: >
+      If the scene's room_shape is narrow / low_ceilinged / small_closed_in, add the
+      corresponding line-orientation constraint from module 04's rules/space_tips.yml —
+      generation should respect the constraint or downstream weight-balance in module 04
+      Step 5 will fail.
+    applied_by: llm_synthesis   # the meta-prompt handles this lookup
+
+  do_not_specify:
+    # These are decided in Phase 2 by module 04 after the piece exists, not baked into the
+    # image. The image is the ART, not the framed piece. Do not include frame material,
+    # matting, or physical scale in the generation prompt.
+    - "frame material or finish"
+    - "matting technique"
+    - "physical dimensions or aspect ratio (image generation returns a fixed ratio anyway)"
+
+  constraints:
+    negative_prompt: >
+      no watermark, no signature, no text unless the style requires typography, no visible
+      frame or matting in the image itself, no room or wall around the piece — the art fills
+      the frame
+    style_reference_use: >
+      If your generation provider supports style references (Midjourney sref, Flux img-to-img,
+      Ideogram style reference), pass the reference set from A1 as the style reference. If
+      not, describe the reference set's characteristics in the prompt.
