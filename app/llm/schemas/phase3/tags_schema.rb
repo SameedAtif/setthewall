@@ -11,7 +11,7 @@ module Schemas
       end
       integer :distinct_angles_covered,
               description: "How many of the 4 angles are represented across the 13 tags. Validation requires >= 3."
-      array :missing_angles,
+      array :missing_angles, of: :string,
             description: "Angles you couldn't populate with a non-forced tag."
     end
   end
