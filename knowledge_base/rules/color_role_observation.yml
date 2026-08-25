@@ -1,0 +1,48 @@
+meta:
+  source: "Phase 1, Step B6 — Color Role, step 1"
+  citation: "how_to_arrange_pictures / at_home_with_pictures — p. 82 (accent-highlighter), p. 84 (unifier), p. 91 (color-burst, saturator), p. 97 (line-only default)"
+  volatility: static
+  note: >
+    This is only step 1 of B6 (observation → candidate role). Step 2 (Content Type override
+    to line_only for minimalist_modern) is a human-decided call implemented in the B6 step
+    class. Step 3 (cross-check against B1/B2) is a validation implemented in the same class.
+    The full B6 logic lives across all three, not in this file alone.
+
+rules:
+  axis: color_role
+  values: [accent_highlighter, color_burst, unifier, saturator, line_only]
+
+  observation:
+    - observation: "Predominantly neutral/muted, no strong existing color anywhere"
+      candidate_role: color_burst
+      citation: "p. 91"
+      role_description: >
+        The piece becomes the room's one saturated note. A saturated piece "stimulates"
+        a whole muted room, making its understated colors feel more alive by contrast.
+    - observation: "One existing accent color present but understated, easy to miss"
+      candidate_role: accent_highlighter
+      citation: "p. 82"
+      role_description: "Brings out an accent color already in the room that would otherwise fade."
+    - observation: "Multiple scattered color touches (pillows, throw, small objects) not yet visually tied together"
+      candidate_role: unifier
+      citation: "p. 84"
+      role_description: "Ties together touches of color already scattered through the room."
+    - observation: "A clear dominant color theme already established throughout"
+      candidate_role: saturator
+      citation: "p. 91"
+      role_description: "Repeats and reinforces the room's existing dominant color theme."
+
+  # Not in the observation table — invoked only by step 2 (Content Type override)
+  minimalist_modern_default:
+    candidate_role: line_only
+    citation: "p. 97"
+    role_description: >
+      Removes color tension entirely so line, pattern, and light/dark contrast carry the
+      piece. Black/white/gray display, minimal or no color in mat/frame — "allows the
+      lines to sing." This is the default color role for a minimalist/Japandi-type spec.
+    override_rule: >
+      If content_type is minimalist_modern, this default OVERRIDES the observation-table
+      result from step 1 UNLESS the human has a specific catalog-strategy reason to make
+      this particular scene a deliberate color statement within an otherwise monochrome
+      catalog. The override is the one genuinely strategic call in B6 and cannot be made
+      by the agent.

@@ -13,8 +13,6 @@
 #   space_math        single | set | split_wall | nook | surface
 #   color_role        accent_highlighter | color_burst | unifier | saturator | line_only
 module KnowledgeBase
-  class IncompleteSpecError < StandardError; end
-
   class StyleSpec
     STYLE_LEVEL_AXES = %i[mood content_type frame_form].freeze
     SCENE_AXES = %i[wall_condition furniture_weight room_type room_shape space_math color_role].freeze

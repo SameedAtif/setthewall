@@ -1,0 +1,54 @@
+meta:
+  source: "Phase 1, Track B — borderline-default rules on B1, B2, B3, B4"
+  citation: >
+    how_to_arrange_pictures / at_home_with_pictures — B1 references p. 61 (the "read
+    distinctly against this wall" test); B2/B3/B4 defaults reflect the safe-fail direction
+    for the downstream rule each axis feeds (§2.3, §2.9, §2.10, §2.5a in module 04).
+  volatility: static
+  design_note: >
+    Every borderline-default here is the direction that produces the LESS damaging error if
+    wrong. B3 is deliberately the one axis with NO safe default — the eye-level formulas it
+    picks between are not interchangeable, so a wrong guess silently breaks Step 6's
+    compositing math. That step must escalate to a human, not default.
+
+rules:
+  wall_condition:
+    axis: wall_condition
+    on_ambiguous: neutral
+    reasoning: >
+      The match-vs-contrast rule this axis feeds (module 04 §2.3) is more forgiving of a
+      false "neutral" than a false "busy". A subtle texture or low-contrast pattern
+      classified as neutral will still produce a workable frame decision.
+    escalate: false
+
+  furniture_weight:
+    axis: furniture_weight
+    on_ambiguous: light
+    reasoning: >
+      Weight-balance check (module 04 §2.9): art lighter than dark furniture is required;
+      art heavier than light furniture is only "allowed", not required. Defaulting to light
+      furniture treats the check as advisory rather than mandatory in the ambiguous case,
+      which fails less loudly.
+    escalate: false
+
+  room_type:
+    axis: room_type
+    on_ambiguous: null
+    reasoning: >
+      NO SAFE DEFAULT. Each value picks a different eye-level formula (module 04 §2.10):
+      seated_room uses "5-6 inches above the back of the couch/chairs", hallway uses "at
+      or just above eye level", no_furniture_wall has neither reference point. A wrong
+      classification silently produces wrong eye-level math in Phase 2 Step 6, which will
+      not fail loudly — it will produce a plausible-looking but wrong composite.
+    escalate: true
+    escalation_reason: "eye-level formulas are not interchangeable"
+
+  room_shape:
+    axis: room_shape
+    on_ambiguous: none
+    reasoning: >
+      Room shape only adds an OPTIONAL generation constraint in Track C (space tips —
+      module 04 §2.5a). A false negative ("none") just skips an optional space-tip; a
+      false positive forces an unnecessary constraint on generation. "None of these" is
+      explicitly named in the source doc as a legitimate, common answer.
+    escalate: false
