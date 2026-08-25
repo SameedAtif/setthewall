@@ -1,0 +1,91 @@
+meta:
+  source: "Phase 3 §2.4 (technical rules) and §2.4a (seven photo types)"
+  citation: >
+    Etsy Seller Handbook — Photos guidance; and Etsy's web article "7 Essential Types of
+    Product Photos" for the seven-types framing.
+  volatility: live
+  last_verified: "TODO — fill in on first setup"
+
+rules:
+  # Technical rules from §2.4
+  file_types:
+    allowed: [jpg, gif, png, svg, heic]
+    disallowed_reasons:
+      animated_gif: "Not supported — first frame only"
+      transparent_png: "Transparent area renders as BLACK on Etsy. Do not upload transparent PNGs."
+
+  # THIS IS TWO DIFFERENT NUMBERS — the manifest explicitly flags this as a common error
+  resolution:
+    ranking_floor_px: 635
+    ranking_floor_rule: >
+      First listing photo must be at LEAST 635×635 pixels or the listing incurs a ranking
+      penalty. This is the FLOOR, not the target.
+    recommended_target_px: 2000
+    recommended_target_rule: >
+      Etsy separately RECOMMENDS 2000px+ on the shortest side so photos "pop" and support the
+      zoom function. 2000px is the TARGET, not the floor.
+    important_do_not_conflate: >
+      635 and 2000 are different numbers with different purposes. Do not average them, do not
+      pick one. Check against BOTH: fail hard below 635; warn if below 2000.
+
+  slot_count: 10
+  slot_rule: >
+    Use as many slots as genuinely add information. Multiple high-quality photos are explicitly
+    named as a listing-quality ranking factor. Padding with low-signal photos hurts, not helps.
+
+  crop_survivability:
+    rule: >
+      Etsy reuses listing photos across pages/placements at different crops. Upload photos that
+      work across multiple crop ratios (square and rectangle).
+
+  first_photo:
+    what_it_carries:
+      - "Part of query-matching evaluation"
+      - "Thumbnail shown in search results"
+    should_be: "Clearest, most eye-catching image — not necessarily the most artistic one"
+
+  # Supplementary crop tip — explicitly flagged in the source doc
+  first_photo_crop_tip:
+    source: supplementary_third_party
+    caveat: "NOT Etsy-official — verify before relying on it"
+    rule: >
+      Search-result thumbnails crop the hero photo to roughly a 4:3 to 5:4 ratio. A
+      tightly-centered square composition tends to survive this crop better than a portrait
+      orientation with the subject near the top.
+    use_as: guidance_not_rule
+
+  # §2.4a — the seven photo types
+  photo_types:
+    studio:
+      description: "Product alone, plain background, strong light"
+      applies_to_wall_art: yes_required
+      role: "Clear, bright thumbnail candidate"
+    lifestyle:
+      description: "Product styled in its setting"
+      applies_to_wall_art: yes_required
+      role: "This IS Phase 2's Step 6 composite — do not regenerate"
+      source: phase_2_step_6
+    scale:
+      description: "Visual size reference (room with human figure, or ruler/measurement overlay)"
+      applies_to_wall_art: yes_recommended
+      role: "Buyer hesitation around wall art size is common"
+      reuse: "Use Phase 2's already-computed sizing math — do not re-derive"
+    detail:
+      description: "Close-up on texture/craftsmanship"
+      applies_to_wall_art: yes_required
+      role: "Print texture, paper quality, frame corner/edge"
+    group:
+      description: "Multiple variants together"
+      applies_to_wall_art: conditional
+      condition: "Only if this listing offers multiple sizes/variants shown together"
+    packaging:
+      description: "What arrives in the mail"
+      applies_to_wall_art: conditional
+      condition: "Only if selling a physical/printed product, not a digital download"
+    process:
+      description: "Item being made"
+      applies_to_wall_art: optional
+      note: "Doubles as social content, not required for the listing itself"
+
+  # Which photos are treated as REQUIRED by Step 1b's generation logic
+  required_types: [studio, lifestyle, detail]

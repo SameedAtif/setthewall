@@ -1,0 +1,28 @@
+meta:
+  source: "Phase 3 §2.5 — Return policy and shipping"
+  citation: "Etsy Seller Handbook — Return policy and Shipping policies"
+  volatility: live
+  last_verified: "TODO — fill in on first setup"
+
+rules:
+  return_policy:
+    rule: >
+      A clear return policy is explicitly named as part of the listing-quality ranking factor.
+      Don't leave it blank.
+    validation:
+      must_be_set: true
+
+  shipping_price_factor:
+    rule: >
+      Etsy has stated it factors shipping price into US search ranking, specifically to avoid
+      disadvantaging buyers with a high shipping charge relative to item price.
+    anti_pattern:
+      name: low_item_price_inflated_shipping
+      what: >
+        Setting a low item price and inflating shipping to compensate. Etsy's own ranking
+        approach is designed to work AGAINST this — not a way to game the system.
+    validation:
+      warn_if: "shipping_cost > 0.4 * item_price"     # heuristic; refine after live data
+      reasoning: >
+        A shipping cost approaching half the item price triggers the pattern Etsy penalises.
+        Warn, don't block — this is a rough heuristic, and legitimate cases exist (heavy items).

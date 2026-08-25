@@ -1,0 +1,55 @@
+meta:
+  source: "Phase 3, §1 — How Etsy Search Actually Works"
+  citation: "Etsy Seller Handbook (etsy.com/seller-handbook) and Etsy Help Center (help.etsy.com)"
+  volatility: live
+  volatility_note: >
+    Etsy explicitly states its search algorithm changes regularly. Re-verify against the current
+    Seller Handbook periodically. Module 07 reads volatility: live to flag this file for review.
+  last_verified: "TODO — fill in on first setup"
+
+rules:
+  query_matching:
+    fields_evaluated: [title, tags, attributes, description, first_photo, reviews]
+    holistic: >
+      Evaluated across fields, not any single one in isolation. A tag missing from the title
+      can still match; a title missing from the tags can still match.
+
+  ranking_factors:
+    relevancy:
+      what: "Exact keyword matches across title/tags/description/attributes rank higher for that query"
+    shop_quality:
+      what: "Shop branding — icon, banner, about section. Buyers want to know who they're buying from."
+    listing_quality:
+      what: "Multiple high-quality photos plus a clear return policy — specifically called out as critical."
+    customer_service_quality:
+      what: "Trailing 3 months: average review rating, message response rate, case rate."
+    translations_language:
+      what: "Content should match the shop's set language; self-added translations outperform machine translation."
+    listing_engagement_rate:
+      what: >
+        Conversion rate (views → purchases). Etsy explicitly frames this as a trust signal, not
+        just a sales metric — module 07 should treat conversion as a listing-health measure,
+        not only a business KPI.
+    recency:
+      what: >
+        New/renewed listings get a small, temporary boost so Etsy can learn how buyers respond.
+        Etsy explicitly states repeatedly renewing just to chase this boost is NOT effective.
+      anti_pattern: renewal_chasing
+    shoppers_habits:
+      what: >
+        Personalized via Context Specific Ranking. Etsy explicitly warns that searching your own
+        shop isn't representative of what other buyers see.
+      anti_pattern: self_search_verification
+
+  # What Etsy explicitly says does NOT affect organic ranking
+  does_not_affect_ranking:
+    items:
+      - name: etsy_plus
+        what: "Etsy Plus subscription — no ranking effect"
+      - name: star_seller
+        what: "Star Seller status — a trust/conversion signal, not a ranking input"
+      - name: etsy_ads
+        what: "Etsy Ads — only affects designated ad placements, not organic results"
+    note: >
+      Worth stating plainly because third-party SEO content often implies otherwise. If you see
+      advice claiming these affect organic ranking, disregard it.

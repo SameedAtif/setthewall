@@ -1,0 +1,36 @@
+meta:
+  source: "Phase 3 §2.3 — Attributes and category"
+  citation: "Etsy Seller Handbook — Attributes and Categories"
+  volatility: live
+  last_verified: "TODO — fill in on first setup"
+
+rules:
+  fill_all_applicable:
+    rule: "Fill EVERY applicable attribute field. Attributes are part of query matching, same as tags."
+    reason: >
+      A blank attribute is a query the listing cannot match. There is no algorithmic cost to
+      filling one that fits; there IS a cost to leaving one blank.
+
+  category_rule:
+    rule: "Choose the most specific category available, not a generic parent category."
+
+  applicable_fields_for_wall_art:
+    # A pipeline default set. Etsy's actual category tree changes; this list is a starting point,
+    # not authoritative — the P3_5 step class reads the live category tree via the Etsy API and
+    # matches these fields against what's actually available for the selected category.
+    - name: primary_color
+      source: "derived from PieceRecord (mood + color_role feeds this)"
+    - name: secondary_color
+      source: "derived from PieceRecord.chosen_url — vision-classified"
+    - name: room
+      source: "derived from scene_spec.room_type"
+    - name: style
+      source: "spec.name (e.g. 'Japandi')"
+    - name: material
+      source: "derived from Phase 2 frame_material_category + print substrate"
+    - name: orientation
+      source: "derived from art image aspect ratio"
+    - name: occasion
+      source: "human-set only — leave blank if not genuinely occasion-specific"
+    - name: dimensions
+      source: "PieceRecord.composite_measurements"

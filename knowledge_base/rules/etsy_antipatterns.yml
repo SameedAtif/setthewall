@@ -1,0 +1,30 @@
+meta:
+  source: "Phase 3 §2.6 — What NOT to do (directly contradicts common third-party SEO advice)"
+  citation: "Etsy Seller Handbook — sourced from Etsy's own statements about ineffective strategies"
+  volatility: live
+  last_verified: "TODO — fill in on first setup"
+
+rules:
+  # 3 anti-patterns
+  renewal_chasing:
+    what: "Renewing/relisting repeatedly to chase the temporary 'new listing' boost"
+    etsy_says: "Ineffective use of time versus improving tags or conversion rate"
+    on_detect: warn_and_refuse
+    reasoning: >
+      Module 07's evolution loop might otherwise 'discover' that renewed listings temporarily
+      spike, and 'suggest' this as a strategy. This rule blocks it — the source is explicit that
+      this is ineffective long-term.
+
+  self_search_verification:
+    what: "Judging your ranking by searching your own shop"
+    etsy_says: >
+      Personalization means your results aren't representative of what other buyers see. Use
+      Shop Stats' actual traffic/search-term data instead.
+    on_detect: warn
+    reasoning: "Same category as renewal_chasing — a mistake performance data can teach you into."
+
+  plus_starseller_ads_assumed_ranking:
+    what: "Assuming Etsy Plus, Star Seller, or Etsy Ads move organic placement"
+    etsy_says: "None of them do, per Etsy's own statement."
+    on_detect: warn
+    see_also: "etsy_search_mechanism.yml → does_not_affect_ranking"

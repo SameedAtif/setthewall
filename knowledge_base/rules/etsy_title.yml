@@ -1,0 +1,40 @@
+meta:
+  source: "Phase 3 §2.2 — Title (with rule details from §3 STEP 3)"
+  citation: "Etsy Seller Handbook — Title guidance"
+  volatility: live
+  last_verified: "TODO — fill in on first setup"
+
+rules:
+  # From §2.2 — the two headline rules
+  lead_rule:
+    what: "Lead with the clearest, most literal descriptor of what the item actually is"
+    reason: >
+      For buyer scanning on mobile — shoppers see only the first few words in search results.
+      NOT for ranking: title word order does NOT affect Etsy's ranking algorithm, per Etsy's
+      own statement. This rule serves the buyer, not the algorithm.
+    misinterpretation_warning: >
+      Third-party SEO content often claims word order matters for ranking. It does not. But
+      leading with the descriptor still matters — for the buyer, not the algorithm.
+
+  ai_tool_note:
+    what: "Etsy offers an optional AI-suggested-title tool based on current title, first photo, and description."
+    use: "Useful as a starting point, not something to trust blindly for accuracy."
+
+  # From §3 STEP 3 — additional rules
+  hard_rules:
+    include_only:
+      - what: "style + subject + product type"
+      - what: "occasion/recipient word ONLY if it's essential to what the item literally is"
+        example_include: "a genuinely occasion-specific product (e.g. a wedding-anniversary print)"
+        example_exclude: "using 'anniversary' as a marketing angle on a piece that isn't occasion-specific"
+    exclude:
+      - "subjective adjectives ('beautiful', 'perfect', 'stunning') — those belong in the description"
+      - "price — never in the title"
+      - "emoji, decorative punctuation, ALL CAPS marketing phrases"
+
+  # The lead structure — enforced in Step 3's schema
+  first_words_test:
+    rule: >
+      A shopper skimming mobile search results should be able to tell what this is from the
+      FIRST FEW WORDS ALONE. If the first 6 words don't answer "what is this thing", rewrite.
+    validation_words: 6

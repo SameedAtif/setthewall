@@ -1,0 +1,38 @@
+meta:
+  source: "Phase 3 §2.1 — Tags"
+  citation: "Etsy Seller Handbook — Tags guidance"
+  volatility: live
+  last_verified: "TODO — fill in on first setup"
+
+rules:
+  slot_count: 13
+  slot_rule: "Fill ALL 13 slots. Each is a separate query-match opportunity."
+
+  phrase_style:
+    prefer: multi_word_long_tail
+    example_good: "japandi wall art living room"
+    example_bad_pair: ["japandi", "wall art"]
+    reason: >
+      Multi-word phrases and long-tail keywords beat single words. A shopper searching a
+      multi-word query matches a multi-word tag; splitting the phrase into single-word tags
+      leaves match opportunities on the table.
+
+  # Diversification is not optional
+  angle_diversity:
+    required_angles:
+      - style_descriptor
+      - room_or_space_use
+      - gift_or_occasion
+      - alternate_use
+    reason: >
+      A listing that only repeats style words in different phrasings leaves match opportunities
+      on the table. Etsy's own example: a candle can also be tagged "spa day accessory" —
+      alternate-use framing catches queries the primary framing misses.
+    validation:
+      min_angles_covered: 3   # at least 3 of 4 angles represented across the 13 tags
+
+  balance:
+    rule: >
+      Balance a few broad terms with several specific/long-tail ones — broad casts a wide net,
+      long-tail faces less competition.
+    ratio_guidance: "roughly 3 broad : 10 specific"
