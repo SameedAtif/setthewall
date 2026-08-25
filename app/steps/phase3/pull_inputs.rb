@@ -31,7 +31,7 @@ module Steps
             style_name: spec.name, mood: piece.mood,
             content_type: piece.content_type, color_role: piece.color_role_confirmed
           },
-          dimensions: piece.composite_measurements&.dig("art_width_px", "art_height_px")
+          dimensions: piece.composite_measurements&.slice("art_width_px", "art_height_px")
         })
       end
     end

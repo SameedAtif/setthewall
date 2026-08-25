@@ -13,10 +13,10 @@ elif [ -d "/Applications/Google Chrome.app" ]; then
 fi
 
 if [ -z "$CHROME_BIN" ]; then
-  echo "Chrome/Chromium not found — skipping system tests"
+  echo "Chrome/Chromium not found — skipping system specs"
   exit 0
 fi
 
 export RAILS_ENV=test
 export CHROME_BIN
-bin/rails test:system
+bundle exec rspec spec/system

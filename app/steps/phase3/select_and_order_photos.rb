@@ -6,6 +6,8 @@ module Steps
            ownership: "[AGENT-ASSISTED — human confirms hero shot]"
 
       def perform
+        return ok({ photo_order: piece.photo_order }) if context[:confirmed]
+
         available = (piece.photos || {}).select { |_, v| v.present? }
         if available.empty?
           return fail_step("No photos on piece — Step 1b must run first.", {})

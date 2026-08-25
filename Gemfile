@@ -72,6 +72,12 @@ group :development, :test do
 
   # Audit Gemfile.lock for known-vulnerable gems [https://github.com/rubysec/bundler-audit]
   gem "bundler-audit", require: false
+
+  # Behavior-driven testing [https://github.com/rspec/rspec-rails]
+  gem "rspec-rails", "~> 7.0"
+
+  # Test data factories [https://github.com/thoughtbot/factory_bot_rails]
+  gem "factory_bot_rails", "~> 6.4"
 end
 
 group :development do

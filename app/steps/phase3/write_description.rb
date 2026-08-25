@@ -6,6 +6,8 @@ module Steps
       # context: { product_type:, dimensions:, sizes:, included:, fulfillment_type:,
       #            turnaround_days:, positioning_target: (specific 'who is this for' string) }
       def perform
+        return ok({ description: piece.listing_description }) if context[:confirmed]
+
         result = RubyLLM.chat(model: Pipeline::TEXT_MODEL)
                         .with_schema(Schemas::Phase3::DescriptionSchema)
                         .ask(prompt("p3_step6_description",

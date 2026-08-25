@@ -7,6 +7,8 @@ module Steps
 
       # context: { skip_types: [], provided_urls: { studio:, detail:, scale:, ... } }
       def perform
+        return ok({ photos: piece.photos || {} }) if context[:confirmed]
+
         photo_rules = rules("etsy_photos").rules
         required    = photo_rules["required_types"]   # [studio, lifestyle, detail]
         photos      = piece.photos || {}

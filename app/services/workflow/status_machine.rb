@@ -15,6 +15,15 @@ module Workflow
       return if piece.nil?
 
       from = piece.status
+      if from == to
+        # A step may set the status directly (e.g. P3_8 marks a piece "complete", or
+        # Steps::Base marks it "failed" before re-raising). Transitioning to the current
+        # state is a no-op here — just refresh current_step / last_error.
+        piece.update!(current_step: current_step || piece.current_step,
+                      last_error: to == "failed" ? last_error : nil)
+        return
+      end
+
       allowed = TRANSITIONS.fetch(from, [])
       unless allowed.include?(to)
         raise InvalidTransition, "PieceRecord ##{piece.id}: #{from} → #{to} not allowed. " \
