@@ -13,28 +13,43 @@ you move through the pipeline.
 
 ---
 
-## 1. LLM provider — Anthropic (or OpenAI) — *required for every LLM step*
+## 1. LLM provider — Qwen (configured) or Anthropic/OpenAI — *required for every LLM step*
 
 Used by all classification, synthesis, and copywriting steps (Track A, Track B, C1 prompt
 synthesis, P2_3 theme check, P3 title/tags/description, and the module 07 KB-evolution
 proposer).
 
+### Qwen (current default)
+
+Qwen is an OpenAI-compatible provider. Set these three variables:
+
+| Variable | Where | Value |
+|---|---|---|
+| `QWEN_API_KEY` | `.env` | your Qwen (DashScope) API key |
+| `QWEN_API_BASE` | `.env` | `https://dashscope-intl.aliyuncs.com/compatible-mode/v1` |
+| `QWEN_MODEL` | `.env` | `qwen3.8-max` |
+
+When `QWEN_API_KEY` is set, `config/initializers/ruby_llm.rb` routes the OpenAI provider at
+`QWEN_API_BASE`, registers `QWEN_MODEL` in the database model registry, and
+`PIPELINE_TEXT_MODEL` / `PIPELINE_VISION_MODEL` both default to `QWEN_MODEL`.
+
+### Anthropic (alternative)
+
 | Variable | Where | How to get it |
 |---|---|---|
 | `ANTHROPIC_API_KEY` | `.env` | https://console.anthropic.com → API Keys (billing required) |
 
-Optional alternative provider (both may be set; RubyLLM picks per provider):
+Optional OpenAI alternative (both may be set; RubyLLM picks per provider):
 
 | Variable | Where | How to get it |
 |---|---|---|
 | `OPENAI_API_KEY` | `.env` | https://platform.openai.com/api-keys |
 
-> **Important — model names are config, not keys.** The defaults in `config/initializers/pipeline.rb`
-> are placeholders (`claude-sonnet-5`) that do **not** exist. Set real model ids once you have a key:
+> **Model names are config, not keys.** If you switch providers, set real model ids explicitly:
 >
 > ```bash
-> PIPELINE_TEXT_MODEL=claude-sonnet-4-5     # or another real text model id
-> PIPELINE_VISION_MODEL=claude-sonnet-4-5   # must accept image inputs
+> PIPELINE_TEXT_MODEL=...     # text model id
+> PIPELINE_VISION_MODEL=...   # must accept image inputs
 > ```
 
 ---
@@ -94,7 +109,7 @@ https://developers.etsy.com before going live — the Etsy API changes without n
 
 ## Quick-start order
 
-1. `ANTHROPIC_API_KEY` + `PIPELINE_TEXT_MODEL` / `PIPELINE_VISION_MODEL` — unlocks Track A/B and all copywriting.
+1. `QWEN_API_KEY` + `QWEN_API_BASE` + `QWEN_MODEL` — unlocks Track A/B and all copywriting (already configured).
 2. `TAVILY_API_KEY` — unlocks the live research steps (A0/A1).
 3. `REPLICATE_API_KEY` + `IMAGE_GEN_PROVIDER=replicate` — unlocks real image generation (C1/P3_1b).
 4. `ETSY_API_KEY` / `ETSY_API_SECRET` / `ETSY_OAUTH_TOKEN` / `ETSY_SHOP_ID` + `ETSY_ADAPTER=api` — unlocks real publish (P3_8) and stats (module 07).

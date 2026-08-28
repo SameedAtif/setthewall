@@ -7,4 +7,30 @@ RubyLLM.configure do |config|
   # `bin/rails generate ruby_llm:install` — the generated `Model` model uses
   # `acts_as_model`, which only exists under the new association-based API.
   config.use_new_acts_as = true
+
+  # Qwen — an OpenAI-compatible provider. When QWEN_API_KEY is set, route the
+  # OpenAI provider at Qwen's endpoint and read the model registry from the DB
+  # (so the Qwen model can be registered below).
+  if ENV["QWEN_API_KEY"].present?
+    config.openai_api_key = ENV["QWEN_API_KEY"]
+    config.openai_api_base = ENV.fetch("QWEN_API_BASE", "https://dashscope.aliyuncs.com/compatible-mode/v1")
+    config.model_registry_class = "Model"
+  end
+end
+
+# Register the Qwen model in the database-backed registry so that
+# `RubyLLM.chat(model: Pipeline::TEXT_MODEL)` resolves it without every call
+# site needing `provider: :openai, assume_model_exists: true`.
+Rails.application.config.after_initialize do
+  next unless ENV["QWEN_API_KEY"].present?
+  next unless defined?(Model) && Model.table_exists?
+
+  model_id = ENV.fetch("QWEN_MODEL", "qwen3.8-max")
+  Model.find_or_create_by!(model_id: model_id, provider: "openai") do |m|
+    m.name = model_id
+    m.modalities = { "input" => %w[text image], "output" => %w[text] }
+  end
+  RubyLLM.models.load_from_database!
+rescue StandardError => e
+  Rails.logger.warn("Qwen model registration skipped: #{e.class}: #{e.message}")
 end
