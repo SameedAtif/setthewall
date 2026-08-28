@@ -125,6 +125,15 @@ RSpec.describe Steps::Phase3::PublishAndLog do
       expect(piece.performance_snapshots.count).to eq(1)
     end
   end
+
+  it "finalizes from a manually published listing id" do
+    piece = create(:piece_record, **ready_attrs)
+    result = described_class.call(piece: piece, context: { manual_listing_id: "4242" })
+    expect(result).to be_ok
+    expect(piece.reload.etsy_listing_id).to eq("4242")
+    expect(piece.reload.published_at).to be_present
+    expect(piece.performance_snapshots.count).to eq(1)
+  end
 end
 
 RSpec.describe Steps::Phase3::PullInputs do

@@ -5,6 +5,17 @@ module Steps
 
       # context: { piece_count:, subject_energy: (dynamic|formal), staircase_scene: (bool) }
       def perform
+        # A "set" branch is only meaningful once the human specifies how many pieces and
+        # what form — the pipeline can't guess a set's cardinality.
+        if context[:piece_count].blank?
+          return needs_human(
+            "Multi-piece set: specify the set in context — piece_count (int), " \
+            "base_form (one of the 6 standard arrangement forms), subject_energy " \
+            "(dynamic|formal), and anchor_url when piece_count is odd.",
+            {}
+          )
+        end
+
         forms = rules("arrangement_forms")
         count = context.fetch(:piece_count, 1).to_i
 

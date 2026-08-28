@@ -13,7 +13,11 @@
               <div class="mt-1"><%= gate.notes.to_s.truncate(140) %></div>
             </div>
             <div class="text-right text-sm text-gray-500">
-              Piece #<%= gate.piece_record_id %><br>
+              <% if gate.track_run.present? %>
+                <%= gate.track_run.track.humanize %> #<%= gate.track_run.id %><br>
+              <% else %>
+                Piece #<%= gate.piece_record_id %><br>
+              <% end %>
               <%= time_ago_in_words(gate.opened_at) %> ago
             </div>
           </div>

@@ -20,10 +20,16 @@ class HumanGatesController < ApplicationController
       closed_at: Time.current
     )
 
-    # Only resume the piece if the reviewer approved or edited. Rejections leave the piece for
-    # the human to decide the next move (usually: rerun the previous step with different context,
-    # or abandon).
-    ResumePieceJob.perform_later(gate_id: @gate.id) if %w[approved edited].include?(decision)
+    # Only resume the piece/track if the reviewer approved or edited. Rejections leave the
+    # run for the human to decide the next move (usually: rerun the previous step with
+    # different context, or abandon).
+    if %w[approved edited].include?(decision)
+      if @gate.track_run.present?
+        Workflow::TrackRunner.resume(@gate)
+      else
+        ResumePieceJob.perform_later(gate_id: @gate.id)
+      end
+    end
 
     redirect_to reviews_path, notice: "Gate ##{@gate.id} → #{decision}."
   end

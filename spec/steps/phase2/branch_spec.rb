@@ -22,11 +22,11 @@ RSpec.describe Steps::Phase2::NookFit do
 end
 
 RSpec.describe Steps::Phase2::SplitWallZoning do
-  it "fails without zones" do
+  it "pauses for zones when none are provided" do
     piece = build_piece
     piece.save!
     result = described_class.call(piece: piece, context: { split_technique: "chair_rail" })
-    expect(result).to be_failed
+    expect(result).to be_awaiting_human
   end
 end
 
@@ -40,6 +40,13 @@ RSpec.describe Steps::Phase2::SurfaceDisplay do
 end
 
 RSpec.describe Steps::Phase2::SetGroupingAndCount do
+  it "pauses for the set specification when piece_count is missing" do
+    piece = build_piece
+    piece.save!
+    result = described_class.call(piece: piece, context: {})
+    expect(result).to be_awaiting_human
+  end
+
   it "rejects stair_stepping off a staircase" do
     piece = build_piece
     piece.save!

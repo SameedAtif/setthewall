@@ -35,4 +35,12 @@ RSpec.describe "HumanGates", type: :request do
     expect(gate.reload.status).to eq("edited")
     expect(gate.reload.reviewer_edits).to eq({ "recommended_hero" => "other" })
   end
+
+  it "resumes a track gate via the TrackRunner" do
+    run = create(:track_run, status: "awaiting_human", current_step: "A0")
+    gate = create(:human_gate, track_run: run, step_id: "A0", status: "open", piece_record: nil)
+    expect(Workflow::TrackRunner).to receive(:resume).with(gate)
+    patch human_gate_path(gate), params: { decision: "approved" }
+    expect(response).to redirect_to(reviews_path)
+  end
 end

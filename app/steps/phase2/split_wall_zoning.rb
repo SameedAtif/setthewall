@@ -10,7 +10,12 @@ module Steps
 
         zones = context.fetch(:zones, [])
         if zones.empty?
-          return fail_step("split_wall requires at least one zone in context[:zones]", {})
+          return needs_human(
+            "Split-wall: specify the zones in context[:zones] — an array of " \
+            "{ branch: (single|set), piece_count: N } per zone, plus split_technique " \
+            "(chair_rail|border|paint_line|backing_panel).",
+            {}
+          )
         end
 
         # Each zone recursively re-uses 2a/2b logic — a zone is treated as a separate wall.

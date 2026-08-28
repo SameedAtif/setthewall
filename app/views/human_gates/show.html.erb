@@ -3,20 +3,36 @@
     <%= link_to "← Back", reviews_path, class: "text-blue-600 hover:underline" %>
   </div>
 
-  <h1 class="text-2xl font-semibold">Piece #<%= @piece.id %> — Step <%= @gate.step_id %></h1>
+  <h1 class="text-2xl font-semibold">
+    <% if @piece %>
+      Piece #<%= @piece.id %> — Step <%= @gate.step_id %>
+    <% else %>
+      <%= @gate.track_run&.track&.humanize %> — Step <%= @gate.step_id %>
+    <% end %>
+  </h1>
   <p class="text-gray-600 mt-1"><%= @gate.notes %></p>
 
   <h2 class="text-lg font-semibold mt-6">Agent proposal</h2>
   <pre class="bg-gray-50 border rounded p-3 text-sm overflow-auto"><%= JSON.pretty_generate(@agent_proposal) %></pre>
 
-  <h2 class="text-lg font-semibold mt-6">Piece context</h2>
+  <h2 class="text-lg font-semibold mt-6">Context</h2>
   <dl class="mt-2 text-sm grid grid-cols-2 gap-2">
-    <dt class="text-gray-500">style/scene</dt>
-    <dd><%= @piece.style_spec_slug %> / <%= @piece.scene_spec_id %></dd>
-    <dt class="text-gray-500">mood / content / role</dt>
-    <dd><%= @piece.mood %> / <%= @piece.content_type %> / <%= @piece.color_role %></dd>
-    <dt class="text-gray-500">kb_version</dt>
-    <dd class="font-mono text-xs"><%= @piece.kb_version %></dd>
+    <% if @piece %>
+      <dt class="text-gray-500">style/scene</dt>
+      <dd><%= @piece.style_spec_slug %> / <%= @piece.scene_spec_id %></dd>
+      <dt class="text-gray-500">mood / content / role</dt>
+      <dd><%= @piece.mood %> / <%= @piece.content_type %> / <%= @piece.color_role %></dd>
+      <dt class="text-gray-500">kb_version</dt>
+      <dd class="font-mono text-xs"><%= @piece.kb_version %></dd>
+    <% else %>
+      <% ctx = @gate.context_snapshot || {} %>
+      <dt class="text-gray-500">style</dt>
+      <dd><%= ctx["style_slug"] %></dd>
+      <% if ctx["scene_template_id"] %>
+        <dt class="text-gray-500">scene</dt>
+        <dd><%= ctx["scene_template_id"] %></dd>
+      <% end %>
+    <% end %>
   </dl>
 
   <%= form_with url: human_gate_path(@gate), method: :patch, local: true, class: "mt-6 space-y-4" do |f| %>

@@ -8,6 +8,11 @@ module Steps
       ].freeze
 
       def perform
+        # On resume after a manual publish, the human supplies the listing id via context.
+        if context[:manual_listing_id].present?
+          return finalize(context[:manual_listing_id])
+        end
+
         missing = REQUIRED_BEFORE_PUBLISH.select { |f| piece.send(f).blank? }
         if missing.any?
           return fail_step(
@@ -34,8 +39,16 @@ module Steps
           )
         end
 
+        finalize(result.listing_id)
+      rescue Etsy::ApiError => e
+        fail_step("Etsy publish failed: #{e.message}", {})
+      end
+
+      private
+
+      def finalize(listing_id)
         piece.update!(
-          etsy_listing_id: result.listing_id,
+          etsy_listing_id: listing_id,
           published_at: Time.current,
           status: "complete"
         )
@@ -45,15 +58,11 @@ module Steps
           piece_record: piece,
           captured_on: Date.current,
           views: 0, favorites: 0, orders: 0, revenue: 0,
-          raw: { baseline: true, etsy_listing_id: result.listing_id }
+          raw: { baseline: true, etsy_listing_id: listing_id }
         )
 
-        ok({ etsy_listing_id: result.listing_id, published_at: piece.published_at })
-      rescue Etsy::ApiError => e
-        fail_step("Etsy publish failed: #{e.message}", {})
+        ok({ etsy_listing_id: listing_id, published_at: piece.published_at })
       end
-
-      private
 
       def build_payload(photos)
         {
