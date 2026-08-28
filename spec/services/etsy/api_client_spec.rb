@@ -8,14 +8,13 @@ RSpec.describe Etsy::ApiClient do
   end
 
   around do |example|
+    original = ENV.to_h.slice("ETSY_SHOP_ID", "ETSY_API_KEY", "ETSY_OAUTH_TOKEN")
     ENV["ETSY_SHOP_ID"] = "99"
     ENV["ETSY_API_KEY"] = "key"
     ENV["ETSY_OAUTH_TOKEN"] = "tok"
     example.run
   ensure
-    ENV.delete("ETSY_SHOP_ID")
-    ENV.delete("ETSY_API_KEY")
-    ENV.delete("ETSY_OAUTH_TOKEN")
+    original.each { |k, v| v.nil? ? ENV.delete(k) : ENV[k] = v }
   end
 
   it "names itself" do

@@ -18,6 +18,11 @@ RSpec.describe ImageGeneration::Adapter do
     expect(described_class.build).to be_a(ImageGeneration::ReplicateAdapter)
   end
 
+  it "builds the gemini adapter when configured" do
+    ENV["IMAGE_GEN_PROVIDER"] = "gemini"
+    expect(described_class.build).to be_a(ImageGeneration::GeminiAdapter)
+  end
+
   it "raises on an unknown provider" do
     ENV["IMAGE_GEN_PROVIDER"] = "nonsense"
     expect { described_class.build }.to raise_error(ImageGeneration::GenerationError)

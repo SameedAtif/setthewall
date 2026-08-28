@@ -65,14 +65,26 @@ The `Search::ReasonedRunner` in module 00b refuses to answer without a real sear
 
 ---
 
-## 3. Image generation — Replicate (Flux) — *required for Track C (C1) and P3_1b*
+## 3. Image generation — Gemini "Nano Banana 2" (current) or Replicate (Flux) — *required for Track C (C1) and P3_1b*
 
-Only needed once you switch `IMAGE_GEN_PROVIDER` from `manual` to `replicate`. Until then the
-manual adapter writes the prompt to `tmp/manual_gen_prompts/` and waits for you to paste a URL.
+Only needed once you switch `IMAGE_GEN_PROVIDER` from `manual`. Until then the manual adapter
+writes the prompt to `tmp/manual_gen_prompts/` and waits for you to paste a URL.
+
+### Gemini — "Nano Banana 2" (configured default)
+
+| Variable | Where | Value |
+|---|---|---|
+| `IMAGE_GEN_PROVIDER` | `.env` | `gemini` |
+| `GEMINI_API_KEY` | `.env` | Gemini API key (with billing enabled — image models are not on the free tier) |
+| `GEMINI_API_BASE` | `.env` | `https://generativelanguage.googleapis.com/v1beta` |
+| `GEMINI_IMAGE_MODEL` | `.env` | `gemini-3.1-flash-image` ("Nano Banana 2") |
+| `GEMINI_COST_PER_IMAGE` | `.env` | cost-tracking constant, default `0.04` |
+
+### Replicate — Flux (alternative)
 
 | Variable | Where | How to get it |
 |---|---|---|
-| `IMAGE_GEN_PROVIDER` | `.env` | set to `replicate` when ready (`manual` is the safe default) |
+| `IMAGE_GEN_PROVIDER` | `.env` | set to `replicate` (`manual` is the safe default) |
 | `REPLICATE_API_KEY` | `.env` | https://replicate.com/account/api-tokens |
 | `REPLICATE_MODEL_SLUG` | `.env` | default `black-forest-labs/flux-1.1-pro` — verify current slug on Replicate |
 | `REPLICATE_COST_PER_IMAGE` | `.env` | cost-tracking constant, default `0.04` |
@@ -111,7 +123,7 @@ https://developers.etsy.com before going live — the Etsy API changes without n
 
 1. `QWEN_API_KEY` + `QWEN_API_BASE` + `QWEN_MODEL` — unlocks Track A/B and all copywriting (already configured).
 2. `TAVILY_API_KEY` — unlocks the live research steps (A0/A1).
-3. `REPLICATE_API_KEY` + `IMAGE_GEN_PROVIDER=replicate` — unlocks real image generation (C1/P3_1b).
+3. `GEMINI_API_KEY` + `IMAGE_GEN_PROVIDER=gemini` — unlocks real image generation (C1/P3_1b).
 4. `ETSY_API_KEY` / `ETSY_API_SECRET` / `ETSY_OAUTH_TOKEN` / `ETSY_SHOP_ID` + `ETSY_ADAPTER=api` — unlocks real publish (P3_8) and stats (module 07).
 
 Run `bash tools/scripts/doctor.sh` (or `mise run validate:doctor`) to see at a glance which

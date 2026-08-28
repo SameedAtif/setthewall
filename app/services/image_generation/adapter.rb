@@ -18,6 +18,7 @@ module ImageGeneration
       case ENV.fetch("IMAGE_GEN_PROVIDER", "manual")
       when "manual"    then ManualAdapter.new
       when "replicate" then ReplicateAdapter.new
+      when "gemini"    then GeminiAdapter.new
       else raise GenerationError, "Unknown IMAGE_GEN_PROVIDER=#{ENV['IMAGE_GEN_PROVIDER']}"
       end
     end
