@@ -9,6 +9,17 @@ namespace :pipeline do
     puts "Run `bin/rails pipeline:status piece=#{piece.id}` to watch."
   end
 
+  desc "Survey style candidates before committing to one. Usage: rake pipeline:ideate_styles [direction='calm and neutral'] [count=5]"
+  task ideate_styles: :environment do
+    context = {}
+    context[:direction] = ENV["direction"] if ENV["direction"].present?
+    context[:candidate_count] = ENV["count"].to_i if ENV["count"].present?
+
+    result = Workflow::StepDispatcher.call(step_id: "A_IDEATE", piece: nil, context: context)
+    puts result.message
+    puts JSON.pretty_generate(result.data[:candidates])
+  end
+
   desc "Kick off Track A for a new style. Usage: rake pipeline:track_a style_slug=japandi-v1 style_name=Japandi"
   task track_a: :environment do
     slug = ENV.fetch("style_slug")

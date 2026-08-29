@@ -1,0 +1,52 @@
+meta:
+  source: "Module 01b — style ideation, upstream of Track A Step A0"
+  citation: >
+    Project precedent, not a book or platform rule. Derived from this project's own history:
+    an Aug 17 2026 research session flagged vendor-authored trend blogs (print-on-demand
+    vendors promoting their own tooling) as promotional framing rather than neutral evidence,
+    after a naive Etsy "best-selling" survey was shown to conflate genuine demand with
+    shop-level marketing strength and inflated variant counts. This file formalizes that
+    correction as a standing rule.
+  volatility: static
+  note: >
+    Distinct from A1's citation (module 01 §2.1) in the same way: not book-grounded, but
+    held to its own explicit discipline rather than left as an unconstrained survey.
+
+rules:
+  candidate_count:
+    default: 5
+    max: 8
+    reasoning: >
+      Paradox of Choice grounding (module 03 §1.3 uses the same principle for the art-batch
+      cap) — more candidates doesn't produce a better pick, it produces more time spent
+      comparing options that were never going to be chosen.
+
+  source_diversity:
+    min_independent_sources_per_candidate: 2
+    reasoning: >
+      Same bar as A1's reference-set requirement (module 01 §2.1) — a candidate surfaced by
+      only one source (one blog, one shop) is not yet a real signal, just one source's opinion.
+
+  promotional_language_indicators:
+    # Soft-flag pattern list, same design as module 07's anti-regression soft flags
+    # (knowledge_base/rules/anti_regressions.yml) — surfaced as a warning, not a hard block.
+    phrases:
+      - "get there early"
+      - "sellers who"
+      - "join now"
+      - "exclusive offer"
+      - "coupon"
+      - "act now"
+      - "don't miss"
+    rule: >
+      If a source's own language matches these patterns, flag it as promotional framing in
+      the candidate's signal notes rather than reporting its trend claim as neutral fact.
+      This does not exclude the source — a promotional blog can still be directionally
+      correct — it just means the claim should be corroborated elsewhere before being
+      trusted, per source_diversity above.
+
+  explicit_non_validation_notice:
+    rule: >
+      This step's output is NOT a validation verdict. Every candidate still requires a full
+      A0 run before any production commitment. This step exists to generate candidates
+      worth spending an A0 call on — nothing here should be read as "this style is proven."

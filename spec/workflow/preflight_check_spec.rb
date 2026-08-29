@@ -7,6 +7,14 @@ RSpec.describe Workflow::PreflightCheck do
     expect(result.dirty).to eq(result.kb_version.start_with?("dirty:"))
   end
 
+  it "returns a clean result when the KB tree is clean" do
+    stub_singleton(described_class, :`, ->(cmd) { cmd.include?("git status") ? "" : "abc123" }) do
+      result = described_class.call!
+      expect(result.dirty).to be(false)
+      expect(result.kb_version).to eq("abc123")
+    end
+  end
+
   it "stamps a dirty tree with allow_dirty" do
     marker = Pipeline::KB_ROOT.join("rules/.dirty_marker")
     File.write(marker, "x")

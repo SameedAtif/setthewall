@@ -7,6 +7,12 @@ phase_1:
   track_a:
     cadence: per_style
     steps:
+      - id: A_IDEATE
+        title: "Survey style candidates"
+        ownership: "[AGENT-READY for the research — human picks which candidate to validate]"
+        mechanism: llm_text
+        human_gate: true
+        klass: "Steps::TrackA::IdeateStyleCandidates"
       - id: A0
         title: "Validate the style is worth pursuing"
         ownership: "[AGENT-READY for the research — human confirms the go/no-go]"
