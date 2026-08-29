@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_08_28_180032) do
+ActiveRecord::Schema[8.0].define(version: 2026_08_29_111557) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -41,6 +41,20 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_28_180032) do
     t.index ["piece_record_id"], name: "index_human_gates_on_piece_record_id"
     t.index ["step_id", "status"], name: "index_human_gates_on_step_id_and_status"
     t.index ["track_run_id"], name: "index_human_gates_on_track_run_id"
+  end
+
+  create_table "ideation_surveys", force: :cascade do |t|
+    t.string "direction"
+    t.integer "candidate_count"
+    t.string "status", default: "complete", null: false
+    t.jsonb "candidates", default: [], null: false
+    t.jsonb "weak_candidates", default: [], null: false
+    t.text "survey_notes"
+    t.text "last_error"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_at"], name: "index_ideation_surveys_on_created_at"
+    t.index ["status"], name: "index_ideation_surveys_on_status"
   end
 
   create_table "kb_proposals", force: :cascade do |t|

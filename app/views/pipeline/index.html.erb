@@ -1,0 +1,193 @@
+<div class="max-w-6xl mx-auto p-6">
+  <h1 class="text-2xl font-semibold mb-6">Pipeline</h1>
+
+  <% if flash[:notice] %>
+    <div class="mb-4 bg-green-50 border border-green-200 text-green-800 rounded p-3"><%= flash[:notice] %></div>
+  <% end %>
+  <% if flash[:alert] %>
+    <div class="mb-4 bg-red-50 border border-red-200 text-red-800 rounded p-3"><%= flash[:alert] %></div>
+  <% end %>
+
+  <%# ── Quick actions ─────────────────────────────────────────────── %>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+    <div class="border rounded-lg p-4">
+      <h2 class="font-semibold mb-2">Survey style candidates (A_IDEATE)</h2>
+      <%= form_with url: pipeline_ideate_path, method: :post, class: "space-y-2" do |f| %>
+        <%= f.text_field :direction, placeholder: "direction (optional) e.g. calm and neutral", class: "w-full border rounded px-3 py-1.5 text-sm" %>
+        <%= f.number_field :count, placeholder: "count (default 5)", class: "w-full border rounded px-3 py-1.5 text-sm" %>
+        <%= f.submit "Survey candidates", class: "bg-gray-900 text-white px-3 py-1.5 rounded text-sm hover:bg-gray-700" %>
+      <% end %>
+    </div>
+
+    <div class="border rounded-lg p-4">
+      <h2 class="font-semibold mb-2">Start Track A (validate a style)</h2>
+      <%= form_with url: pipeline_track_a_path, method: :post, class: "space-y-2" do |f| %>
+        <%= f.text_field :style_slug, placeholder: "style_slug e.g. coastal-minimal", class: "w-full border rounded px-3 py-1.5 text-sm" %>
+        <%= f.text_field :style_name, placeholder: "style_name e.g. Coastal Minimal", class: "w-full border rounded px-3 py-1.5 text-sm" %>
+        <%= f.submit "Start Track A", class: "bg-gray-900 text-white px-3 py-1.5 rounded text-sm hover:bg-gray-700" %>
+      <% end %>
+    </div>
+
+    <div class="border rounded-lg p-4">
+      <h2 class="font-semibold mb-2">Start Track B (classify a scene)</h2>
+      <%= form_with url: pipeline_track_b_path, method: :post, class: "space-y-2" do |f| %>
+        <%= f.text_field :style_slug, placeholder: "style_slug", class: "w-full border rounded px-3 py-1.5 text-sm" %>
+        <%= f.text_field :scene, placeholder: "scene template id", class: "w-full border rounded px-3 py-1.5 text-sm" %>
+        <%= f.submit "Start Track B", class: "bg-gray-900 text-white px-3 py-1.5 rounded text-sm hover:bg-gray-700" %>
+      <% end %>
+    </div>
+
+    <div class="border rounded-lg p-4">
+      <h2 class="font-semibold mb-2">Run daily pipeline</h2>
+      <%= form_with url: pipeline_daily_path, method: :post, class: "space-y-2" do |f| %>
+        <%= f.text_field :style, placeholder: "style_slug", class: "w-full border rounded px-3 py-1.5 text-sm" %>
+        <%= f.text_field :scene, placeholder: "scene template id", class: "w-full border rounded px-3 py-1.5 text-sm" %>
+        <%= f.submit "Run daily pipeline", class: "bg-gray-900 text-white px-3 py-1.5 rounded text-sm hover:bg-gray-700" %>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Awaiting review ───────────────────────────────────────────── %>
+  <h2 class="text-lg font-semibold mb-3">Awaiting review (<%= @open_gates.size %>)</h2>
+  <% if @open_gates.empty? %>
+    <p class="text-gray-500 text-sm mb-6">Nothing awaiting review.</p>
+  <% else %>
+    <div class="space-y-2 mb-8">
+      <% @open_gates.each do |gate| %>
+        <%= link_to human_gate_path(gate), class: "block border rounded-lg p-3 hover:bg-gray-50" do %>
+          <div class="flex justify-between items-start">
+            <div>
+              <div class="font-mono text-sm text-gray-700">Step <%= gate.step_id %></div>
+              <div class="text-sm text-gray-600"><%= gate.notes.to_s.truncate(160) %></div>
+            </div>
+            <div class="text-right text-xs text-gray-500 shrink-0 ml-4">
+              <% if gate.track_run.present? %>
+                <%= gate.track_run.track.humanize %> #<%= gate.track_run.id %> · <%= gate.track_run.style_slug %>
+              <% else %>
+                Piece #<%= gate.piece_record_id %>
+              <% end %><br>
+              <%= time_ago_in_words(gate.opened_at) %> ago
+            </div>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# ── Track runs ─────────────────────────────────────────────────── %>
+  <h2 class="text-lg font-semibold mb-3">Track runs</h2>
+  <% if @track_runs.empty? %>
+    <p class="text-gray-500 text-sm mb-6">No track runs yet.</p>
+  <% else %>
+    <table class="w-full text-sm mb-8 border">
+      <thead class="bg-gray-50">
+        <tr class="text-left">
+          <th class="px-3 py-1.5">Track</th><th class="px-3 py-1.5">Style</th>
+          <th class="px-3 py-1.5">Scene</th><th class="px-3 py-1.5">Step</th><th class="px-3 py-1.5">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @track_runs.each do |r| %>
+          <tr class="border-t">
+            <td class="px-3 py-1.5"><%= r.track.humanize %></td>
+            <td class="px-3 py-1.5 font-mono"><%= r.style_slug %></td>
+            <td class="px-3 py-1.5 font-mono"><%= r.scene_template_id %></td>
+            <td class="px-3 py-1.5 font-mono"><%= r.current_step %></td>
+            <td class="px-3 py-1.5"><span class="font-mono text-xs px-2 py-0.5 rounded <%= status_color(r.status) %>"><%= r.status %></span></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+
+  <%# ── Pieces ─────────────────────────────────────────────────────── %>
+  <h2 class="text-lg font-semibold mb-3">Pieces</h2>
+  <% if @pieces.empty? %>
+    <p class="text-gray-500 text-sm mb-6">No pieces yet.</p>
+  <% else %>
+    <table class="w-full text-sm mb-8 border">
+      <thead class="bg-gray-50">
+        <tr class="text-left">
+          <th class="px-3 py-1.5">#</th><th class="px-3 py-1.5">Style / Scene</th>
+          <th class="px-3 py-1.5">Step</th><th class="px-3 py-1.5">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @pieces.each do |p| %>
+          <tr class="border-t">
+            <td class="px-3 py-1.5 font-mono"><%= p.id %></td>
+            <td class="px-3 py-1.5 font-mono text-xs"><%= p.style_spec_slug %> / <%= p.scene_spec_id %></td>
+            <td class="px-3 py-1.5 font-mono"><%= p.current_step %></td>
+            <td class="px-3 py-1.5"><span class="font-mono text-xs px-2 py-0.5 rounded <%= status_color(p.status) %>"><%= p.status %></span></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+
+  <%# ── Ideation surveys ───────────────────────────────────────────── %>
+  <h2 class="text-lg font-semibold mb-3">Style candidates</h2>
+  <% if @surveys.empty? %>
+    <p class="text-gray-500 text-sm mb-6">No surveys yet — run "Survey style candidates" above.</p>
+  <% else %>
+    <div class="space-y-4 mb-8">
+      <% @surveys.each do |s| %>
+        <div class="border rounded-lg p-4">
+          <div class="flex justify-between text-sm text-gray-500 mb-2">
+            <span><%= s.created_at.strftime("%b %d, %H:%M") %> · <%= s.candidate_count || "default" %> candidates</span>
+            <span class="font-mono text-xs"><%= s.status %></span>
+          </div>
+          <% if s.failed? %>
+            <p class="text-sm text-red-700"><%= s.last_error %></p>
+          <% else %>
+            <ul class="space-y-2">
+              <% s.candidates.each do |c| %>
+                <li class="text-sm">
+                  <span class="font-semibold"><%= c["name"] %></span>
+                  <span class="text-gray-500">— <%= c["trend_signal"] %></span>
+                  <span class="text-xs text-gray-400">(sources: <%= c["independent_source_count"] %>, competition: <%= c["competition_read"] %>)</span>
+                  <% if s.weak_candidates.include?(c["name"]) %><span class="text-xs text-amber-600">⚠ weak</span><% end %>
+                </li>
+              <% end %>
+            </ul>
+            <% if s.survey_notes.present? %><p class="text-xs text-gray-500 mt-2"><%= s.survey_notes %></p><% end %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# ── Failed ─────────────────────────────────────────────────────── %>
+  <% if @failed_runs.any? || @failed_pieces.any? %>
+    <h2 class="text-lg font-semibold mb-3">Failed</h2>
+    <div class="space-y-2 mb-8">
+      <% @failed_runs.each do |r| %>
+        <div class="border-l-4 border-red-500 pl-3 py-1 text-sm">
+          <span class="font-mono"><%= r.track.humanize %> #<%= r.id %></span>
+          at <%= r.current_step %>: <span class="text-red-700"><%= r.last_error.to_s.truncate(160) %></span>
+        </div>
+      <% end %>
+      <% @failed_pieces.each do |p| %>
+        <div class="border-l-4 border-red-500 pl-3 py-1 text-sm">
+          <span class="font-mono">Piece #<%= p.id %></span>
+          at <%= p.current_step %>: <span class="text-red-700"><%= p.last_error.to_s.truncate(160) %></span>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# ── Evolution ──────────────────────────────────────────────────── %>
+  <h2 class="text-lg font-semibold mb-3">Feedback loop</h2>
+  <div class="border rounded-lg p-4 space-y-3">
+    <div class="flex flex-wrap items-center gap-2">
+      <%= button_to "Refresh stats", pipeline_refresh_stats_path, method: :post, class: "bg-gray-900 text-white px-3 py-1.5 rounded text-sm hover:bg-gray-700" %>
+      <%= button_to "Export weekly", pipeline_export_path, method: :post, class: "bg-gray-900 text-white px-3 py-1.5 rounded text-sm hover:bg-gray-700" %>
+      <%= form_with url: pipeline_propose_path, method: :post, class: "flex items-center gap-2" do |f| %>
+        <%= f.text_field :cycle, value: @latest_cycle, placeholder: "cycle id", class: "border rounded px-3 py-1.5 text-sm font-mono" %>
+        <%= f.submit "Propose KB edits", class: "bg-gray-900 text-white px-3 py-1.5 rounded text-sm hover:bg-gray-700" %>
+      <% end %>
+      <%= link_to "Review proposals", kb_proposals_path, class: "text-blue-600 hover:underline text-sm" %>
+    </div>
+    <p class="text-xs text-gray-500">Refresh pulls Etsy stats; Export builds the weekly report; Propose asks the LLM for KB edits (review + apply at /kb_proposals).</p>
+  </div>
+</div>
