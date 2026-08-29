@@ -13,8 +13,11 @@ RubyLLM.configure do |config|
   # (so the Qwen model can be registered below).
   if ENV["QWEN_API_KEY"].present?
     config.openai_api_key = ENV["QWEN_API_KEY"]
-    config.openai_api_base = ENV.fetch("QWEN_API_BASE", "https://dashscope.aliyuncs.com/compatible-mode/v1")
+    config.openai_api_base = ENV.fetch("QWEN_API_BASE", "https://dashscope-intl.aliyuncs.com/compatible-mode/v1")
     config.model_registry_class = "Model"
+    # Qwen's compatible-mode endpoint only accepts the `system` role, not
+    # OpenAI's newer `developer` role that RubyLLM sends by default.
+    config.openai_use_system_role = true
   end
 end
 
