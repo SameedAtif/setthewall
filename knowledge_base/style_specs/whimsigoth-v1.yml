@@ -1,0 +1,12 @@
+# Style Spec — style-level axes set by Phase 1 Track A.
+# Scene axes are appended by Track B (module 02). Do not hand-edit scene keys here
+# without also re-running Track B's validation.
+---
+slug: whimsigoth-v1
+name: Celestial sun/moon maximalist prints (physical, $12–55)
+locked_at: '2026-09-01'
+style_level:
+  mood: bold_active
+  content_type: detailed_representational
+  frame_form: rounded
+scenes: {}
