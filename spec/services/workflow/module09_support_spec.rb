@@ -28,6 +28,15 @@ RSpec.describe Context::Assembler do
     expect(ctx).to include(style_name: "Ensō print", mood: "calm_ordered",
                            content_type: "minimalist_modern", frame_form: "angular")
   end
+
+  it "provisionally picks C2 finalists and chosen" do
+    piece = create(:piece_record, candidate_urls: %w[u1 u2 u3 u4 u5])
+    run = PipelineRunRecord.create!(run_id: "run-#{SecureRandom.hex(4)}", kb_version: "test",
+                                    style_slug: "s", scene_spec_id: "sc", piece_record: piece)
+    ctx = described_class.for("C2", run)
+    expect(ctx[:finalist_urls]).to eq(%w[u1 u2 u3])
+    expect(ctx[:chosen_url]).to eq("u1")
+  end
 end
 
 RSpec.describe Workflow::GateCloser do

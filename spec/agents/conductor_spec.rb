@@ -32,7 +32,7 @@ RSpec.describe Agents::Conductor do
     expect(run.status).to eq("awaiting_dossier_review")
     expect(run.mode).to eq("speculative")
     expect(run.step_results.size).to eq(described_class::ORDER.size)
-    expect(run.escalations.map { |e| e["step_id"] }).to include("A0", "A5", "B0", "B7", "P3_7")
+    expect(run.escalations.map { |e| e["step_id"] }).to include("P2_0", "P3_7")
     expect(run.dossier_markdown).to include("# Run #{run.run_id}")
   end
 
@@ -79,6 +79,18 @@ RSpec.describe Agents::Conductor do
     run = described_class.run_speculative(style_slug: "japandi", scene_spec_id: "s1")
 
     expect(run.escalations.map { |e| e["reason"] }).to include("no_legal_agent_disposition")
+  end
+
+  it "records and escalates a step error instead of crashing" do
+    allow(Workflow::PreflightCheck).to receive(:call!).and_return(kb_result)
+    allow(Workflow::StepDispatcher).to receive(:call).and_raise("boom")
+    allow(Agents::Registry).to receive(:for).and_return([fake_agent])
+
+    run = described_class.run_speculative(style_slug: "japandi", scene_spec_id: "s1")
+
+    expect(run.status).to eq("awaiting_dossier_review")
+    expect(run.step_results.first["status"]).to eq("failed")
+    expect(run.escalations.map { |e| e["reason"] }).to include("step_error")
   end
 
   describe ".build_piece" do

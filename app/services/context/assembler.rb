@@ -14,6 +14,8 @@ module Context
     }.freeze
 
     def self.for(step_id, run)
+      return c2_context(run) if step_id == "C2"
+
       results = results_by_step(run)
       derived = SOURCES.fetch(step_id, {}).each_with_object({}) do |(key, (from, result_key)), ctx|
         value = results.dig(from, result_key)
@@ -22,6 +24,17 @@ module Context
 
       base = { style_slug: run.style_slug, scene_spec_id: run.scene_spec_id }.compact
       base.merge(derived)
+    end
+
+    # C2's cull + pick is a human decision. For a speculative run, provisionally auto-pick the
+    # first finalists and the first as chosen so Phase 2/3 can proceed; the human reviews and
+    # overrides via the dossier.
+    def self.c2_context(run)
+      candidates = Array(run.piece_record&.candidate_urls)
+      return {} if candidates.empty?
+
+      finalists = candidates.first(3)
+      { finalist_urls: finalists, chosen_url: finalists.first }
     end
 
     def self.results_by_step(run)

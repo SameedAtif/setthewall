@@ -1,11 +1,11 @@
 module Agents
-  # Module 09 §7 — walks the pipeline unattended in speculative mode, routing each result through
-  # the QA specialists, escalating Tier 3 gates, and assembling one reviewable dossier. Contains no
-  # judgment of its own: QA agents advise, module 08's DecisionRules decides.
+  # Module 09 §7 — walks the piece pipeline (Track C → Phase 3) unattended in speculative mode,
+  # routing each result through the QA specialists, escalating Tier 3 gates, and assembling one
+  # reviewable dossier. Contains no judgment of its own: QA agents advise, module 08's DecisionRules
+  # decides. Track A/B (style/scene classification) run separately and are committed first; the
+  # piece seeded in run_speculative reads their locked axes.
   class Conductor
     ORDER = %w[
-      A_IDEATE A0 A1 A2 A3 A4 A5
-      B0 B1 B2 B3 B4 B5 B6 B7
       C1 C2 P2_0 P2_1 P2_3 P2_4 P2_4b P2_5 P2_6
       P3_1 P3_1b P3_2 P3_3 P3_4 P3_5 P3_6 P3_7 P3_8
     ].freeze
@@ -84,6 +84,12 @@ module Agents
       end
 
       close_gate(step_id, result, findings)
+    rescue StandardError => e
+      # A transient step failure (API 5xx, timeout) must not kill the whole run — record it and
+      # escalate so the dossier surfaces it for a re-run.
+      failed = Struct.new(:status, :data, keyword_init: true).new(status: :failed, data: { "error" => e.message })
+      record_step!(step_id, failed)
+      escalate!(step_id, "step_error", e.message)
     end
 
     def close_gate(step_id, result, findings)
