@@ -42,14 +42,14 @@ module KnowledgeBase
     end
 
     def self.load(slug)
-      path = Pipeline::KB_ROOT.join("style_specs", "#{slug}.yml")
+      path = Workflow::RunMode.write_root.join("style_specs", "#{slug}.yml")
       raise IncompleteSpecError, "No style spec at #{path}" unless path.exist?
 
       new(YAML.safe_load_file(path, permitted_classes: [Date]), path)
     end
 
     def self.all
-      Dir.glob(Pipeline::KB_ROOT.join("style_specs", "*.yml")).map do |f|
+      Dir.glob(Workflow::RunMode.write_root.join("style_specs", "*.yml")).map do |f|
         load(File.basename(f, ".yml"))
       end
     end

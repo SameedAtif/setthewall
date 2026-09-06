@@ -50,6 +50,30 @@ RSpec.describe Agents::Conductor do
     expect(run.escalations.map { |e| e["reason"] }).to include("verifier_divergence")
   end
 
+  it "runs the style scope (Track A + B) and escalates its Tier 3 locks" do
+    allow(Workflow::PreflightCheck).to receive(:call!).and_return(kb_result)
+    allow(Workflow::StepDispatcher).to receive(:call).and_return(Result.new(status: :ok, data: {}))
+    allow(Agents::Registry).to receive(:for).and_return([fake_agent])
+
+    run = described_class.run_speculative(style_slug: "japandi", scene_spec_id: "s1", scope: "style")
+
+    expect(run.scope).to eq("style")
+    expect(run.step_results.map { |r| r["step_id"] }).to eq(described_class::STYLE_ORDER)
+    expect(run.escalations.map { |e| e["step_id"] }).to include("A0", "A5", "B0", "B7")
+    expect(run.dossier_markdown).to include("## The style", "## The scene")
+  end
+
+  it "runs the full scope across Track A, Track B, and the piece pipeline" do
+    allow(Workflow::PreflightCheck).to receive(:call!).and_return(kb_result)
+    allow(Workflow::StepDispatcher).to receive(:call).and_return(Result.new(status: :ok, data: {}))
+    allow(Agents::Registry).to receive(:for).and_return([fake_agent])
+
+    run = described_class.run_speculative(style_slug: "japandi", scene_spec_id: "s1", scope: "full")
+
+    expect(run.scope).to eq("full")
+    expect(run.step_results.map { |r| r["step_id"] }).to eq(described_class::FULL_ORDER)
+  end
+
   it "rewinds on a blocking finding" do
     allow(Workflow::PreflightCheck).to receive(:call!).and_return(kb_result)
     allow(Workflow::StepDispatcher).to receive(:call).and_return(Result.new(status: :awaiting_human, data: {}))

@@ -1,34 +1,53 @@
 module Agents
-  # Module 09 §7 — walks the piece pipeline (Track C → Phase 3) unattended in speculative mode,
-  # routing each result through the QA specialists, escalating Tier 3 gates, and assembling one
-  # reviewable dossier. Contains no judgment of its own: QA agents advise, module 08's DecisionRules
-  # decides. Track A/B (style/scene classification) run separately and are committed first; the
-  # piece seeded in run_speculative reads their locked axes.
+  # Module 09 §7 — walks the pipeline unattended in speculative mode, routing each result through
+  # the QA specialists, escalating Tier 3 gates, and assembling one reviewable dossier. Contains no
+  # judgment of its own: QA agents advise, module 08's DecisionRules decides.
+  #
+  # Three scopes share this class:
+  #   style  — Track A + Track B (A0 → B7), locks the style/scene spec, no piece.
+  #   piece  — Track C → Phase 3 (C1 → P3_8) against an already-locked spec.
+  #   full   — style + piece in one pass, one dossier.
   class Conductor
     ORDER = %w[
       C1 C2 P2_0 P2_1 P2_3 P2_4 P2_4b P2_5 P2_6
       P3_1 P3_1b P3_2 P3_3 P3_4 P3_5 P3_6 P3_7 P3_8
     ].freeze
 
-    def self.run_speculative(style_slug:, scene_spec_id:)
+    STYLE_ORDER = %w[A0 A1 A2 A3 A4 A5 B0 B1 B2 B3 B4 B5 B6 B7].freeze
+    FULL_ORDER  = (STYLE_ORDER + ORDER).freeze
+
+    SCOPES = {
+      "style" => STYLE_ORDER,
+      "piece" => ORDER,
+      "full"  => FULL_ORDER
+    }.freeze
+
+    def self.order_for(scope) = SCOPES.fetch(scope.to_s, ORDER)
+
+    def self.run_speculative(style_slug:, scene_spec_id:, scope: "piece",
+                             style_name: nil, scene_image: nil)
       kb_version = Workflow::PreflightCheck.call!(allow_dirty: true).kb_version
+      run_context = { "style_name" => style_name, "scene_image" => scene_image }.compact
+
+      piece = scope.to_s == "piece" ? build_piece(style_slug: style_slug,
+                                                  scene_spec_id: scene_spec_id,
+                                                  kb_version: kb_version) : nil
 
       run = PipelineRunRecord.create!(
         run_id: "run_#{Date.current.strftime('%Y%m%d')}_#{SecureRandom.hex(2)}",
-        mode: "speculative", status: "running",
+        mode: "speculative", status: "running", scope: scope.to_s,
         style_slug: style_slug, scene_spec_id: scene_spec_id,
-        kb_version: kb_version,
-        piece_record: build_piece(style_slug: style_slug, scene_spec_id: scene_spec_id,
-                                  kb_version: kb_version),
+        kb_version: kb_version, dossier_data: run_context,
+        piece_record: piece,
         started_at: Time.current
       )
       Workflow::RunMode.with("speculative", run_id: run.run_id) { new(run).call }
       run
     end
 
-    # Seed a PieceRecord for the piece-pipeline half (Track C → Phase 3) from the committed
-    # style/scene spec, denormalising the axis values C1 onward read. Returns nil when the spec
-    # isn't locked yet — a fresh style's Track A/B will lock it in a committed pass first.
+    # Seed a PieceRecord for the piece pipeline from the committed style/scene spec, denormalising
+    # the axis values C1 onward read. Returns nil when the spec isn't locked yet — a fresh style's
+    # Track A/B locks it first (committed, or in the staged spec of a full run).
     def self.build_piece(style_slug:, scene_spec_id:, kb_version:)
       spec  = KnowledgeBase::StyleSpec.load(style_slug)
       scene = spec.scene(scene_spec_id)
@@ -47,7 +66,7 @@ module Agents
     def call
       Agents::Registry.validate_coverage!
 
-      ORDER.each do |step_id|
+      self.class.order_for(@run.scope).each do |step_id|
         execute(step_id)
       end
 
@@ -66,6 +85,8 @@ module Agents
     def piece = @run.piece_record
 
     def execute(step_id)
+      ensure_piece! if step_id == "C1" && piece.nil?
+
       context = Context::Assembler.for(step_id, @run)
       result  = Workflow::StepDispatcher.call(step_id: step_id, piece: piece, context: context)
       record_step!(step_id, result)
@@ -91,6 +112,13 @@ module Agents
       failed = Struct.new(:status, :data, keyword_init: true).new(status: :failed, data: { "error" => e.message })
       record_step!(step_id, failed)
       escalate!(step_id, "step_error", e.message)
+    end
+
+    def ensure_piece!
+      piece = self.class.build_piece(style_slug: @run.style_slug,
+                                     scene_spec_id: @run.scene_spec_id,
+                                     kb_version: @run.kb_version)
+      @run.update!(piece_record: piece) if piece
     end
 
     def close_gate(step_id, result, findings)

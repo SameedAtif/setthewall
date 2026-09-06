@@ -8,7 +8,8 @@ RSpec.describe Context::Assembler do
 
   it "returns base context for an unmapped step" do
     ctx = described_class.for("B0", run_with([]))
-    expect(ctx).to eq({ style_slug: "s", scene_spec_id: "sc" })
+    expect(ctx).to include(style_slug: "s", scene_spec_id: "sc", scene_template_id: "sc",
+                           scene_name: "sc", template_ref: "scene_templates/sc.yml")
   end
 
   it "carries A0's style_name_used into A1" do
@@ -36,6 +37,42 @@ RSpec.describe Context::Assembler do
     ctx = described_class.for("C2", run)
     expect(ctx[:finalist_urls]).to eq(%w[u1 u2 u3])
     expect(ctx[:chosen_url]).to eq("u1")
+  end
+
+  it "assembles B6 context from A3, B1, and B2" do
+    run = run_with([
+      { "step_id" => "A3", "data" => { "result" => { "content_type" => "minimalist_modern" } } },
+      { "step_id" => "B1", "data" => { "wall_condition" => "neutral" } },
+      { "step_id" => "B2", "data" => { "furniture_weight" => "light" } }
+    ])
+    ctx = described_class.for("B6", run)
+    expect(ctx).to include(content_type: "minimalist_modern", wall_condition: "neutral",
+                           furniture_weight: "light")
+  end
+
+  it "assembles B7 axes from B1-B6 and provisionally confirms the lock" do
+    run = run_with([
+      { "step_id" => "B1", "data" => { "wall_condition" => "neutral" } },
+      { "step_id" => "B2", "data" => { "furniture_weight" => "light" } },
+      { "step_id" => "B3", "data" => { "room_type" => "seated_room" } },
+      { "step_id" => "B4", "data" => { "room_shape" => "none" } },
+      { "step_id" => "B5", "data" => { "space_math" => "single" } },
+      { "step_id" => "B6", "data" => { "color_role" => "line_only" } }
+    ])
+    ctx = described_class.for("B7", run)
+    expect(ctx[:axes]).to eq(wall_condition: "neutral", furniture_weight: "light",
+                             room_type: "seated_room", room_shape: "none",
+                             space_math: "single", color_role: "line_only")
+    expect(ctx[:confirmed]).to be(true)
+  end
+
+  it "provisionally confirms the A5 lock" do
+    run = run_with([
+      { "step_id" => "A2", "data" => { "result" => { "mood" => "calm_ordered" } } },
+      { "step_id" => "A3", "data" => { "result" => { "content_type" => "minimalist_modern" } } },
+      { "step_id" => "A4", "data" => { "result" => { "frame_form" => "angular" } } }
+    ])
+    expect(described_class.for("A5", run)[:confirmed]).to be(true)
   end
 end
 

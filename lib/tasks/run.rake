@@ -1,9 +1,14 @@
 namespace :run do
-  desc "Speculative end-to-end run. Writes nothing outside tmp/. rake run:speculative style=x scene=y"
+  desc "Speculative end-to-end run. Writes nothing outside tmp/. rake run:speculative style=x scene=y [scope=piece|style|full] [style_name=...] [scene_image=...]"
   task speculative: :environment do
-    run = Agents::Conductor.run_speculative(style_slug: ENV.fetch("style"),
-                                            scene_spec_id: ENV.fetch("scene"))
-    puts "Run #{run.run_id} → #{run.status}"
+    run = Agents::Conductor.run_speculative(
+      style_slug: ENV.fetch("style"),
+      scene_spec_id: ENV.fetch("scene"),
+      scope: ENV.fetch("scope", "piece"),
+      style_name: ENV["style_name"],
+      scene_image: ENV["scene_image"]
+    )
+    puts "Run #{run.run_id} → #{run.status} (scope=#{run.scope})"
     puts "Escalations: #{run.escalations.size}"
     puts "Dossier: bin/rails run:dossier id=#{run.run_id}"
   end

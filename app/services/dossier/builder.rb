@@ -9,18 +9,11 @@ module Dossier
     def initialize(run) = @run = run
 
     def call
-      [
-        header,
-        what_we_propose,
-        open_questions,
-        research,
-        style_spec,
-        images,
-        step_by_step,
-        why_it_will_work,
-        cannot_verify,
-        if_you_approve
-      ].join("\n\n")
+      sections = [header]
+      sections << what_we_propose if piece
+      sections.concat([open_questions, research, the_style, the_scene,
+                       images, step_by_step, why_it_will_work, cannot_verify, if_you_approve])
+      sections.join("\n\n")
     end
 
     private
@@ -59,11 +52,8 @@ module Dossier
     end
 
     def research_lines
-      gate = HumanGate.where(step_id: "A0").order(:id).last
-      return ["No A0 research gate recorded for this style yet."] unless gate
-
-      proposal = JSON.parse(gate.agent_proposal || "{}")
-      findings = Array(proposal.dig("findings", "findings"))
+      findings = a0_findings
+      return ["No A0 research recorded for this style yet."] if findings.nil?
       return ["A0 returned no demand-to-competition findings."] if findings.empty?
 
       findings.map do |f|
@@ -74,19 +64,59 @@ module Dossier
       end
     end
 
-    def style_spec
-      spec = KnowledgeBase::StyleSpec.load(@run.style_slug)
-      scene = spec.scene(@run.scene_spec_id)
+    def a0_findings
+      step_findings = step_dig("A0", "findings", "findings")
+      return step_findings if step_findings.is_a?(Array)
 
-      lines = ["## The style spec we are running against"]
-      spec.style_level.each { |axis, value| lines << "- **#{axis}:** #{value}" }
-      lines << "- **scene (#{@run.scene_spec_id}):** wall_condition=#{scene.wall_condition}, " \
-                "furniture_weight=#{scene.furniture_weight}, room_type=#{scene.room_type}, " \
-                "room_shape=#{scene.room_shape}, space_math=#{scene.space_math}, " \
-                "color_role=#{scene.color_role}"
+      gate = HumanGate.where(step_id: "A0").order(:id).last
+      return nil unless gate
+
+      Array(JSON.parse(gate.agent_proposal || "{}").dig("findings", "findings"))
+    end
+
+    def the_style
+      lines = ["## The style"]
+      lines << "- **mood:** #{style_value(:mood, 'A2') || '—'}"
+      lines << "- **content_type:** #{style_value(:content_type, 'A3') || '—'}"
+      lines << "- **frame_form:** #{style_value(:frame_form, 'A4') || '—'}"
       lines.join("\n")
+    end
+
+    def the_scene
+      lines = ["## The scene (#{@run.scene_spec_id})"]
+      { wall_condition: "B1", furniture_weight: "B2", room_type: "B3",
+        room_shape: "B4", space_math: "B5", color_role: "B6" }.each do |axis, step|
+        value = step_dig(step, axis.to_s).presence || committed_scene_axis(axis)
+        lines << "- **#{axis}:** #{value || '—'}"
+      end
+      lines.join("\n")
+    end
+
+    def style_value(axis, step)
+      step_dig(step, "result", axis.to_s).presence || spec&.style_level&.[](axis)
     rescue StandardError
-      "## The style spec we are running against\n#{@run.style_slug}"
+      nil
+    end
+
+    def committed_scene_axis(axis)
+      spec&.scene(@run.scene_spec_id)&.public_send(axis)
+    rescue StandardError
+      nil
+    end
+
+    def spec
+      @spec ||= KnowledgeBase::StyleSpec.load(@run.style_slug)
+    rescue StandardError
+      nil
+    end
+
+    def step_data(step_id)
+      entry = Array(@run.step_results).find { |r| r["step_id"] == step_id }
+      (entry && entry["data"] || {}).stringify_keys
+    end
+
+    def step_dig(step_id, *keys)
+      step_data(step_id).dig(*keys)
     end
 
     def images
@@ -154,8 +184,13 @@ module Dossier
     end
 
     def if_you_approve
-      "## If you approve\nThe committed run replays: writes specs to knowledge_base/, commits to git, " \
-      "and publishes to Etsy."
+      actions =
+        case @run.scope
+        when "style" then "writes the locked style spec to knowledge_base/ and commits it to git."
+        when "full"  then "writes the locked style spec to knowledge_base/, commits it to git, and publishes to Etsy."
+        else "commits the run and publishes to Etsy."
+        end
+      "## If you approve\nThe committed run replays: #{actions}"
     end
 
     def truncate(str, len = 120) = str.to_s.length > len ? str.to_s[0, len] + "…" : str.to_s
