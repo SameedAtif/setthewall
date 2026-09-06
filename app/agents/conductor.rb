@@ -52,11 +52,8 @@ module Agents
       end
 
       Agents::EvidenceQa.call(run: @run)
-      @run.update!(
-        dossier_markdown: Dossier::Builder.call(run: @run),
-        status: "awaiting_dossier_review",
-        dossier_ready_at: Time.current
-      )
+      @run.update!(status: "awaiting_dossier_review", dossier_ready_at: Time.current)
+      @run.update!(dossier_markdown: Dossier::Builder.call(run: @run))
       @run
     end
 
