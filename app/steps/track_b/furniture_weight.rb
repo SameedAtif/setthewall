@@ -6,7 +6,7 @@ module Steps
       def perform
         result = RubyLLM.chat(model: Pipeline::VISION_MODEL)
                         .with_schema(Schemas::TrackB::FurnitureWeightSchema)
-                        .ask(prompt("b2_furniture_weight"), with: context.fetch(:scene_image))
+                        .ask(prompt("b2_furniture_weight"), with: Pipeline::KB_ROOT.join(context.fetch(:scene_image)))
                         .content
 
         if result["borderline"]

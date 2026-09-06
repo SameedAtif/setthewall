@@ -6,7 +6,7 @@ module Steps
       def perform
         result = RubyLLM.chat(model: Pipeline::VISION_MODEL)
                         .with_schema(Schemas::TrackB::WallConditionSchema)
-                        .ask(prompt("b1_wall_condition"), with: context.fetch(:scene_image))
+                        .ask(prompt("b1_wall_condition"), with: Pipeline::KB_ROOT.join(context.fetch(:scene_image)))
                         .content
 
         apply_borderline_default!(result, :wall_condition)

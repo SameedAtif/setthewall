@@ -6,7 +6,7 @@ module Steps
       def perform
         result = RubyLLM.chat(model: Pipeline::VISION_MODEL)
                         .with_schema(Schemas::TrackB::RoomShapeSchema)
-                        .ask(prompt("b4_room_shape"), with: context.fetch(:scene_image))
+                        .ask(prompt("b4_room_shape"), with: Pipeline::KB_ROOT.join(context.fetch(:scene_image)))
                         .content
 
         if result["borderline"]

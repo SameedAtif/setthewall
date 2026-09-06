@@ -15,7 +15,7 @@ module Steps
         # === Step 1 — observation ===
         step1 = RubyLLM.chat(model: Pipeline::VISION_MODEL)
                       .with_schema(Schemas::TrackB::ColorRoleObservationSchema)
-                      .ask(prompt("b6_color_role"), with: context.fetch(:scene_image))
+                      .ask(prompt("b6_color_role"), with: Pipeline::KB_ROOT.join(context.fetch(:scene_image)))
                       .content
 
         candidate = step1["candidate_role"]

@@ -6,7 +6,7 @@ module Steps
       def perform
         result = RubyLLM.chat(model: Pipeline::VISION_MODEL)
                         .with_schema(Schemas::TrackB::RoomTypeSchema)
-                        .ask(prompt("b3_room_type"), with: context.fetch(:scene_image))
+                        .ask(prompt("b3_room_type"), with: Pipeline::KB_ROOT.join(context.fetch(:scene_image)))
                         .content
 
         if result["room_type"] == "ambiguous"

@@ -1,6 +1,5 @@
-# Style Spec — style-level axes set by Phase 1 Track A.
-# Scene axes are appended by Track B (module 02). Do not hand-edit scene keys here
-# without also re-running Track B's validation.
+# Style Spec — style-level axes set by Track A (module 01),
+# scene axes appended by Track B (module 02).
 ---
 slug: whimsigoth-v1
 name: Celestial sun/moon maximalist prints (physical, $12–55)
@@ -9,4 +8,15 @@ style_level:
   mood: bold_active
   content_type: detailed_representational
   frame_form: rounded
-scenes: {}
+scenes:
+  behind_sofa_light_neutral:
+    name: behind_sofa_light_neutral
+    template_ref: scene_templates/behind_sofa_light_neutral.yml
+    locked_at: '2026-09-06'
+    axes:
+      wall_condition: neutral
+      furniture_weight: light
+      room_type: seated_room
+      room_shape: none
+      space_math: single
+      color_role: color_burst
