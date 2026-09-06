@@ -36,10 +36,13 @@ module Steps
         # Generate what's missing via the image-gen adapter (module 03)
         adapter = ImageGeneration::Adapter.build
         generated_urls = {}
+        candidates = {}
         missing_required.each do |type|
           prompt = build_photo_prompt(type)
-          result = adapter.generate(prompt: prompt, n: 1, style_reference: [piece.chosen_url])
-          generated_urls[type] = result.urls.first
+          result = adapter.generate(prompt: prompt, n: 2, style_reference: [piece.chosen_url])
+          urls = result.urls.compact
+          generated_urls[type] = urls.first
+          candidates[type] = urls
         end
 
         photos.merge!(generated_urls.compact)
@@ -49,7 +52,7 @@ module Steps
           "Generated #{generated_urls.keys.join(', ')} via #{adapter.name}. " \
           "AI-generated studio/detail shots are still mixed — REVIEW quality before " \
           "confirming. If any is unusable, upload a real photo and re-run this step.",
-          { photos: photos, generated_types: generated_urls.keys }
+          { photos: photos, generated_types: generated_urls.keys, candidates: candidates }
         )
       end
 
@@ -66,11 +69,13 @@ module Steps
       def photo_type_instructions(type)
         case type
         when "studio"
-          "A studio product shot: the framed print on a plain neutral background, soft even " \
-          "studio lighting. No room, no props."
+          "Dead-on product shot: camera facing the print squarely, print centered and filling " \
+          "roughly 70% of the frame, plain light-neutral background, soft even studio lighting. " \
+          "No room, no props."
         when "detail"
-          "A close-up detail shot of a corner of the framed print — showing print texture, paper " \
-          "grain, and the frame edge/corner. Sharp focus, natural lighting."
+          "Extreme close-up macro on ONE corner of the framed print, camera at a 3/4 angle to " \
+          "catch the frame edge and corner joint. Show print/paper texture. The full print must " \
+          "NOT be visible — this is a corner crop. Sharp focus, natural side light."
         else
           # scale, group, packaging: caller should provide, not generate
           raise "Unexpected photo type for generation: #{type}"

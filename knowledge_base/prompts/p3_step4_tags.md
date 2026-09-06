@@ -2,6 +2,7 @@ Generate 13 tags for this Etsy listing. Etsy provides exactly 13 slots; use all 
 
 The piece:
 - Style: %{style_name}
+- Demand terms (what shoppers actually search for, sourced from A0 research): %{demand_terms}
 - Content type: %{content_type}
 - Mood: %{mood}
 - Color role: %{color_role}
@@ -26,7 +27,10 @@ Rules from Etsy's own guidance:
    "whimsigoth living room wall art", "whimsigoth housewarming gift". The style descriptor
    (%{style_name} and its close variants) should recur across the tags, not just in the
    style_descriptor angle.
-5. **No near-duplicates.** "modern wall art" and "modern art wall decor" are duplicative;
+5. **Mine the demand terms for vocabulary** — they are the search phrases shoppers actually use.
+   Work their keywords into the tags, but strip price bands, size ranges, and format labels
+   ("physical", "digital download"); those are A0 research labels, not tags.
+6. **No near-duplicates.** "modern wall art" and "modern art wall decor" are duplicative;
    diversify instead.
 
 Return JSON matching the required schema — 13 tags, each labelled with which of the four angles

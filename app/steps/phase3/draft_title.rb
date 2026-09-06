@@ -11,6 +11,7 @@ module Steps
                         .with_schema(Schemas::Phase3::TitleSchema)
                         .ask(prompt("p3_step3_title",
                                     style_name: spec.display_name,
+                                    demand_terms: TrackAResearch.demand_terms_text,
                                     content_type: piece.content_type,
                                     mood: piece.mood,
                                     color_role: piece.color_role_confirmed,

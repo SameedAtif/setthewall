@@ -62,17 +62,7 @@ module Steps
       end
 
       def trend_evidence
-        gate = HumanGate.where(step_id: "A0").order(:id).last
-        return "None recorded." unless gate
-
-        content = JSON.parse(gate.agent_proposal || "{}").dig("findings") || {}
-        lines = []
-        Array(content["findings"]).each do |f|
-          status = f["cross_check_confirmed"] ? "confirmed" : "not confirmed"
-          lines << "- #{f['theme']}: cross-check #{status} via #{f['cross_check_platform']}"
-        end
-        Array(content["cross_check_attempts"]).each { |a| lines << "- #{a}" }
-        lines.empty? ? "None recorded." : lines.join("\n")
+        TrackAResearch.trend_evidence
       end
 
       def check_keyword_stuffing(text, tags)
