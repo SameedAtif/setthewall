@@ -29,6 +29,20 @@ RSpec.describe "DossierReviews", type: :request do
     expect(r.reload.status).to eq("approved")
   end
 
+  it "captures structured reviewer decisions on approve" do
+    r = run
+    patch dossier_review_path(r.run_id), params: {
+      decision: "approve",
+      notes: "ok",
+      decisions: {
+        "C2" => { "chosen_url" => "u2" },
+        "P3_7" => { "return_policy" => "30 days", "shipping_price_usd" => "5", "item_price_usd" => "50" }
+      }
+    }
+    expect(r.reload.reviewer_decisions.dig("P3_7", "return_policy")).to eq("30 days")
+    expect(r.reload.reviewer_decisions.dig("C2", "chosen_url")).to eq("u2")
+  end
+
   it "abandons a run" do
     r = run
     patch dossier_review_path(r.run_id), params: { decision: "abandon" }

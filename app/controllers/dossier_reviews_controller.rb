@@ -12,7 +12,8 @@ class DossierReviewsController < ApplicationController
 
     case params[:decision]
     when "approve"
-      @run.update!(status: "approved", reviewed_at: Time.current, reviewer_notes: params[:notes])
+      @run.update!(status: "approved", reviewed_at: Time.current, reviewer_notes: params[:notes],
+                   reviewer_decisions: decisions_from(params))
       CommitRunJob.perform_later(run_id: @run.run_id)
     when "rerun"
       step = params.require(:step_id)
@@ -23,5 +24,17 @@ class DossierReviewsController < ApplicationController
     end
 
     redirect_to dossier_reviews_path
+  end
+
+  private
+
+  def decisions_from(params)
+    raw = params[:decisions]
+    return {} if raw.blank?
+
+    raw = raw.to_unsafe_h if raw.respond_to?(:to_unsafe_h)
+    raw.slice("C2", "P3_7").each_with_object({}) do |(step, value), acc|
+      acc[step] = value if value.is_a?(Hash)
+    end
   end
 end

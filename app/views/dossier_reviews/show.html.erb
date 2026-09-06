@@ -14,6 +14,40 @@
       <%= f.text_area :notes, rows: 3, class: "mt-1 w-full border rounded p-2" %>
     </div>
 
+    <% piece = @run.piece_record %>
+    <% if piece.present? %>
+      <% if piece.listing_attributes.blank? %>
+        <fieldset class="border rounded p-3 space-y-2">
+          <legend class="text-sm font-medium px-1">Shipping &amp; pricing (P3_7 — required to publish)</legend>
+          <%= f.label "decisions[P3_7][return_policy]", "Return policy", class: "block text-xs" %>
+          <%= f.text_field "decisions[P3_7][return_policy]", value: "30-day returns", class: "mt-1 w-full border rounded p-2" %>
+          <div class="flex gap-3">
+            <div class="flex-1">
+              <%= f.label "decisions[P3_7][shipping_price_usd]", "Shipping (USD)", class: "block text-xs" %>
+              <%= f.number_field "decisions[P3_7][shipping_price_usd]", step: "0.01", min: 0, class: "mt-1 w-full border rounded p-2" %>
+            </div>
+            <div class="flex-1">
+              <%= f.label "decisions[P3_7][item_price_usd]", "Item price (USD)", class: "block text-xs" %>
+              <%= f.number_field "decisions[P3_7][item_price_usd]", step: "0.01", min: 0, class: "mt-1 w-full border rounded p-2" %>
+            </div>
+          </div>
+        </fieldset>
+      <% end %>
+
+      <% finalists = Array(piece.finalist_urls) %>
+      <% if finalists.any? %>
+        <fieldset class="border rounded p-3 space-y-2">
+          <legend class="text-sm font-medium px-1">Final art pick (C2)</legend>
+          <% finalists.each_with_index do |url, i| %>
+            <label class="flex items-center gap-2 text-sm">
+              <%= radio_button_tag "decisions[C2][chosen_url]", url, url == piece.chosen_url %>
+              <span class="font-mono text-xs truncate"><%= url %></span>
+            </label>
+          <% end %>
+        </fieldset>
+      <% end %>
+    <% end %>
+
     <div class="flex gap-2">
       <button type="submit" name="decision" value="approve"
               class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Approve &amp; commit</button>

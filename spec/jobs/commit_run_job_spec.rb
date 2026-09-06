@@ -33,4 +33,41 @@ RSpec.describe CommitRunJob do
     expect(run.reload.status).to eq("committed")
     expect(KnowledgeBase::StyleSpec.all.map(&:slug)).not_to include("cjfoo")
   end
+
+  it "applies reviewer decisions (pricing and art pick) for a piece run" do
+    piece = create(:piece_record, finalist_urls: %w[u1 u2], chosen_url: "u1")
+    run = PipelineRunRecord.create!(
+      run_id: "run-cj-dec", kb_version: "test", scope: "piece",
+      style_slug: "cjfoo", scene_spec_id: "s", piece_record: piece,
+      reviewer_decisions: {
+        "C2" => { "chosen_url" => "u2" },
+        "P3_7" => { "return_policy" => "30 days", "shipping_price_usd" => 5,
+                    "item_price_usd" => 50 }
+      }
+    )
+    allow_any_instance_of(described_class).to receive(:publish_piece)
+
+    described_class.perform_now(run_id: "run-cj-dec")
+
+    piece.reload
+    expect(piece.chosen_url).to eq("u2")
+    expect(piece.listing_attributes["return_policy"]).to eq("30 days")
+    expect(piece.listing_attributes["shipping_price_usd"].to_f).to eq(5.0)
+    expect(piece.listing_attributes["item_price_usd"].to_f).to eq(50.0)
+    expect(run.reload.status).to eq("committed")
+  end
+
+  it "ignores a chosen override that is not a finalist" do
+    piece = create(:piece_record, finalist_urls: %w[u1], chosen_url: "u1")
+    run = PipelineRunRecord.create!(
+      run_id: "run-cj-dec2", kb_version: "test", scope: "piece",
+      style_slug: "cjfoo", scene_spec_id: "s", piece_record: piece,
+      reviewer_decisions: { "C2" => { "chosen_url" => "not-a-finalist" } }
+    )
+    allow_any_instance_of(described_class).to receive(:publish_piece)
+
+    described_class.perform_now(run_id: "run-cj-dec2")
+
+    expect(piece.reload.chosen_url).to eq("u1")
+  end
 end
