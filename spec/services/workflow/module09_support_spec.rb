@@ -96,10 +96,15 @@ RSpec.describe Dossier::Builder do
     expect(markdown).to include("## If you approve")
   end
 
-  it "embeds images and the listing data" do
-    piece = create(:piece_record, candidate_urls: ["/tmp/a.jpg", "/tmp/b.jpg"],
-                                  chosen_url: "/tmp/a.jpg", composite_url: "/tmp/composite.png",
-                                  photos: { "detail" => "/tmp/detail.jpg" },
+  it "copies images into the run dir, references them relatively, and shows listing data" do
+    src = Rails.root.join("tmp", "test_images")
+    src.mkpath
+    %w[a.jpg b.jpg].each { |f| FileUtils.touch(src.join(f)) }
+
+    piece = create(:piece_record, candidate_urls: [src.join("a.jpg").to_s],
+                                  chosen_url: src.join("a.jpg").to_s,
+                                  composite_url: src.join("b.jpg").to_s,
+                                  photos: { "detail" => src.join("b.jpg").to_s },
                                   listing_title: "Celestial Sun Moon Print",
                                   listing_tags: %w[celestial sun moon])
     run = PipelineRunRecord.create!(run_id: "run-img", kb_version: "abc", style_slug: "whimsigoth-v1",
@@ -109,12 +114,25 @@ RSpec.describe Dossier::Builder do
     markdown = described_class.call(run: run)
 
     expect(markdown).to include("## Images")
-    expect(markdown).to include("![composite](/tmp/composite.png)")
-    expect(markdown).to include("![chosen](/tmp/a.jpg)")
-    expect(markdown).to include("![candidate 1](/tmp/a.jpg)")
-    expect(markdown).to include("![detail](/tmp/detail.jpg)")
+    expect(markdown).to include("![composite](images/b.jpg)")
+    expect(markdown).to include("![chosen](images/a.jpg)")
+    expect(markdown).to include("![candidate 1](images/a.jpg)")
+    expect(markdown).to include("![detail](images/b.jpg)")
+    expect(Rails.root.join("tmp", "runs", "run-img", "images", "a.jpg").exist?).to be(true)
     expect(markdown).to include("Celestial Sun Moon Print")
     expect(markdown).to include("celestial, sun, moon")
+  ensure
+    FileUtils.rm_rf(src)
+    FileUtils.rm_rf(Rails.root.join("tmp", "runs", "run-img"))
+  end
+
+  it "falls back to the original path when an image file is missing" do
+    piece = create(:piece_record, candidate_urls: ["/nonexistent/missing.jpg"])
+    run = PipelineRunRecord.create!(run_id: "run-miss", kb_version: "abc", style_slug: "whimsigoth-v1",
+                                    scene_spec_id: "behind_sofa_light_neutral", piece_record: piece,
+                                    step_results: [], escalations: [])
+
+    expect(described_class.call(run: run)).to include("![candidate 1](/nonexistent/missing.jpg)")
   end
 
   it "renders A0 research findings from the gate" do

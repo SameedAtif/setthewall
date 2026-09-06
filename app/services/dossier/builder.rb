@@ -92,20 +92,34 @@ module Dossier
     def images
       lines = ["## Images"]
       lines << "### The piece placed in the scene (composite)"
-      lines << (piece&.composite_url.presence ? "![composite](#{piece.composite_url})" : "_(none)_")
+      lines << (piece&.composite_url.presence ? "![composite](#{relative(piece.composite_url)})" : "_(none)_")
       lines << "### The chosen piece (art only)"
-      lines << (piece&.chosen_url.presence ? "![chosen](#{piece.chosen_url})" : "_(none)_")
+      lines << (piece&.chosen_url.presence ? "![chosen](#{relative(piece.chosen_url)})" : "_(none)_")
       lines << "### Candidate batch"
       candidates = Array(piece&.candidate_urls)
       if candidates.empty?
         lines << "_(none)_"
       else
-        candidates.each_with_index { |url, i| lines << "![candidate #{i + 1}](#{url})" }
+        candidates.each_with_index { |url, i| lines << "![candidate #{i + 1}](#{relative(url)})" }
       end
       lines << "### Lifestyle photos"
       photos = (piece&.photos || {}).select { |_, v| v.present? }
-      photos.empty? ? lines << "_(none)_" : photos.each { |k, v| lines << "![#{k}](#{v})" }
+      photos.empty? ? lines << "_(none)_" : photos.each { |k, v| lines << "![#{k}](#{relative(v)})" }
       lines.join("\n")
+    end
+
+    # Copy a local image into the run's own directory and return a path relative to dossier.md, so
+    # the report is self-contained and renders in any markdown viewer. Remote URLs pass through.
+    def relative(original)
+      return original if original.blank? || original.start_with?("http")
+
+      target_dir = Rails.root.join("tmp", "runs", @run.run_id, "images")
+      target_dir.mkpath
+      target = target_dir.join(File.basename(original))
+      FileUtils.cp(original, target) unless target.exist?
+      "images/#{File.basename(original)}"
+    rescue StandardError
+      original
     end
 
     def step_by_step
