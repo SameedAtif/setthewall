@@ -123,9 +123,9 @@ RSpec.describe Dossier::Builder do
 
     expect(markdown).to include("# Run run-x — japandi / s1")
     expect(markdown).to include("## Open questions")
-    expect(markdown).to include("- **A5:** tier_3_gate")
+    expect(markdown).to include("Lock the style-level entry (A5) — needs your decision")
     expect(markdown).to include("## Step by step")
-    expect(markdown).to include("- **A0:** awaiting_human (clean → approve)")
+    expect(markdown).to include("⚠ Validate the style is worth pursuing (A0) — needs your review")
     expect(markdown).to include("## Why we think this will work")
     expect(markdown).to include("- clean")
     expect(markdown).to include("## What we could not verify")

@@ -13,7 +13,7 @@ module Steps
           RubyLLM.chat(model: Pipeline::VISION_MODEL)
                  .with_schema(Schemas::TrackA::FrameFormSchema)
                  .ask(prompt("a4_frame_form", mood: mood),
-                      with: context.fetch(:reference_images)).content
+                      with: localize_images(context.fetch(:reference_images))).content
         )
 
         if result.empty?

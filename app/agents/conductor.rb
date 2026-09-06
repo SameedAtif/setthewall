@@ -153,8 +153,10 @@ module Agents
     end
 
     def record_step!(step_id, result)
-      append_step_result("step_id" => step_id, "status" => result.status.to_s,
-                         "data" => (result.data || {}).stringify_keys)
+      entry = { "step_id" => step_id, "status" => result.status.to_s,
+                "data" => (result.data || {}).stringify_keys }
+      entry["message"] = result.message if result.respond_to?(:message) && result.message.present?
+      append_step_result(entry)
     end
 
     def record_disposition!(step_id, verdict, disposition)

@@ -10,7 +10,7 @@ module Steps
 
       # context: { reference_images: [urls] }
       def perform
-        images = context.fetch(:reference_images)
+        images = localize_images(context.fetch(:reference_images))
 
         result = Pipeline::Json.normalize(
           RubyLLM.chat(model: Pipeline::VISION_MODEL)

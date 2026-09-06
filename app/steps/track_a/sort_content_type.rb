@@ -9,7 +9,7 @@ module Steps
         result = Pipeline::Json.normalize(
           RubyLLM.chat(model: Pipeline::VISION_MODEL)
                  .with_schema(Schemas::TrackA::ContentTypeSchema)
-                 .ask(prompt("a3_content_type"), with: context.fetch(:reference_images))
+                 .ask(prompt("a3_content_type"), with: localize_images(context.fetch(:reference_images)))
                  .content
         )
 

@@ -56,6 +56,28 @@ module Steps
       format(template, **vars)
     end
 
+    # Vision models often cannot fetch remote URLs (Pinterest, blogs, etc.) server-side, so
+    # download reference images locally and hand the vision call a local path instead.
+    def localize_images(urls)
+      Array(urls).filter_map do |url|
+        url = url.to_s
+        next url if url.blank? || File.exist?(url)
+
+        ext = File.extname(URI.parse(url).path).presence || ".jpg"
+        dst = Rails.root.join("tmp", "reference_images", "#{Digest::SHA256.hexdigest(url)}#{ext}")
+        unless dst.exist?
+          dst.dirname.mkpath
+          response = Faraday.get(url) { |req| req.headers["User-Agent"] = "Mozilla/5.0" }
+          next url unless response.success?
+
+          dst.binwrite(response.body)
+        end
+        dst.to_s
+      rescue StandardError
+        url
+      end
+    end
+
     def spec  = piece.style_spec
     def scene = piece.scene_spec
   end

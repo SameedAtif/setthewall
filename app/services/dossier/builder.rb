@@ -40,11 +40,25 @@ module Dossier
       escalations = Array(@run.escalations)
       return "## Open questions\nNone." if escalations.empty?
 
-      rows = escalations.map do |e|
-        detail = e["divergence"] ? " (proposer: #{e["divergence"]["proposer"]}, verifier: #{e["divergence"]["verifier"]})" : ""
-        "- **#{e["step_id"]}:** #{e["reason"]}#{detail}"
+      "## Open questions\n" + escalations.map { |e| "- #{open_question_line(e)}" }.join("\n")
+    end
+
+    def open_question_line(e)
+      label = "#{step_title(e['step_id'])} (#{e['step_id']})"
+      case e["reason"]
+      when "tier_3_gate"
+        msg = message_for(e["step_id"])
+        "#{label} — needs your decision#{msg.present? ? ": #{truncate(msg, 300)}" : ''}"
+      when "step_error"
+        "#{label} — failed: #{e['divergence'] || 'unknown error'}"
+      when "verifier_divergence"
+        "#{label} — the QA checks disagreed (proposer: #{e.dig('divergence', 'proposer')}, " \
+        "verifier: #{e.dig('divergence', 'verifier')})"
+      when "no_legal_agent_disposition"
+        "#{label} — no valid automatic decision was possible; needs your call"
+      else
+        "#{label} — #{e['reason']}"
       end
-      "## Open questions\n" + rows.join("\n")
     end
 
     def research
@@ -153,20 +167,41 @@ module Dossier
     end
 
     def step_by_step
-      rows = Array(@run.step_results).map do |r|
-        verdict = r["verdict"] ? " (#{r["verdict"]} → #{r["disposition"]})" : ""
-        detail = step_detail(r)
-        "- **#{r["step_id"]}:** #{r["status"]}#{verdict}#{detail}"
-      end
+      rows = Array(@run.step_results).map { |r| step_line(r) }
       "## Step by step\n" + rows.join("\n")
     end
 
-    def step_detail(record)
-      data = (record["data"] || {}).except("error", "criteria", "brief")
-      return "" if data.empty?
+    def step_line(record)
+      label = "#{step_title(record['step_id'])} (#{record['step_id']})"
+      case record["status"]
+      when "ok"
+        "✓ #{label}"
+      when "awaiting_human"
+        "⚠ #{label} — needs your review: #{truncate(record['message'].to_s, 200)}"
+      when "failed"
+        reason = record.dig("data", "error") || record["message"] || "no error recorded"
+        "✗ #{label} — failed: #{truncate(reason.to_s, 200)}"
+      else
+        "- #{label} — #{record['status']}"
+      end
+    end
 
-      summary = data.map { |k, v| "#{k}=#{truncate(v.inspect)}" }.join(", ")
-      " — #{summary}"
+    def message_for(step_id)
+      entry = Array(@run.step_results).find { |r| r["step_id"] == step_id }
+      entry && entry["message"]
+    end
+
+    def step_title(step_id)
+      self.class.step_titles[step_id.to_s] || step_id.to_s
+    end
+
+    def self.step_titles
+      @step_titles ||= begin
+        raw = YAML.safe_load_file(Rails.root.join("config/step_registry.yml"))
+        %w[track_a track_b track_c].map { |t| raw.dig("phase_1", t, "steps") }
+          .concat([raw.dig("phase_2", "steps"), raw.dig("phase_3_module_1", "steps")])
+          .flatten.compact.to_h { |s| [s["id"], s["title"]] }
+      end
     end
 
     def why_it_will_work
