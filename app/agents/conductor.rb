@@ -54,6 +54,10 @@ module Agents
       Agents::EvidenceQa.call(run: @run)
       @run.update!(status: "awaiting_dossier_review", dossier_ready_at: Time.current)
       @run.update!(dossier_markdown: Dossier::Builder.call(run: @run))
+
+      dir = Rails.root.join("tmp", "runs", @run.run_id)
+      dir.mkpath
+      dir.join("dossier.md").write(@run.dossier_markdown)
       @run
     end
 

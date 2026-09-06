@@ -86,13 +86,59 @@ RSpec.describe Dossier::Builder do
 
     expect(markdown).to include("# Run run-x — japandi / s1")
     expect(markdown).to include("## Open questions")
-    expect(markdown).to include("- A5: tier_3_gate")
+    expect(markdown).to include("- **A5:** tier_3_gate")
     expect(markdown).to include("## Step by step")
-    expect(markdown).to include("- A0: awaiting_human (clean → approve)")
+    expect(markdown).to include("- **A0:** awaiting_human (clean → approve)")
     expect(markdown).to include("## Why we think this will work")
     expect(markdown).to include("- clean")
     expect(markdown).to include("## What we could not verify")
     expect(markdown).to include("- weak sources")
     expect(markdown).to include("## If you approve")
+  end
+
+  it "embeds images and the listing data" do
+    piece = create(:piece_record, candidate_urls: ["/tmp/a.jpg", "/tmp/b.jpg"],
+                                  chosen_url: "/tmp/a.jpg", composite_url: "/tmp/composite.png",
+                                  photos: { "detail" => "/tmp/detail.jpg" },
+                                  listing_title: "Celestial Sun Moon Print",
+                                  listing_tags: %w[celestial sun moon])
+    run = PipelineRunRecord.create!(run_id: "run-img", kb_version: "abc", style_slug: "whimsigoth-v1",
+                                    scene_spec_id: "behind_sofa_light_neutral", piece_record: piece,
+                                    step_results: [], escalations: [])
+
+    markdown = described_class.call(run: run)
+
+    expect(markdown).to include("## Images")
+    expect(markdown).to include("![composite](/tmp/composite.png)")
+    expect(markdown).to include("![chosen](/tmp/a.jpg)")
+    expect(markdown).to include("![candidate 1](/tmp/a.jpg)")
+    expect(markdown).to include("![detail](/tmp/detail.jpg)")
+    expect(markdown).to include("Celestial Sun Moon Print")
+    expect(markdown).to include("celestial, sun, moon")
+  end
+
+  it "renders A0 research findings from the gate" do
+    create(:human_gate, step_id: "A0", gate_kind: "a0", agent_proposal: {
+      "findings" => { "findings" => [
+        { "theme" => "Celestial", "demand_to_competition_verdict" => "Produce",
+          "independent_shops" => 5, "competition_density" => "medium",
+          "cross_check_confirmed" => true, "cross_check_platform" => "Pinterest" }
+      ] }
+    }.to_json)
+    run = PipelineRunRecord.create!(run_id: "run-res", kb_version: "abc", style_slug: "japandi",
+                                    scene_spec_id: "s1", step_results: [], escalations: [])
+
+    markdown = described_class.call(run: run)
+    expect(markdown).to include("**Celestial** — Produce")
+    expect(markdown).to include("cross-check confirmed via Pinterest")
+  end
+
+  it "notes when A0 returned no findings" do
+    create(:human_gate, step_id: "A0", gate_kind: "a0",
+                        agent_proposal: { "findings" => { "findings" => [] } }.to_json)
+    run = PipelineRunRecord.create!(run_id: "run-res2", kb_version: "abc", style_slug: "japandi",
+                                    scene_spec_id: "s1", step_results: [], escalations: [])
+
+    expect(described_class.call(run: run)).to include("A0 returned no demand-to-competition findings")
   end
 end
