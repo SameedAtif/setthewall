@@ -31,6 +31,16 @@ module KnowledgeBase
 
     attr_reader :slug, :name, :style_level, :scenes, :path
 
+    # The slug's human name, for listing copy. `name` is the A0 research label (which can carry a
+    # price band and narrowing detail); this is the market-facing term — "whimsigoth-v1" → "Whimsigoth".
+    def display_name
+      slug.to_s
+          .sub(/-v\d+\z/i, "")
+          .sub(/-\d+\z/, "")
+          .tr("-", " ")
+          .humanize
+    end
+
     def self.load(slug)
       path = Pipeline::KB_ROOT.join("style_specs", "#{slug}.yml")
       raise IncompleteSpecError, "No style spec at #{path}" unless path.exist?

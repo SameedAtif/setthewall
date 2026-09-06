@@ -38,7 +38,7 @@ module Steps
         generated_urls = {}
         missing_required.each do |type|
           prompt = build_photo_prompt(type)
-          result = adapter.generate(prompt: prompt, n: 1)
+          result = adapter.generate(prompt: prompt, n: 1, style_reference: [piece.chosen_url])
           generated_urls[type] = result.urls.first
         end
 
@@ -56,15 +56,21 @@ module Steps
       private
 
       def build_photo_prompt(type)
+        prompt("p3_step1b_photo_types",
+               photo_type: type,
+               photo_type_instructions: photo_type_instructions(type),
+               frame_material_category: piece.frame_material_category,
+               frame_contour: piece.frame_contour)
+      end
+
+      def photo_type_instructions(type)
         case type
         when "studio"
-          "Studio product photo: a %s framed print (frame material: %s, contour: %s), " \
-          "on a plain neutral background with soft even studio lighting. No room, no props." %
-            [piece.content_type, piece.frame_material_category, piece.frame_contour]
+          "A studio product shot: the framed print on a plain neutral background, soft even " \
+          "studio lighting. No room, no props."
         when "detail"
-          "Close-up detail photo of the corner of a framed print — showing print texture, paper " \
-          "grain, and frame edge/corner. Frame: %s. Sharp focus, natural lighting." %
-            piece.frame_material_category
+          "A close-up detail shot of a corner of the framed print — showing print texture, paper " \
+          "grain, and the frame edge/corner. Sharp focus, natural lighting."
         else
           # scale, group, packaging: caller should provide, not generate
           raise "Unexpected photo type for generation: #{type}"

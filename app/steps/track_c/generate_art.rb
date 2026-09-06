@@ -58,10 +58,9 @@ module Steps
 
       def build_synthesis_prompt
         prompt("c1_generation_prompt_synthesis",
-               style_name:   spec.name,
+               style_name: spec.display_name,
                mood:         piece.mood,
                content_type: piece.content_type,
-               frame_form:   piece.frame_form,
                color_role:   piece.color_role,
                room_shape:   piece.room_shape)
       end

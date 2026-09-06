@@ -15,6 +15,7 @@ module Compositor
       art_dims = compute_art_dimensions
 
       x, y = compute_position(art_dims)
+      x, y = clamp_to_bounds(art_dims, x, y)
 
       composited = paste_art_on_template(art, x: x, y: y, w: art_dims[:w], h: art_dims[:h])
       output_path = write_output(composited)
@@ -60,7 +61,7 @@ module Compositor
 
     def compute_art_dimensions
       m   = @template.fetch("measurements")
-      ppi = m.fetch("pixels_per_inch").to_i
+      ppi = pixels_per_inch
 
       # === Group width vs. furniture rule (§2.11) ===
       # Group no wider than furniture; if narrower, at least half.
@@ -92,7 +93,7 @@ module Compositor
       x = wall_center_x - (art_dims[:w] / 2)
 
       # === Vertical position — eye-level rule (§2.10) + general drop (P2-P14) ===
-      ppi = m["pixels_per_inch"].to_i
+      ppi = pixels_per_inch
       eye_rules = KnowledgeBase::RuleSet.load("eye_level").rules
 
       by_room = eye_rules["by_room_type"].fetch(@piece.room_type)
@@ -137,6 +138,26 @@ module Compositor
       template_img = Vips::Image.new_from_file(Pipeline::KB_ROOT.join(@template["image_path"]).to_s)
       resized_art  = art.resize(w.to_f / art.width)
       template_img.composite2(resized_art, :over, x: x, y: y)
+    end
+
+    def clamp_to_bounds(art_dims, x, y)
+      m = @template["measurements"]
+      tw = m["image_width_px"].to_i
+      th = m["image_height_px"].to_i
+      return [x, y] if tw <= 0 || th <= 0
+
+      max_x = [tw - art_dims[:w], 0].max
+      max_y = [th - art_dims[:h], 0].max
+      [x.clamp(0, max_x), y.clamp(0, max_y)]
+    end
+
+    def pixels_per_inch
+      m = @template.fetch("measurements")
+      value = m.fetch("pixels_per_inch").to_i
+      raise TemplateError, "Template '#{@piece.scene_spec_id}' has invalid pixels_per_inch" if value <= 0
+      raise TemplateError, "Template '#{@piece.scene_spec_id}' pixels_per_inch is uncalibrated" if m["calibrated"] == false
+
+      value
     end
 
     def write_output(img)

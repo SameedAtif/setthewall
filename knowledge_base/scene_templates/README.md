@@ -22,6 +22,9 @@ measurements:
   # Pixels per inch, calibrated against a known-size object in the scene.
   # Required for Phase 2 Step 6 to translate the book's inch-based rules into pixel math.
   pixels_per_inch: 24
+  # Set false until a human calibrates pixels_per_inch; Phase 2 Step 6 refuses to run pixel
+  # math while false (uncalibrated ppi silently produces wrong placement).
+  calibrated: true
 
   # Anchor rectangles used by Step 6. Only include the ones relevant to this scene type.
   furniture_top_edge_y_px: 900      # top of the sofa/table/etc. — for the 8-10" gap rule

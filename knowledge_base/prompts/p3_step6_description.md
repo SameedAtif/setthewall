@@ -12,6 +12,8 @@ The piece:
 - Digital or physical: %{fulfillment_type}
 - Turnaround: %{turnaround_days} days
 - Style spec's positioning target ("who is this for"): %{positioning_target}
+- Trending-support evidence (A0-sourced — you may state ONLY what is listed here, nothing else):
+  %{trend_evidence}
 
 Structure per Etsy's own guidance:
 
@@ -25,6 +27,10 @@ Structure per Etsy's own guidance:
 4. **Make a specific "who this is for" claim.** Per *This Is Marketing* — specific beats
    generic. "For someone building a calm, uncluttered space where a single piece can breathe"
    beats "for everyone who loves art." Vague positioning targets everyone and reaches no one.
+5. **Use the trending-support evidence as future social proof** — a new listing has no reviews,
+   so, per *Influence* Ch. 4, honestly describe the trending support audiences expect to continue
+   (e.g. "part of the whimsigoth trend featured in…"). Only restate what `trend_evidence` lists;
+   do not invent trend claims.
 
 Return JSON matching the required schema, with:
 - `essential_info_block` — the specs-first section

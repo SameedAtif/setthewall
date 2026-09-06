@@ -11,7 +11,7 @@ module Steps
         result = RubyLLM.chat(model: Pipeline::TEXT_MODEL)
                         .with_schema(Schemas::Phase3::DescriptionSchema)
                         .ask(prompt("p3_step6_description",
-                                    style_name: spec.name,
+                                    style_name: spec.display_name,
                                     content_type: piece.content_type,
                                     mood: piece.mood,
                                     color_role: piece.color_role_confirmed,
@@ -21,7 +21,8 @@ module Steps
                                     included: context.fetch(:included, "Print only"),
                                     fulfillment_type: context.fetch(:fulfillment_type, "physical"),
                                     turnaround_days: context.fetch(:turnaround_days, 3),
-                                    positioning_target: context.fetch(:positioning_target)))
+                                    positioning_target: context.fetch(:positioning_target, default_positioning_target),
+                                    trend_evidence: trend_evidence))
                         .content
 
         # Validate keyword-stuffing: no tag phrase used more than 2× in the description
@@ -55,6 +56,24 @@ module Steps
       end
 
       private
+
+      def default_positioning_target
+        rules("positioning").rules.dig("positioning", "positioning_target")
+      end
+
+      def trend_evidence
+        gate = HumanGate.where(step_id: "A0").order(:id).last
+        return "None recorded." unless gate
+
+        content = JSON.parse(gate.agent_proposal || "{}").dig("findings") || {}
+        lines = []
+        Array(content["findings"]).each do |f|
+          status = f["cross_check_confirmed"] ? "confirmed" : "not confirmed"
+          lines << "- #{f['theme']}: cross-check #{status} via #{f['cross_check_platform']}"
+        end
+        Array(content["cross_check_attempts"]).each { |a| lines << "- #{a}" }
+        lines.empty? ? "None recorded." : lines.join("\n")
+      end
 
       def check_keyword_stuffing(text, tags)
         return [] if tags.blank?

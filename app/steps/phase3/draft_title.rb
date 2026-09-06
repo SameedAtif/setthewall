@@ -10,7 +10,7 @@ module Steps
         result = RubyLLM.chat(model: Pipeline::TEXT_MODEL)
                         .with_schema(Schemas::Phase3::TitleSchema)
                         .ask(prompt("p3_step3_title",
-                                    style_name: spec.name,
+                                    style_name: spec.display_name,
                                     content_type: piece.content_type,
                                     mood: piece.mood,
                                     color_role: piece.color_role_confirmed,

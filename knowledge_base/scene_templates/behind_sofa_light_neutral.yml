@@ -13,8 +13,9 @@ measurements:
   image_height_px: 768
 
   # Pixels per inch, calibrated against a known-size object in the scene (e.g. sofa ~84" wide).
-  # TODO: calibrate — do not trust this estimate.
+  # calibrated: false blocks Phase 2 Step 6 pixel math until a human calibrates this value.
   pixels_per_inch: 24
+  calibrated: false
 
   # Anchor rectangles used by Step 6. Only the ones relevant to this scene type are populated.
   furniture_top_edge_y_px: 500        # TODO: top of the sofa — for the 8-10" gap rule

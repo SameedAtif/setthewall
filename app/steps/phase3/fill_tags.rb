@@ -10,7 +10,7 @@ module Steps
         result = RubyLLM.chat(model: Pipeline::TEXT_MODEL)
                         .with_schema(Schemas::Phase3::TagsSchema)
                         .ask(prompt("p3_step4_tags",
-                                    style_name: spec.name,
+                                    style_name: spec.display_name,
                                     content_type: piece.content_type,
                                     mood: piece.mood,
                                     color_role: piece.color_role_confirmed,
@@ -32,6 +32,18 @@ module Steps
         if normalized.uniq.size < normalized.size
           dups = normalized.tally.select { |_, c| c > 1 }.keys
           errors << "near-duplicate tags detected: #{dups.join(', ')}"
+        end
+
+        # Breadth cap — at most 4 broad tags, the rest long-tail
+        broad_count = tags.count { |t| t["breadth"] == "broad" }
+        errors << "#{broad_count} broad tags (max 4)" if broad_count > 4
+
+        # Style descriptor must be embedded in room/gift/alternate tags
+        style_token = spec.display_name.to_s.split.first.to_s.downcase
+        unless style_token.empty?
+          bare = tags.select { |t| %w[room_or_space_use gift_or_occasion alternate_use].include?(t["angle"]) }
+                     .reject { |t| t["tag"].to_s.downcase.include?(style_token) }
+          errors << "room/gift/alternate tags missing style descriptor: #{bare.map { |t| t['tag'] }.join(', ')}" if bare.any?
         end
 
         if errors.any?

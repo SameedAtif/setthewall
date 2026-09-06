@@ -19,8 +19,14 @@ Rules from Etsy's own guidance:
    - gift_or_occasion (e.g. "housewarming gift", "new home present")
    - alternate_use (e.g. "office print", "studio wall decor" — catching queries the primary
      framing misses; Etsy's own example is a candle also being a "spa day accessory")
-3. **Balance broad and long-tail.** Roughly 3 broad, 10 specific/long-tail.
-4. **No near-duplicates.** "modern wall art" and "modern art wall decor" are duplicative;
+3. **Balance broad and long-tail.** At most 4 broad tags; the remaining 9+ must be
+   specific/long-tail.
+4. **Embed the style descriptor in room/gift/alternate tags.** A tag that is purely generic
+   ("living room wall art", "housewarming gift") misses the style entirely. Fold the style in:
+   "whimsigoth living room wall art", "whimsigoth housewarming gift". The style descriptor
+   (%{style_name} and its close variants) should recur across the tags, not just in the
+   style_descriptor angle.
+5. **No near-duplicates.** "modern wall art" and "modern art wall decor" are duplicative;
    diversify instead.
 
 Return JSON matching the required schema — 13 tags, each labelled with which of the four angles

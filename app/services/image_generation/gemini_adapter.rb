@@ -12,10 +12,16 @@ module ImageGeneration
     def generate(prompt:, n:, style_reference: [])
       urls = []
 
+      parts = [{ text: prompt }]
+      Array(style_reference).each do |ref|
+        part = inline_image_part(ref)
+        parts << part if part
+      end
+
       n.times do
         response = connection.post("models/#{MODEL}:generateContent") do |req|
           req.body = {
-            contents: [{ parts: [{ text: prompt }] }],
+            contents: [{ parts: parts }],
             generationConfig: { responseModalities: ["IMAGE"] }
           }
         end
@@ -46,6 +52,22 @@ module ImageGeneration
         return [inline["data"], inline["mimeType"]] if inline && inline["data"]
       end
       [nil, nil]
+    end
+
+    def inline_image_part(path)
+      return nil if path.blank?
+      return nil unless File.exist?(path.to_s)
+
+      mime = case File.extname(path.to_s).downcase
+      when ".png" then "image/png"
+      when ".jpg", ".jpeg" then "image/jpeg"
+      when ".webp" then "image/webp"
+      else "image/png"
+      end
+
+      { inlineData: { mimeType: mime, data: Base64.strict_encode64(File.binread(path.to_s)) } }
+    rescue StandardError
+      nil
     end
 
     def save_image(base64, mime_type)

@@ -164,7 +164,7 @@ RSpec.describe Steps::Phase3::FillTags do
     angles = %w[style_descriptor room_or_space_use gift_or_occasion alternate_use]
     tags = angles.flat_map.with_index do |angle, ai|
       (ai == 3 ? 4 : 3).times.map do |j|
-        { "tag" => "#{angle.tr('_', ' ')} #{j} wall art", "angle" => angle, "breadth" => "specific_long_tail" }
+        { "tag" => "test #{angle.tr('_', ' ')} #{j} wall art", "angle" => angle, "breadth" => "specific_long_tail" }
       end
     end
     { "tags" => tags, "distinct_angles_covered" => 4, "missing_angles" => [] }
