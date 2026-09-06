@@ -80,4 +80,19 @@ RSpec.describe Agents::Conductor do
 
     expect(run.escalations.map { |e| e["reason"] }).to include("no_legal_agent_disposition")
   end
+
+  describe ".build_piece" do
+    it "seeds a piece with denormalised axes from the committed spec" do
+      piece = described_class.build_piece(style_slug: "whimsigoth-v1",
+                                          scene_spec_id: "behind_sofa_light_neutral", kb_version: "test")
+      expect(piece).to be_a(PieceRecord)
+      expect(piece.mood).to eq("bold_active")
+      expect(piece.room_type).to eq("seated_room")
+      expect(piece.color_role).to eq("color_burst")
+    end
+
+    it "returns nil when the spec is not locked" do
+      expect(described_class.build_piece(style_slug: "nope", scene_spec_id: "x", kb_version: "t")).to be_nil
+    end
+  end
 end

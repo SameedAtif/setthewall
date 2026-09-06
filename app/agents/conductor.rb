@@ -11,15 +11,35 @@ module Agents
     ].freeze
 
     def self.run_speculative(style_slug:, scene_spec_id:)
+      kb_version = Workflow::PreflightCheck.call!(allow_dirty: true).kb_version
+
       run = PipelineRunRecord.create!(
         run_id: "run_#{Date.current.strftime('%Y%m%d')}_#{SecureRandom.hex(2)}",
         mode: "speculative", status: "running",
         style_slug: style_slug, scene_spec_id: scene_spec_id,
-        kb_version: Workflow::PreflightCheck.call!(allow_dirty: true).kb_version,
+        kb_version: kb_version,
+        piece_record: build_piece(style_slug: style_slug, scene_spec_id: scene_spec_id,
+                                  kb_version: kb_version),
         started_at: Time.current
       )
       Workflow::RunMode.with("speculative", run_id: run.run_id) { new(run).call }
       run
+    end
+
+    # Seed a PieceRecord for the piece-pipeline half (Track C → Phase 3) from the committed
+    # style/scene spec, denormalising the axis values C1 onward read. Returns nil when the spec
+    # isn't locked yet — a fresh style's Track A/B will lock it in a committed pass first.
+    def self.build_piece(style_slug:, scene_spec_id:, kb_version:)
+      spec  = KnowledgeBase::StyleSpec.load(style_slug)
+      scene = spec.scene(scene_spec_id)
+
+      piece = PieceRecord.create!(style_spec_slug: style_slug, scene_spec_id: scene_spec_id,
+                                  kb_version: kb_version, status: "pending")
+      piece.apply_spec!(spec, scene)
+      piece.save!
+      piece
+    rescue KnowledgeBase::IncompleteSpecError
+      nil
     end
 
     def initialize(run) = @run = run
