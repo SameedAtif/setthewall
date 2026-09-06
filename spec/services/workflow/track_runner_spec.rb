@@ -2,7 +2,12 @@ require "rails_helper"
 
 RSpec.describe Workflow::TrackRunner do
   def validation_content
-    { "findings" => [], "recommended_style_focus" => "x", "methodology_caveats" => "" }
+    { "breadth_assessment" => "single_coherent_style",
+      "findings" => [],
+      "cross_check_attempts" => ["Pinterest Trends search"],
+      "single_recommended_focus" => "Ensō minimalist print",
+      "recommendation_reasoning" => "best demand-to-competition ratio",
+      "methodology_caveats" => "" }
   end
 
   def reference_set_content
@@ -27,6 +32,41 @@ RSpec.describe Workflow::TrackRunner do
         expect(run.human_gates.open.count).to eq(1)
         expect(run.human_gates.open.first.step_id).to eq("A0")
       end
+    end
+
+    it "threads A0's narrowed pick forward as the style name" do
+      fragmented = validation_content.merge(
+        "breadth_assessment" => "fragments_into_substyles",
+        "single_recommended_focus" => "Ensō print"
+      )
+      run = nil
+      stub_reasoned_runner(content: fragmented) do
+        run = start_track_a
+        gate = run.human_gates.open.last
+        gate.update!(status: "approved", reviewer_decision: gate.agent_proposal, closed_at: Time.current)
+        stub_reasoned_runner(content: reference_set_content) do
+          described_class.resume(gate)
+        end
+      end
+
+      expect(run.reload.context["style_name"]).to eq("Ensō print")
+      expect(run.current_step).to eq("A1")
+    end
+
+    it "routes a return_to_a1 A2 gate back to A1 instead of advancing" do
+      run = create(:track_run, status: "awaiting_human", current_step: "A2",
+                               context: { "style_slug" => "s", "style_name" => "X",
+                                          "reference_images" => %w[u1 u2 u3] })
+      gate = create(:human_gate, piece_record: nil, track_run: run, step_id: "A2", status: "approved",
+                                 agent_proposal: { "result" => { "mood" => "mixed" },
+                                                   "recommended_action" => "return_to_a1" }.to_json)
+
+      stub_reasoned_runner(content: reference_set_content) do
+        described_class.resume(gate)
+      end
+
+      expect(run.reload.current_step).to eq("A1")
+      expect(run.context["mood"]).to be_nil
     end
 
     it "threads context through the full track to a locked spec" do

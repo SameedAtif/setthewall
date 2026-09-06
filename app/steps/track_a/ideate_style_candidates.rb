@@ -27,10 +27,11 @@ module Steps
                 "print business — a broad, shallow pass, not a deep validation of any one style.",
           question: prompt("a_ideate_style_candidates",
                            candidate_count: count, direction_clause: direction_clause),
-          max_rounds: 10   # broader survey than A0's single-style deep dive, so a larger budget
+          max_rounds: 10,   # broader survey than A0's single-style deep dive, so a larger budget
+          on_progress: context[:on_progress]
         )
 
-        candidates = result[:content]["candidates"] || []
+        candidates = Array(result[:content]["candidates"]).select { |c| c.is_a?(Hash) }
         min_sources = constraints["source_diversity"]["min_independent_sources_per_candidate"]
         weak = candidates.select { |c| c["independent_source_count"].to_i < min_sources }
 

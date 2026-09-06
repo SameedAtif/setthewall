@@ -16,6 +16,9 @@ module Workflow
     # threads into the accumulated context for downstream steps. Keys are strings
     # (the context is jsonb).
     THREADING = {
+      # A0's narrowed pick (style_name_used, module 01c §3.1) becomes the style name the rest of
+      # the track treats as "the" style — so a broad name that fragmented is not retyped downstream.
+      "A0" => ->(out) { { "style_name" => out["style_name_used"] }.compact },
       "A1" => ->(out) { { "reference_images" => reference_images_from(out) } },
       "A2" => ->(out) { { "mood" => out.dig("result", "mood") || out["mood"] } },
       "A3" => ->(out) { { "content_type" => out.dig("result", "content_type") || out["content_type"] } },
@@ -50,6 +53,11 @@ module Workflow
         run.update!(current_step: gate.step_id, status: "running")
         StepDispatcher.call(step_id: gate.step_id, piece: nil, context: context)
         run.update!(status: "complete")
+      elsif (target = back_to_step(gate))
+        # The step vetoed its own advancement (module 01 §6.3: A2's "mixed"/weak mood must not be
+        # forced) — rebuild the earlier step instead of carrying an invalid value forward.
+        run.update!(current_step: target, status: "running")
+        advance(run)
       else
         run.context = run.context.deep_merge(thread(gate.step_id, gate.effective_output).compact)
         nxt = next_step(run.track, gate.step_id)
@@ -61,6 +69,16 @@ module Workflow
         end
       end
       run
+    end
+
+    # Some gates recommend going back to an earlier step rather than advancing. Returns the target
+    # step id, or nil to advance normally. Today only A2 vetoes: a "mixed"/weak mood means "narrow
+    # the reference set and re-run A1", not "thread a mixed mood into A3…A5" (which would later
+    # crash StyleSpecWriter with an unclassifiable axis value).
+    def self.back_to_step(gate)
+      return nil unless gate.step_id == "A2"
+
+      gate.effective_output["recommended_action"] == "return_to_a1" ? "A1" : nil
     end
 
     def self.next_step(track, step_id)

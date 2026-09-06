@@ -13,7 +13,7 @@
   <p class="text-gray-600 mt-1"><%= @gate.notes %></p>
 
   <h2 class="text-lg font-semibold mt-6">Agent proposal</h2>
-  <pre class="bg-gray-50 border rounded p-3 text-sm overflow-auto"><%= JSON.pretty_generate(@agent_proposal) %></pre>
+  <%= render_agent_proposal(@gate, @agent_proposal) %>
 
   <h2 class="text-lg font-semibold mt-6">Context</h2>
   <dl class="mt-2 text-sm grid grid-cols-2 gap-2">

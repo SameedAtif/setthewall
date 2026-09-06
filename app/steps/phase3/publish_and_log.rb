@@ -28,6 +28,7 @@ module Steps
         end
 
         payload = build_payload(photos)
+        Workflow::RunMode.require_committed!("Etsy publish")
         result  = Etsy::Adapter.build.create_listing(payload: payload)
 
         if result.status == "pending_manual"

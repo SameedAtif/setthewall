@@ -1,0 +1,62 @@
+meta:
+  source: "Module 09 §5 — QA specialist thresholds"
+  citation: >
+    Where a threshold restates an existing rule it cites that rule and does not redefine it (a2
+    markers/images from mood.yml validation; tags from etsy_tags.yml). Where no source exists —
+    image conformance axes, single-word tag tolerance — it is a project convention and is marked
+    as such, following generation_constraints.yml's precedent.
+  volatility: static
+
+rules:
+  research_qa:
+    search_floor:
+      restates: "module 00b Search::ReasonedRunner min_rounds; A0 = 4, A1 = 5"
+      on_fail: blocking
+    source_independence:
+      min_sources_per_item: 2
+      restates: "reference_set_criteria.yml image_requirements"
+      on_fail: advisory
+
+  axis_qa:
+    a2:
+      required_markers: 2
+      required_images: 3
+      restates: "mood.yml validation.rule — 3+ images across 2+ of the 4 markers"
+      on_fail: blocking
+
+  image_qa:
+    scope: >
+      Conformance only. This agent does not judge aesthetic merit, marketability, or whether one
+      candidate is nicer than another. No document in the knowledge base defines image quality, so
+      an agent scoring it would be inventing a standard. Merit is decided at C2_chosen, which is
+      Tier 3.
+    conformance_axes: [mood, content_type, color_role, frame_form]
+    reference_comparison:
+      enabled: true
+      max_reference_images: 4
+      reasoning: >
+        A1's curated set is the only recorded statement of what this style looks like. Comparing
+        candidates against it is checkable; comparing them against taste is not.
+    on_no_conforming_candidate: blocking
+
+  listing_qa:
+    tags:
+      required_slots: 13
+      max_single_word: 3
+      restates: "etsy_tags.yml slot_count and phrase_style"
+      convention_note: "max_single_word is a project convention; Etsy states no such limit."
+    title:
+      min_first_six_chars: 20
+      convention_note: "Project convention operationalising the 'first six words' guidance."
+    policy:
+      shipping_ratio_warn: 0.4
+      restates: "etsy_policy.yml validation.warn_if — heuristic, warns rather than blocks"
+
+  customer_safety_qa:
+    watched_topics: [hanging_hardware, weight_ratings, conservation_glass, humidity_placement]
+    on_untraceable_claim: blocking
+    citation: "Phase 2 §6 Limitation 4 — customer-facing accuracy must be fact-checked"
+
+  evidence_qa:
+    unresolvable_citation: void_disposition_and_escalate
+    citation: "decision_rules.yml SR11"

@@ -34,11 +34,43 @@ RSpec.describe IdeateStylesJob do
     expect(survey.status).to eq("failed")
     expect(survey.last_error).to include("boom")
   end
+
+  it "tracks progress from queued to done" do
+    stub_reasoned_runner(content: { "candidates" => [], "survey_notes" => nil }) do
+      described_class.perform_now
+    end
+    survey = IdeationSurvey.last
+    expect(survey.status).to eq("complete")
+    expect(survey.progress).to eq("done")
+  end
+
+  it "passes an on_progress callback that updates the survey" do
+    captured_context = nil
+    stub_singleton(
+      Workflow::StepDispatcher, :call,
+      lambda do |**kwargs|
+        captured_context = kwargs[:context]
+        Steps::StepResult.new(status: :awaiting_human,
+                              data: { candidates: [], weak_candidates: [], survey_notes: nil },
+                              message: "x")
+      end
+    ) do
+      described_class.perform_now
+    end
+
+    survey = IdeationSurvey.last
+    captured_context[:on_progress].call("researching")
+    expect(survey.reload.progress).to eq("researching")
+  end
 end
 
 RSpec.describe StartTrackJob do
   it "starts a Track A run" do
-    stub_reasoned_runner(content: { "findings" => [], "recommended_style_focus" => "x", "methodology_caveats" => "" }) do
+    stub_reasoned_runner(content: { "breadth_assessment" => "single_coherent_style",
+                                    "findings" => [], "cross_check_attempts" => ["x"],
+                                    "single_recommended_focus" => "Ensō print",
+                                    "recommendation_reasoning" => "best ratio",
+                                    "methodology_caveats" => "" }) do
       described_class.perform_now(track: "track_a", style_slug: "x", style_name: "X")
     end
     run = TrackRun.last

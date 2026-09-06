@@ -3,7 +3,7 @@
 # These fakes satisfy that chain and let a spec pin the model's returned content —
 # either a single `content` for every schema, or a per-schema `contents` mapping.
 module LlmStubs
-  Message = Struct.new(:content, :tool_call?, keyword_init: true)
+  Message = Struct.new(:content, :tool_call?, :tool_calls, keyword_init: true)
 
   class Chat
     attr_reader :messages, :asked
@@ -13,7 +13,7 @@ module LlmStubs
       @contents = contents
       @schema = nil
       @asked = []
-      @messages = Array.new(tool_calls) { Message.new(content: nil, tool_call?: true) }
+      @messages = Array.new(tool_calls) { Message.new(content: nil, tool_call?: true, tool_calls: { _: nil }) }
     end
 
     def with_schema(schema)

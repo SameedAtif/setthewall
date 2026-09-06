@@ -2,7 +2,12 @@ require "rails_helper"
 
 RSpec.describe Steps::TrackA do
   def validation_content
-    { "findings" => [], "recommended_style_focus" => "x", "methodology_caveats" => "" }
+    { "breadth_assessment" => "single_coherent_style",
+      "findings" => [],
+      "cross_check_attempts" => ["Pinterest Trends search"],
+      "single_recommended_focus" => "Ensō minimalist print",
+      "recommendation_reasoning" => "best demand-to-competition ratio",
+      "methodology_caveats" => "" }
   end
 
   def reference_set_content
@@ -20,6 +25,47 @@ RSpec.describe Steps::TrackA do
         result = described_class::ValidateStyle.call(piece: nil, context: { style_name: "Japandi", style_slug: "japandi-v1" })
         expect(result).to be_awaiting_human
         expect(result.data[:findings]).to eq(validation_content)
+      end
+    end
+
+    it "flags a fragmented style in the gate message" do
+      fragmented = validation_content.merge(
+        "breadth_assessment" => "fragments_into_substyles",
+        "findings" => [{ "theme" => "a" }, { "theme" => "b" }],
+        "single_recommended_focus" => "Ensō print"
+      )
+      stub_reasoned_runner(content: fragmented) do
+        result = described_class::ValidateStyle.call(piece: nil, context: { style_name: "Japandi", style_slug: "japandi-v1" })
+        expect(result).to be_awaiting_human
+        expect(result.message).to include("FRAGMENTED")
+        expect(result.message).to include("Japandi")
+        expect(result.message).to include("2 distinct sub-themes")
+      end
+    end
+
+    it "surfaces the cross-check attempt count in the gate message" do
+      content = validation_content.merge("cross_check_attempts" => %w[route-a route-b route-c])
+      stub_reasoned_runner(content: content) do
+        result = described_class::ValidateStyle.call(piece: nil, context: { style_name: "Japandi", style_slug: "japandi-v1" })
+        expect(result.message).to include("3 route(s)")
+      end
+    end
+
+    it "records style_name_used as the narrowed pick when fragmented" do
+      fragmented = validation_content.merge(
+        "breadth_assessment" => "fragments_into_substyles",
+        "single_recommended_focus" => "Ensō print"
+      )
+      stub_reasoned_runner(content: fragmented) do
+        result = described_class::ValidateStyle.call(piece: nil, context: { style_name: "Japandi", style_slug: "japandi-v1" })
+        expect(result.data[:style_name_used]).to eq("Ensō print")
+      end
+    end
+
+    it "records style_name_used as the original name when coherent" do
+      stub_reasoned_runner(content: validation_content) do
+        result = described_class::ValidateStyle.call(piece: nil, context: { style_name: "Japandi", style_slug: "japandi-v1" })
+        expect(result.data[:style_name_used]).to eq("Japandi")
       end
     end
 
@@ -55,6 +101,23 @@ RSpec.describe Steps::TrackA do
         expect(result).to be_failed
       end
     end
+
+    it "reports no images when the images field is a raw string" do
+      stub_reasoned_runner(content: reference_set_content.merge("images" => "not an array")) do
+        result = described_class::BuildReferenceSet.call(piece: nil, context: { style_name: "Japandi" })
+        expect(result).to be_awaiting_human
+        expect(result.data[:issues]).to include("no candidate images returned")
+      end
+    end
+
+    it "drops image entries that are not hashes" do
+      mixed = reference_set_content.merge("images" => ["oops", reference_set_content["images"].first])
+      stub_reasoned_runner(content: mixed) do
+        result = described_class::BuildReferenceSet.call(piece: nil, context: { style_name: "Japandi" })
+        expect(result).to be_awaiting_human
+        expect(result.data[:issues]).not_to include("no candidate images returned")
+      end
+    end
   end
 
   describe "SortMood (A2)" do
@@ -84,6 +147,15 @@ RSpec.describe Steps::TrackA do
         expect(result.data[:recommended_action]).to eq("return_to_a1")
       end
     end
+
+    it "reports an empty response instead of crashing" do
+      stub_llm(content: "") do
+        result = described_class::SortMood.call(piece: nil, context: { reference_images: %w[u1 u2] })
+        expect(result).to be_awaiting_human
+        expect(result.message).to include("empty response")
+        expect(result.data[:recommended_action]).to eq("return_to_a1")
+      end
+    end
   end
 
   describe "SortContentType (A3)" do
@@ -105,6 +177,22 @@ RSpec.describe Steps::TrackA do
         expect(result.data[:recommended_action]).to eq("reconsider")
       end
     end
+
+    it "reports an empty response instead of crashing" do
+      stub_llm(content: "") do
+        result = described_class::SortContentType.call(piece: nil, context: { reference_images: %w[u1 u2] })
+        expect(result).to be_awaiting_human
+        expect(result.message).to include("empty response")
+        expect(result.data[:recommended_action]).to eq("reconsider")
+      end
+    end
+
+    it "parses a fenced JSON response" do
+      stub_llm(content: "```json\n#{content.to_json}\n```") do
+        result = described_class::SortContentType.call(piece: nil, context: { reference_images: %w[u1 u2] })
+        expect(result.data[:recommended_action]).to eq("confirm")
+      end
+    end
   end
 
   describe "SortFrameForm (A4)" do
@@ -120,6 +208,14 @@ RSpec.describe Steps::TrackA do
       stub_llm(content: { "frame_form" => "angular", "consistency" => "mixed", "tiebreaker_used" => true, "reasoning" => "" }) do
         result = described_class::SortFrameForm.call(piece: nil, context: { reference_images: %w[u1 u2], mood: "calm_ordered" })
         expect(result.data[:note]).to include("tiebreaker")
+      end
+    end
+
+    it "reports an empty response instead of crashing" do
+      stub_llm(content: "") do
+        result = described_class::SortFrameForm.call(piece: nil, context: { reference_images: %w[u1 u2], mood: "calm_ordered" })
+        expect(result).to be_awaiting_human
+        expect(result.message).to include("empty response")
       end
     end
   end
@@ -140,6 +236,15 @@ RSpec.describe Steps::TrackA do
       track_kb_file(Pipeline::KB_ROOT.join("style_specs/lock-style.yml"))
       expect(result).to be_ok
       expect(KnowledgeBase::StyleSpec.load("lock-style").style_level[:mood]).to eq("calm_ordered")
+    end
+
+    it "refuses to lock an unclassifiable mood" do
+      result = described_class::LockStyleEntry.call(
+        piece: nil,
+        context: context.merge(mood: "mixed", confirmed: true)
+      )
+      expect(result).to be_failed
+      expect(result.message).to include("mood=\"mixed\"")
     end
   end
 end

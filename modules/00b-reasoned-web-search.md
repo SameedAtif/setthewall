@@ -81,14 +81,21 @@ module Tools
       answer reliably from training data, or need to attribute a claim to a real, checkable
       source. Issue multiple distinct, focused queries rather than one broad query when you
       need to cross-check a finding across independent sources.
+
+      Set include_images: true when you need actual photo URLs — e.g. building a visual
+      reference set — not just page links. Without it, results are text-only and contain no
+      usable image URLs; do not report or invent an image URL you did not actually receive
+      from a call with include_images: true.
     DESC
 
     param :query, type: :string,
           desc: "A focused search query, 2-6 words works best."
     param :max_results, type: :integer, required: false,
           desc: "Number of results to return. Default 5, max 10."
+    param :include_images, type: :boolean, required: false,
+          desc: "Set true to also retrieve real image URLs found on the result pages. Default false (text only)."
 
-    def execute(query:, max_results: 5)
+    def execute(query:, max_results: 5, include_images: false)
       max_results = max_results.to_i.clamp(1, 10)
 
       response = connection.post("search") do |req|
@@ -97,7 +104,9 @@ module Tools
           query: query,
           max_results: max_results,
           include_answer: false,
-          search_depth: "basic"
+          search_depth: "basic",
+          include_images: include_images,
+          include_image_descriptions: include_images
         }
       end
 
@@ -105,18 +114,24 @@ module Tools
         return { error: "search request failed (HTTP #{response.status})", query: query }
       end
 
-      results = JSON.parse(response.body)["results"] || []
-      if results.empty?
+      body = JSON.parse(response.body)
+      results = body["results"] || []
+      images  = body["images"] || []
+
+      if results.empty? && images.empty?
         return { error: "no results found", query: query }
       end
 
-      results.map do |r|
-        {
-          title: r["title"],
-          url: r["url"],
-          snippet: r["content"].to_s.truncate(500)
+      {
+        results: results.map { |r|
+          { title: r["title"], url: r["url"], snippet: r["content"].to_s.truncate(500) }
+        },
+        images: images.map { |img|
+          # Tavily returns either bare URL strings or {url:, description:} objects depending
+          # on include_image_descriptions — normalize to one shape.
+          img.is_a?(Hash) ? { url: img["url"], description: img["description"] } : { url: img, description: nil }
         }
-      end
+      }
     rescue Faraday::Error, JSON::ParserError => e
       { error: "search tool error: #{e.message}", query: query }
     end
@@ -232,8 +247,18 @@ module Search
           one broad query.
         - Cross-check any important finding against at least one independent source before
           treating it as established — do not accept a single source's claim as settled.
-        - You have a budget of up to #{@max_rounds} searches. Stop once you have enough
-          independently-confirmed evidence to answer — do not pad with redundant searches.
+        - If the task above specifies a numbered methodology or names required checks, you
+          MUST attempt every one of them explicitly. "I already have enough evidence" is not
+          a reason to skip a check the task specifically required — completeness of the
+          required steps comes before efficiency. If a specific required check proves
+          genuinely inaccessible (e.g. a data source that doesn't return to search tools),
+          try at least one alternate route to satisfy the same requirement before giving up
+          on it, and report what you tried and why it failed. Do not silently substitute a
+          weaker check and present the requirement as satisfied.
+        - You have a budget of up to #{@max_rounds} searches. Once every required check has
+          been genuinely attempted, stop rather than padding with redundant searches — but do
+          not stop early by treating "enough evidence for some checks" as "done with all of
+          them."
         - If sources disagree, say so explicitly in your answer rather than silently picking
           one.
         - Every substantive claim in your final answer must trace back to something you
@@ -308,10 +333,20 @@ end
 ## 6. Verification for this module
 
 ```bash
-# 1. Tool executes and returns real results (requires TAVILY_API_KEY set)
+# 1. Tool executes text-only search (requires TAVILY_API_KEY set)
 bin/rails runner '
   r = Tools::WebSearch.new.execute(query: "japandi wall art style guide")
-  puts r.first.is_a?(Hash) ? "ok: #{r.size} results, first title=#{r.first[:title]}" : r.inspect
+  ok = r[:results].is_a?(Array) && r[:results].any?
+  puts ok ? "text search ok: #{r[:results].size} results, first title=#{r[:results].first[:title]}" : r.inspect
+  puts "images key present but empty by default: #{r[:images] == []}"
+'
+
+# 1b. Tool executes WITH include_images and actually returns real image URLs — this is the
+#     specific capability A1 needs and the original gap that produced zero candidates.
+bin/rails runner '
+  r = Tools::WebSearch.new.execute(query: "japandi wall art living room", include_images: true)
+  puts "images returned: #{r[:images].size}"
+  puts r[:images].any? ? "sample url: #{r[:images].first[:url]}" : "NONE — investigate Tavily plan/key before trusting A1"
 '
 
 # 2. Capability detection runs without raising even if the method is absent

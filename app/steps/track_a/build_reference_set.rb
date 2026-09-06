@@ -15,10 +15,13 @@ module Steps
           model: Pipeline::TEXT_MODEL,
           schema: Schemas::TrackA::ReferenceSetSchema,
           task: "You are assembling a curated reference-image set for a wall-art style, following " \
-                "the search process and per-image requirements given below exactly.",
+                "the search process and per-image requirements given below exactly. Every search " \
+                "call must set include_images: true — this task is unusable without real image " \
+                "URLs, and a text-only search call will not produce any.",
           question: text,
-          max_rounds: 8   # 1 retailer-guide search + 3 distinct Pinterest queries + 1-2 blog
+          max_rounds: 8,  # 1 retailer-guide search + 3 distinct Pinterest queries + 1-2 blog
           # searches, per the source's own 4-step process
+          min_rounds: 5   # search floor — the 3 Pinterest queries are required, not a suggestion
         )
         result = search_result[:content]
         issues = validate_set(result)
@@ -26,7 +29,9 @@ module Steps
         needs_human(
           "Curate the reference set (#{search_result[:search_calls_made]} live searches performed). " \
           "#{issues.any? ? "Automated checks flagged: #{issues.join('; ')}" : 'Automated checks passed.'}",
-          { candidates: result, issues: issues, criteria: criteria.rules["image_requirements"] }
+          { candidates: result, issues: issues, criteria: criteria.rules["image_requirements"],
+            search_calls_made: search_result[:search_calls_made],
+            min_rounds_met: search_result[:min_rounds_met] }
         )
       rescue Search::NoSearchPerformedError => e
         fail_step("A1 could not complete: #{e.message}", { text: text })
@@ -37,7 +42,7 @@ module Steps
       # Mechanical checks only. The curation judgment stays with the human.
       def validate_set(result)
         issues = []
-        images = result["images"] || []
+        images = Array(result["images"]).select { |i| i.is_a?(Hash) }
 
         if images.empty?
           issues << "no candidate images returned"

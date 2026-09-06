@@ -7,10 +7,36 @@ RSpec.describe "Pipeline dashboard", type: :request do
     expect(response.body).to include("Pipeline")
   end
 
+  it "shows Track A session state (next step + decided axes)" do
+    create(:track_run, track: "track_a", style_slug: "japandi-v1", status: "awaiting_human",
+                       current_step: "A2",
+                       context: { "style_slug" => "japandi-v1", "style_name" => "Ensō print",
+                                  "mood" => "calm_ordered" })
+
+    get root_path
+
+    expect(response.body).to include("japandi-v1")
+    expect(response.body).to include("Ensō print")
+    expect(response.body).to include("A3")   # next step
+    expect(response.body).to include("mood=calm_ordered")
+  end
+
   it "queues an ideation survey" do
     expect { post pipeline_ideate_path, params: { direction: "calm", count: 3 } }
       .to have_enqueued_job(IdeateStylesJob).with(direction: "calm", count: 3)
     expect(response).to redirect_to(root_path)
+  end
+
+  it "renders the surveys turbo frame with running status" do
+    create(:ideation_survey, status: "running", progress: "researching")
+    create(:ideation_survey, status: "complete", candidates: [{ "name" => "Warm minimal" }])
+
+    get pipeline_surveys_path
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include('id="surveys"')
+    expect(response.body).to include("researching")
+    expect(response.body).to include("Warm minimal")
   end
 
   it "queues Track A" do

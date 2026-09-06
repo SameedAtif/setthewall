@@ -1,0 +1,32 @@
+<div class="max-w-3xl mx-auto p-6">
+  <div class="mb-4">
+    <%= link_to "← Back", dossier_reviews_path, class: "text-blue-600 hover:underline" %>
+  </div>
+
+  <h1 class="text-2xl font-semibold mb-2">Dossier — <%= @run.run_id %></h1>
+  <p class="text-sm text-gray-500 mb-6"><%= @run.style_slug %> / <%= @run.scene_spec_id %> · <%= @run.status %></p>
+
+  <pre class="bg-gray-50 border rounded p-4 text-sm overflow-auto whitespace-pre-wrap"><%= @run.dossier_markdown %></pre>
+
+  <%= form_with url: dossier_review_path(@run.run_id), method: :patch, class: "mt-6 space-y-4" do |f| %>
+    <div>
+      <%= f.label :notes, "Reviewer notes", class: "block text-sm font-medium" %>
+      <%= f.text_area :notes, rows: 3, class: "mt-1 w-full border rounded p-2" %>
+    </div>
+
+    <div class="flex gap-2">
+      <button type="submit" name="decision" value="approve"
+              class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Approve &amp; commit</button>
+      <button type="submit" name="decision" value="abandon"
+              class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Abandon</button>
+    </div>
+  <% end %>
+
+  <div class="mt-4">
+    <%= form_with url: dossier_review_path(@run.run_id), method: :patch, class: "flex items-center gap-2" do |f| %>
+      <%= f.text_field :step_id, placeholder: "step_id to re-run from", class: "border rounded px-3 py-1.5 text-sm font-mono" %>
+      <button type="submit" name="decision" value="rerun"
+              class="bg-gray-900 text-white px-3 py-1.5 rounded text-sm hover:bg-gray-700">Re-run from step</button>
+    <% end %>
+  </div>
+</div>

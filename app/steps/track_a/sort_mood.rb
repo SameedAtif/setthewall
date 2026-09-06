@@ -12,9 +12,18 @@ module Steps
       def perform
         images = context.fetch(:reference_images)
 
-        result = RubyLLM.chat(model: Pipeline::VISION_MODEL)
-                        .with_schema(Schemas::TrackA::MoodSchema)
-                        .ask(prompt("a2_mood"), with: images).content
+        result = Pipeline::Json.normalize(
+          RubyLLM.chat(model: Pipeline::VISION_MODEL)
+                 .with_schema(Schemas::TrackA::MoodSchema)
+                 .ask(prompt("a2_mood"), with: images).content
+        )
+
+        if result.empty?
+          return needs_human(
+            "A2 got no scorecard back from the vision model (empty response). Re-run A2.",
+            { result: result, recommended_action: "return_to_a1" }
+          )
+        end
 
         if result["mood"] == "mixed"
           return needs_human(

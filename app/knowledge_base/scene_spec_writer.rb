@@ -3,7 +3,7 @@ module KnowledgeBase
     # Overwrites the axes for one scene under an existing style spec.
     # Refuses to run if style_level hasn't been locked yet (A5 must complete first).
     def self.write_scene_axes(style_slug:, scene_id:, scene_name:, template_ref:, axes:)
-      path = Pipeline::KB_ROOT.join("style_specs", "#{style_slug}.yml")
+      path = Workflow::RunMode.write_root.join("style_specs", "#{style_slug}.yml")
       unless path.exist?
         raise IncompleteSpecError,
               "Style spec '#{style_slug}' not found. Run Track A (module 01) first."

@@ -5,13 +5,18 @@ class PipelineController < ApplicationController
     @open_gates    = HumanGate.open.includes(:piece_record, :track_run).order(opened_at: :desc).limit(30)
     @failed_pieces = PieceRecord.where(status: "failed").order(updated_at: :desc).limit(10)
     @failed_runs   = TrackRun.where(status: "failed").order(updated_at: :desc).limit(10)
-    @surveys       = IdeationSurvey.order(created_at: :desc).limit(10)
     @latest_cycle  = latest_cycle_id
   end
 
   def ideate
     IdeateStylesJob.perform_later(direction: params[:direction].presence, count: params[:count].presence&.to_i)
     redirect_to root_path, notice: "Ideation survey queued — it'll appear in the list shortly."
+  end
+
+  # Turbo frame endpoint for the Style candidates list. Polled by the frontend so progress and
+  # completion appear without a manual refresh.
+  def surveys
+    @surveys = IdeationSurvey.order(created_at: :desc).limit(10)
   end
 
   def start_track_a

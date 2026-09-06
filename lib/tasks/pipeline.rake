@@ -90,4 +90,46 @@ namespace :pipeline do
     puts "  open gate:   ##{run.human_gates.open.order(:opened_at).last&.id || '(none)'} (step=#{run.human_gates.open.last&.step_id})"
     puts "  gates total: #{run.human_gates.count} (#{run.human_gates.closed.count} closed)"
   end
+
+  desc "Run the next (or a specified) Track A step, auto-filling context already decided this " \
+       "session. Usage: rake pipeline:track_a_step style_slug=japandi-v1 " \
+       "[step=A2] [confirmed=true] [context='{\"mood\":\"calm_ordered\"}']"
+  task track_a_step: :environment do
+    slug    = ENV.fetch("style_slug")
+    session = Workflow::TrackASession.load(slug)
+
+    step_id = ENV["step"] || Workflow::TrackASequence.next_step_for(session)
+
+    fresh = ENV["context"] ? JSON.parse(ENV["context"]).symbolize_keys : {}
+    fresh[:confirmed] = true if ENV["confirmed"] == "true"
+
+    context = Workflow::TrackASequence.build_context(step_id, session, fresh)
+    missing = Workflow::TrackASequence.missing_required(step_id, context)
+
+    if missing.any?
+      abort "#{step_id} needs #{missing.join(', ')} — pass via context='{...}' " \
+            "(nothing in the session yet supplies #{missing.join(', ')} for this step)."
+    end
+
+    result = Workflow::StepDispatcher.call(step_id: step_id, piece: nil, context: context)
+
+    Workflow::TrackASession.record_step_result!(slug, step_id, result.data) unless result.failed?
+
+    puts "#{step_id} -> #{result.status}"
+    puts result.message
+    puts JSON.pretty_generate(result.data)
+    puts
+    if result.awaiting_human?
+      puts "Re-run with confirmed=true (and any edits via context=) to proceed, or move to the " \
+           "next step by re-running this task with no `step=` argument."
+    else
+      puts "Next: rake pipeline:track_a_step style_slug=#{slug}"
+    end
+  end
+
+  desc "Reset a Track A session (does not touch any already-locked style_specs file)."
+  task track_a_reset: :environment do
+    Workflow::TrackASession.reset!(ENV.fetch("style_slug"))
+    puts "Session cleared for #{ENV.fetch('style_slug')}."
+  end
 end

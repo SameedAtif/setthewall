@@ -1,7 +1,7 @@
 module KnowledgeBase
   class StyleSpecWriter
     def self.create_or_update_style_level(slug:, name:, mood:, content_type:, frame_form:)
-      path = Pipeline::KB_ROOT.join("style_specs", "#{slug}.yml")
+      path = Workflow::RunMode.write_root.join("style_specs", "#{slug}.yml")
 
       doc = path.exist? ? YAML.safe_load_file(path, permitted_classes: [Date]) : {}
       doc["slug"]      = slug

@@ -1,0 +1,24 @@
+id: behind_sofa_light_neutral
+name: "Behind sofa — light neutral"
+image_path: "scene_templates/assets/behind_sofa_light_neutral.png"
+
+# Physical measurements in the scene image, in pixels.
+#
+# GENERATED MOCKUP (1408x768, gemini-3.1-flash-image). image_width_px / image_height_px are
+# real (read from the file); every other value below is an UNVERIFIED ESTIMATE and must be
+# calibrated by hand against the actual image before Phase 2 Step 6 runs pixel math on it
+# (see scene_templates/README.md). Track B only classifies the scene; it does not use these.
+measurements:
+  image_width_px: 1408
+  image_height_px: 768
+
+  # Pixels per inch, calibrated against a known-size object in the scene (e.g. sofa ~84" wide).
+  # TODO: calibrate — do not trust this estimate.
+  pixels_per_inch: 24
+
+  # Anchor rectangles used by Step 6. Only the ones relevant to this scene type are populated.
+  furniture_top_edge_y_px: 500        # TODO: top of the sofa — for the 8-10" gap rule
+  furniture_width_px: 900             # TODO: sofa width — for the 2/3-3/4 fill + group-width rules
+  wall_zone: { x: 180, y: 80, width: 1050, height: 400 }   # TODO: placement region above the sofa
+  seated_eye_level_y_px: 460          # TODO: only for room_type: seated_room
+  standing_eye_level_y_px: 380        # TODO: only for room_type: hallway or no_furniture_wall

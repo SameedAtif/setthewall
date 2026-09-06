@@ -49,10 +49,43 @@ RSpec.describe Steps::TrackA::IdeateStyleCandidates do
     expect(captured[:question]).to include("bold and colorful")
   end
 
+  it "forwards the on_progress callback to the runner" do
+    callback = ->(_message) { }
+    captured = capture_runner_call { described_class.call(piece: nil, context: { on_progress: callback }) }
+    expect(captured[:on_progress]).to eq(callback)
+  end
+
   it "fails when no search was performed" do
     stub_singleton(Search::ReasonedRunner, :call, ->(**) { raise Search::NoSearchPerformedError }) do
       result = described_class.call(piece: nil, context: {})
       expect(result).to be_failed
+    end
+  end
+
+  it "treats a non-array candidates field as no candidates" do
+    stub_reasoned_runner(content: { "candidates" => "not an array", "survey_notes" => "x" }) do
+      result = described_class.call(piece: nil, context: {})
+      expect(result).to be_awaiting_human
+      expect(result.data[:candidates]).to eq([])
+      expect(result.data[:weak_candidates]).to eq([])
+    end
+  end
+
+  it "drops candidate entries that are not hashes" do
+    content = { "candidates" => ["oops", { "name" => "Good", "independent_source_count" => 3,
+                                            "sources" => [], "competition_read" => "medium" }],
+                "survey_notes" => "x" }
+    stub_reasoned_runner(content: content) do
+      result = described_class.call(piece: nil, context: {})
+      expect(result.data[:candidates].map { |c| c["name"] }).to eq(["Good"])
+    end
+  end
+
+  it "does not crash when the whole content is a raw string" do
+    stub_reasoned_runner(content: "freeform prose") do
+      result = described_class.call(piece: nil, context: {})
+      expect(result).to be_awaiting_human
+      expect(result.data[:candidates]).to eq([])
     end
   end
 end

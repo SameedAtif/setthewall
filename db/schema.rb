@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_08_29_111557) do
+ActiveRecord::Schema[8.0].define(version: 2026_09_02_162052) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -36,9 +36,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_29_111557) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "track_run_id"
+    t.string "reviewer_kind", default: "human", null: false
+    t.jsonb "citations", default: [], null: false
+    t.string "verdict"
     t.index ["opened_at"], name: "index_human_gates_on_opened_at"
     t.index ["piece_record_id", "status"], name: "index_human_gates_on_piece_record_id_and_status"
     t.index ["piece_record_id"], name: "index_human_gates_on_piece_record_id"
+    t.index ["reviewer_kind"], name: "index_human_gates_on_reviewer_kind"
     t.index ["step_id", "status"], name: "index_human_gates_on_step_id_and_status"
     t.index ["track_run_id"], name: "index_human_gates_on_track_run_id"
   end
@@ -53,6 +57,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_29_111557) do
     t.text "last_error"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "progress"
     t.index ["created_at"], name: "index_ideation_surveys_on_created_at"
     t.index ["status"], name: "index_ideation_surveys_on_status"
   end
@@ -182,6 +187,44 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_29_111557) do
     t.index ["style_spec_slug", "scene_spec_id"], name: "index_piece_records_on_style_spec_slug_and_scene_spec_id"
   end
 
+  create_table "pipeline_run_records", force: :cascade do |t|
+    t.string "run_id", null: false
+    t.string "mode", default: "speculative", null: false
+    t.string "status", default: "running", null: false
+    t.bigint "piece_record_id"
+    t.string "style_slug"
+    t.string "scene_spec_id"
+    t.string "kb_version", null: false
+    t.jsonb "step_results", default: [], null: false
+    t.jsonb "escalations", default: [], null: false
+    t.text "dossier_markdown"
+    t.jsonb "dossier_data", default: {}, null: false
+    t.text "reviewer_notes"
+    t.datetime "started_at"
+    t.datetime "dossier_ready_at"
+    t.datetime "reviewed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["piece_record_id"], name: "index_pipeline_run_records_on_piece_record_id"
+    t.index ["run_id"], name: "index_pipeline_run_records_on_run_id", unique: true
+  end
+
+  create_table "qa_findings", force: :cascade do |t|
+    t.bigint "pipeline_run_record_id", null: false
+    t.string "step_id", null: false
+    t.string "agent_id", null: false
+    t.string "role", default: "proposer", null: false
+    t.string "severity", null: false
+    t.text "claim", null: false
+    t.jsonb "citations", default: [], null: false
+    t.jsonb "payload", default: {}, null: false
+    t.boolean "citations_resolved"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["pipeline_run_record_id", "step_id"], name: "index_qa_findings_on_pipeline_run_record_id_and_step_id"
+    t.index ["pipeline_run_record_id"], name: "index_qa_findings_on_pipeline_run_record_id"
+  end
+
   create_table "tool_calls", force: :cascade do |t|
     t.string "tool_call_id", null: false
     t.string "name", null: false
@@ -215,5 +258,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_29_111557) do
   add_foreign_key "messages", "models"
   add_foreign_key "messages", "tool_calls"
   add_foreign_key "performance_snapshots", "piece_records"
+  add_foreign_key "pipeline_run_records", "piece_records"
+  add_foreign_key "qa_findings", "pipeline_run_records"
   add_foreign_key "tool_calls", "messages"
 end

@@ -43,4 +43,35 @@ RSpec.describe "HumanGates", type: :request do
     patch human_gate_path(gate), params: { decision: "approved" }
     expect(response).to redirect_to(reviews_path)
   end
+
+  it "renders A0 findings as structured paragraphs instead of raw JSON" do
+    proposal = {
+      "findings" => {
+        "findings" => [
+          { "theme" => "Textured florals", "independent_shops" => 3,
+            "competition_density" => "Moderate", "cross_check_platform" => "Pinterest",
+            "cross_check_confirmed" => true,
+            "demand_to_competition_verdict" => "Best bet: strong demand" }
+        ],
+        "single_recommended_focus" => "Ensō minimalist print",
+        "recommendation_reasoning" => "Best demand-to-competition ratio.",
+        "methodology_caveats" => "Structural estimate, not numeric."
+      },
+      "search_calls_made" => 2,
+      "brief" => "Research what sells..."
+    }
+    run  = create(:track_run, status: "awaiting_human", current_step: "A0")
+    gate = create(:human_gate, track_run: run, step_id: "A0", status: "open", piece_record: nil,
+                               agent_proposal: proposal.to_json)
+
+    get human_gate_path(gate)
+
+    expect(response.body).to include("Textured florals")
+    expect(response.body).to include("Best bet: strong demand")
+    expect(response.body).to include("Recommended focus")
+    expect(response.body).to include("Methodology caveats")
+    expect(response.body).to include("cross-checked")
+    expect(response.body).to include("2 live searches")
+    expect(response.body).not_to include("competition_density")  # rendered as a "Competition" row, not a raw key
+  end
 end

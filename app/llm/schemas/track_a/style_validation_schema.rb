@@ -1,6 +1,11 @@
 module Schemas
   module TrackA
     class StyleValidationSchema < RubyLLM::Schema
+      string :breadth_assessment,
+             enum: %w[single_coherent_style fragments_into_substyles],
+             description: "Does the candidate resolve to ONE producible style, or split into " \
+                          "multiple genuinely different sub-styles (subject, price tier, or " \
+                          "production difficulty)? Must be answered before findings are trusted."
       array :findings do
         object do
           string :theme,                 description: "Style or theme identified"
@@ -11,7 +16,16 @@ module Schemas
           string :demand_to_competition_verdict
         end
       end
-      string :recommended_style_focus
+      array :cross_check_attempts, of: :string,
+            description: "Every route tried to get Google Trends/Pinterest data, including " \
+                         "failed attempts and why they failed. Must not be empty — a bare " \
+                         "'not retrievable' with no attempt shown fails validation."
+      string :single_recommended_focus,
+             description: "Exactly ONE theme name from findings — never a list, never joined " \
+                          "by 'and'. If breadth_assessment is fragments_into_substyles, this is " \
+                          "your pick of the single best sub-theme, not an average across them."
+      string :recommendation_reasoning,
+             description: "Why this one specifically beats the other candidates found."
       string :methodology_caveats, description: "Any limits on how reliable these findings are"
     end
   end

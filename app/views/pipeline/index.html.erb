@@ -83,16 +83,25 @@
       <thead class="bg-gray-50">
         <tr class="text-left">
           <th class="px-3 py-1.5">Track</th><th class="px-3 py-1.5">Style</th>
-          <th class="px-3 py-1.5">Scene</th><th class="px-3 py-1.5">Step</th><th class="px-3 py-1.5">Status</th>
+          <th class="px-3 py-1.5">Scene</th><th class="px-3 py-1.5">Step</th><th class="px-3 py-1.5">Next</th><th class="px-3 py-1.5">Status</th>
         </tr>
       </thead>
       <tbody>
         <% @track_runs.each do |r| %>
-          <tr class="border-t">
+          <tr class="border-t align-top">
             <td class="px-3 py-1.5"><%= r.track.humanize %></td>
-            <td class="px-3 py-1.5 font-mono"><%= r.style_slug %></td>
+            <td class="px-3 py-1.5">
+              <div class="font-mono"><%= r.style_slug %></div>
+              <% if r.track == "track_a" && r.context["style_name"].present? %>
+                <div class="text-xs text-gray-500"><%= r.context["style_name"] %></div>
+                <% if track_a_decisions(r).present? %>
+                  <div class="text-xs text-gray-400 font-mono"><%= track_a_decisions(r) %></div>
+                <% end %>
+              <% end %>
+            </td>
             <td class="px-3 py-1.5 font-mono"><%= r.scene_template_id %></td>
             <td class="px-3 py-1.5 font-mono"><%= r.current_step %></td>
+            <td class="px-3 py-1.5 font-mono text-gray-500"><%= track_next_step(r) %></td>
             <td class="px-3 py-1.5"><span class="font-mono text-xs px-2 py-0.5 rounded <%= status_color(r.status) %>"><%= r.status %></span></td>
           </tr>
         <% end %>
@@ -127,35 +136,11 @@
 
   <%# ── Ideation surveys ───────────────────────────────────────────── %>
   <h2 class="text-lg font-semibold mb-3">Style candidates</h2>
-  <% if @surveys.empty? %>
-    <p class="text-gray-500 text-sm mb-6">No surveys yet — run "Survey style candidates" above.</p>
-  <% else %>
-    <div class="space-y-4 mb-8">
-      <% @surveys.each do |s| %>
-        <div class="border rounded-lg p-4">
-          <div class="flex justify-between text-sm text-gray-500 mb-2">
-            <span><%= s.created_at.strftime("%b %d, %H:%M") %> · <%= s.candidate_count || "default" %> candidates</span>
-            <span class="font-mono text-xs"><%= s.status %></span>
-          </div>
-          <% if s.failed? %>
-            <p class="text-sm text-red-700"><%= s.last_error %></p>
-          <% else %>
-            <ul class="space-y-2">
-              <% s.candidates.each do |c| %>
-                <li class="text-sm">
-                  <span class="font-semibold"><%= c["name"] %></span>
-                  <span class="text-gray-500">— <%= c["trend_signal"] %></span>
-                  <span class="text-xs text-gray-400">(sources: <%= c["independent_source_count"] %>, competition: <%= c["competition_read"] %>)</span>
-                  <% if s.weak_candidates.include?(c["name"]) %><span class="text-xs text-amber-600">⚠ weak</span><% end %>
-                </li>
-              <% end %>
-            </ul>
-            <% if s.survey_notes.present? %><p class="text-xs text-gray-500 mt-2"><%= s.survey_notes %></p><% end %>
-          <% end %>
-        </div>
-      <% end %>
-    </div>
-  <% end %>
+  <div data-controller="pipeline-progress">
+    <%= turbo_frame_tag "surveys", src: pipeline_surveys_path do %>
+      <p class="text-gray-500 text-sm mb-6">Loading surveys…</p>
+    <% end %>
+  </div>
 
   <%# ── Failed ─────────────────────────────────────────────────────── %>
   <% if @failed_runs.any? || @failed_pieces.any? %>

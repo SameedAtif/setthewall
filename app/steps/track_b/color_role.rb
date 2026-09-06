@@ -41,7 +41,8 @@ module Steps
               "made by the agent.",
               { observation_candidate: candidate,
                 default_override: "line_only",
-                override_citation: "p. 97, module 04 §2.2a" }
+                override_citation: "p. 97, module 04 §2.2a",
+                override_pending: true, conflicts: [] }
             )
           end
         end
@@ -57,12 +58,12 @@ module Steps
             "B6 step-3 cross-check flagged conflicts: #{conflicts.join('; ')}. Per the source " \
             "rule, resolve the conflict explicitly rather than defaulting to whichever was " \
             "decided first.",
-            { chosen_role: chosen_role, conflicts: conflicts }
+            { chosen_role: chosen_role, conflicts: conflicts, override_pending: false }
           )
         end
 
         ok({ color_role: chosen_role, candidate_role: candidate,
-             override_reason: override_reason,
+             override_reason: override_reason, override_pending: false, conflicts: [],
              observed_color_state: step1["observed_color_state"] })
       end
 

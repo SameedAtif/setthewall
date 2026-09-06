@@ -135,6 +135,24 @@ RSpec.describe Steps::TrackB do
         expect(result).to be_awaiting_human
       end
     end
+
+    it "marks the minimalist_modern override as pending" do
+      stub_llm(content: observation.merge("candidate_role" => "color_burst")) do
+        result = described_class::ColorRole.call(piece: nil, context: scene_ctx(content_type: "minimalist_modern", wall_condition: "neutral", furniture_weight: "light"))
+        expect(result).to be_awaiting_human
+        expect(result.data[:override_pending]).to be(true)
+        expect(result.data[:conflicts]).to eq([])
+      end
+    end
+
+    it "reports no conflicts and no override on a clean read" do
+      stub_llm(content: observation) do
+        result = described_class::ColorRole.call(piece: nil, context: scene_ctx(content_type: "detailed_representational", wall_condition: "neutral", furniture_weight: "light"))
+        expect(result).to be_ok
+        expect(result.data[:conflicts]).to eq([])
+        expect(result.data[:override_pending]).to be(false)
+      end
+    end
   end
 
   describe "LockSceneEntry (B7)" do

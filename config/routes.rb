@@ -8,6 +8,7 @@ Rails.application.routes.draw do
   # Pipeline dashboard + actions
   root "pipeline#index"
   post "pipeline/ideate",        to: "pipeline#ideate"
+  get  "pipeline/surveys",       to: "pipeline#surveys"
   post "pipeline/track_a",       to: "pipeline#start_track_a"
   post "pipeline/track_b",       to: "pipeline#start_track_b"
   post "pipeline/daily",         to: "pipeline#start_daily"
@@ -16,6 +17,7 @@ Rails.application.routes.draw do
   post "pipeline/propose",       to: "pipeline#propose"
 
   resources :reviews, only: [:index]
+  resources :dossier_reviews, only: [:index, :show, :update]
   resources :human_gates, only: [:show, :update]
   resources :kb_proposals, only: [:index, :show, :update] do
     member { post :apply }

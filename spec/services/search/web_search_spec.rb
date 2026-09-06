@@ -10,30 +10,85 @@ RSpec.describe Tools::WebSearch do
     ENV.delete("TAVILY_API_KEY")
   end
 
-  def stub_post(response)
-    tool.instance_variable_set(:@connection, double("connection", post: response))
-  end
-
-  it "returns results" do
+  def stub_search(body:, &assert_body)
     req = double("req")
-    allow(req).to receive(:body=)
+    if assert_body
+      allow(req).to receive(:body=) { |b| assert_body.call(b) }
+    else
+      allow(req).to receive(:body=)
+    end
     conn = double("connection")
     allow(conn).to receive(:post).and_yield(req).and_return(
-      double("response", success?: true,
-                         body: JSON.generate("results" => [{ "title" => "t", "url" => "u", "content" => "c" }]))
+      double("response", success?: true, body: JSON.generate(body))
     )
     tool.instance_variable_set(:@connection, conn)
+  end
 
-    expect(tool.execute(query: "q")).to eq([{ title: "t", url: "u", snippet: "c" }])
+  it "returns results and no images by default (include_images false)" do
+    stub_search(body: { "results" => [{ "title" => "t", "url" => "u", "content" => "c" }] }) do |b|
+      expect(b[:include_images]).to be(false)
+      expect(b[:include_image_descriptions]).to be(false)
+    end
+
+    expect(tool.execute(query: "q")).to eq(
+      results: [{ title: "t", url: "u", snippet: "c" }],
+      images: []
+    )
+  end
+
+  it "requests images and returns top-level image objects when include_images is true" do
+    stub_search(body: {
+      "results" => [{ "title" => "t", "url" => "u", "content" => "c" }],
+      "images" => [{ "url" => "https://img1", "description" => "a framed print" }]
+    }) do |b|
+      expect(b[:include_images]).to be(true)
+      expect(b[:include_image_descriptions]).to be(true)
+    end
+
+    expect(tool.execute(query: "q", include_images: true)).to eq(
+      results: [{ title: "t", url: "u", snippet: "c" }],
+      images: [{ url: "https://img1", description: "a framed print" }]
+    )
+  end
+
+  it "normalizes per-result image URL strings" do
+    stub_search(body: {
+      "results" => [{ "title" => "t", "url" => "u", "content" => "c",
+                      "images" => %w[https://img1 https://img2] }]
+    })
+
+    result = tool.execute(query: "q", include_images: true)
+    expect(result[:images]).to eq([{ url: "https://img1", description: nil },
+                                   { url: "https://img2", description: nil }])
+  end
+
+  it "deduplicates images across top-level and per-result sources" do
+    stub_search(body: {
+      "results" => [{ "title" => "t", "url" => "u", "content" => "c", "images" => ["https://img1"] }],
+      "images" => ["https://img1", "https://img2"]
+    })
+
+    result = tool.execute(query: "q", include_images: true)
+    expect(result[:images].map { |i| i[:url] }).to eq(%w[https://img1 https://img2])
+  end
+
+  it "caps images to prevent context overflow" do
+    many = (1..20).map { |n| "https://img#{n}" }
+    stub_search(body: { "results" => [{ "title" => "t", "url" => "u", "content" => "c" }], "images" => many })
+
+    result = tool.execute(query: "q", include_images: true)
+    expect(result[:images].size).to eq(described_class::MAX_IMAGES)
   end
 
   it "returns an error on a failed request" do
-    stub_post(double("response", success?: false, status: 500))
+    tool.instance_variable_set(:@connection,
+                               double("connection", post: double("response", success?: false, status: 500)))
     expect(tool.execute(query: "q")).to eq({ error: "search request failed (HTTP 500)", query: "q" })
   end
 
-  it "returns an error on empty results" do
-    stub_post(double("response", success?: true, body: JSON.generate("results" => [])))
+  it "returns an error on empty results and images" do
+    tool.instance_variable_set(:@connection,
+                               double("connection", post: double("response", success?: true, body: JSON.generate("results" => []))))
     expect(tool.execute(query: "q")).to eq({ error: "no results found", query: "q" })
   end
 
@@ -45,7 +100,8 @@ RSpec.describe Tools::WebSearch do
   end
 
   it "clamps max_results to 10" do
-    stub_post(double("response", success?: true, body: JSON.generate("results" => [])))
+    tool.instance_variable_set(:@connection,
+                               double("connection", post: double("response", success?: true, body: JSON.generate("results" => []))))
     expect(tool.execute(query: "q", max_results: 99)).to eq({ error: "no results found", query: "q" })
   end
 end

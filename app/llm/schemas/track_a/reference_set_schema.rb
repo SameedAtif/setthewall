@@ -3,7 +3,8 @@ module Schemas
     class ReferenceSetSchema < RubyLLM::Schema
       array :images do
         object do
-          string :url
+          string :url, description: "Direct URL of the image file itself (from the search results' " \
+                                    "'images' list), not the page the image appears on"
           string :source_type, enum: %w[retailer design_publication pinterest_attributed]
           string :source_name
           array :attributing_sources, of: :string,
@@ -14,6 +15,14 @@ module Schemas
       integer :closeup_count
       integer :total_count
       array :sources_used, of: :string
+      array :mood_clusters_found do
+        object do
+          string :label, description: "Short name for this mood camp (e.g. 'calm botanical', " \
+                                      "'bold celestial')"
+          array :image_indices, of: :integer,
+                description: "1-based indices of the images that belong to this camp"
+        end
+      end
     end
   end
 end

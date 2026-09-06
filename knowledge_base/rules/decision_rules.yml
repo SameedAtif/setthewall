@@ -1,0 +1,893 @@
+# ---
+# source: Module 08 — Decision Manual (state machine over the 38 steps in config/step_registry.yml)
+# citation: |
+#   Placement-side authority: at_home_with_pictures / how_to_arrange_pictures —
+#     p. 51 (coverage cap), p. 63 (eye level, furniture gap, group width, weight balance,
+#     piece-to-piece spacing), p. 27-28 (focal point), p. 101 (theme-set spacing),
+#     p. 97 (minimalist_modern colour-role default), p. 68-69 (symmetry vs subject energy).
+#   Business-side authority: The Paradox of Choice (chooser vs picker; satisficer bar;
+#     sunk costs), Influence (Ch. 7, Commitment and Consistency), This Is Marketing
+#     (Ch. 4 / Ch. 8 smallest viable market; Ch. 12 the finalist is a commitment),
+#     The Art of Small Business Social Media (Ch. 31, editorial calendar / no random acts).
+#   Platform-side authority: Etsy Seller Handbook, via module 05's rule files.
+#   Numeric budgets in `budgets:` are PROJECT CONVENTIONS, not values any source prescribes —
+#   same honesty posture as generation_constraints.yml (module 03 §2.1).
+# doc: docs/source_knowledge_base/ + 08-decision-manual.md
+# last_verified: "TODO — fill in on first setup"
+# ---
+
+meta:
+  source: "Module 08 §2-§7"
+  citation: "See header block. Every step entry below names its own authority in `authority:`."
+  volatility: static
+  design_note: >
+    This file does not add pipeline states. PieceRecord.status keeps the five values module 06
+    §4 defined (pending | running | awaiting_human | complete | failed). What this file adds is
+    a classification of WHAT a paused step is asking, and which reviewer answers are legal for
+    that class. Module 06's dispatcher and review UI read it; nothing else changes.
+
+rules:
+
+  # =========================================================================
+  # 1. VERDICTS — how to classify the result a step returns
+  # =========================================================================
+  verdicts:
+    clean:
+      means: "Step produced its output and every mechanical check passed."
+      step_result_status: ok_or_awaiting_human
+      reviewer_is_being_asked: "Do you agree with a well-supported proposal?"
+
+    flagged:
+      means: >
+        Output was produced, but one or more ADVISORY checks failed. The step named a specific
+        risk and offered to proceed anyway.
+      step_result_status: awaiting_human
+      reviewer_is_being_asked: "Do you accept this named risk?"
+      requires_on_approve: acceptance_note
+
+    unresolved_perception:
+      means: >
+        The agent could not read the answer, but a single correct answer DOES exist and a human
+        looking at the same input can supply it. Ambiguity is in the reader, not the input.
+      step_result_status: awaiting_human
+      reviewer_is_being_asked: "Supply the value the agent could not read."
+
+    unresolved_input:
+      means: >
+        NO single correct answer exists, because the input set is heterogeneous or too broad.
+        The defect is upstream. Supplying a value here manufactures an answer that the evidence
+        does not support.
+      step_result_status: awaiting_human
+      reviewer_is_being_asked: "Which upstream step do you go back to?"
+      authority: >
+        A2's mixed-scorecard rule, verbatim: a genuinely mixed scorecard means the reference
+        set itself is not focused enough yet; narrow it (return to A1) rather than forcing a
+        call (module 01 §2.2, mood.yml scoring.mixed_result). Grounded in The Paradox of Choice
+        satisficer principle — commit to a bar rather than keeping the option open.
+
+    contradicted:
+      means: >
+        Output was produced but it conflicts with an already-locked upstream value, a documented
+        default, or a cross-check. Two sources of truth disagree.
+      step_result_status: awaiting_human
+      reviewer_is_being_asked: "Which of the two conflicting sources wins, and why?"
+      requires_on_edit: override_reason
+
+    blocked:
+      means: >
+        Hard failure. A precondition is absent or a non-negotiable rule was violated. There is
+        nothing for a reviewer to approve — the condition must be fixed and the step re-run.
+      step_result_status: failed
+      reviewer_is_being_asked: "Nothing. Fix the precondition or rewind."
+
+  # =========================================================================
+  # 2. DISPOSITIONS — what the reviewer may answer
+  # =========================================================================
+  dispositions:
+    approve:
+      writes: "HumanGate.status = approved"
+      effect: "Resume at the next step with the agent's proposal as-is."
+    edit:
+      writes: "HumanGate.status = edited, reviewer_edits populated"
+      effect: "Resume at the next step with the reviewer's values."
+    retry:
+      writes: "HumanGate.status = rejected, notes must name what changed in the input"
+      effect: "Re-run the SAME step with new context."
+      constraint: "A retry with byte-identical context is a no-op and must be refused."
+    rewind:
+      writes: "HumanGate.status = rejected, notes must name rewind_to"
+      effect: "Re-run a NAMED upstream step; every invalidated downstream field is cleared."
+    abandon:
+      writes: "HumanGate.status = rejected, notes must name the reason"
+      effect: "Stop this piece or style. Nothing downstream runs."
+
+  # =========================================================================
+  # 3. LEGALITY MATRIX — the core rule of this file
+  # =========================================================================
+  # Which dispositions a reviewer may take, given the verdict. Enforced in code, not prose.
+  legality:
+    clean:                 [approve, edit, retry, rewind, abandon]
+    flagged:               [approve, edit, retry, rewind, abandon]
+    unresolved_perception: [edit, retry, rewind, abandon]
+    unresolved_input:      [retry, rewind, abandon]
+    contradicted:          [edit, retry, rewind, abandon]
+    blocked:               [retry, rewind, abandon]
+
+  legality_notes:
+    unresolved_perception_no_approve: >
+      There is no proposal to approve — the step returned no value. Only `edit` supplies one.
+    unresolved_input_no_approve_no_edit: >
+      The hard rule. `approve` accepts an answer the evidence does not support; `edit`
+      manufactures one. Both are the forcing move A2's source rule prohibits. The only legal
+      answers move the problem upstream where it actually is.
+    contradicted_no_bare_approve: >
+      Approving a contradiction silently picks a winner without recording why. B6 already
+      demands this explicitly (`catalog_strategy_override` must carry a reason). Generalised.
+    blocked_no_approve: >
+      A fail_step is not a proposal. Notably the coverage-cap mid-band (P2_6) is a fail_step by
+      design in module 04 §2.11 — reviewer approval cannot override a placement rule with a
+      page citation behind it.
+
+  # =========================================================================
+  # 4. STANDING RULES — override any step-level entry below
+  # =========================================================================
+  standing_rules:
+    - id: SR1
+      rule: "The verdict determines which dispositions are legal. `approve` is not always offered."
+      enforced_in: "Workflow::DecisionRules.legal_dispositions(step_id:, verdict:)"
+
+    - id: SR2
+      rule: "Never force a call on unresolved_input. Fix the input, do not supply the output."
+      authority: "module 01 §2.2 mood.yml scoring.mixed_result; The Paradox of Choice (satisficer bar)"
+
+    - id: SR3
+      rule: "Every override of a documented default or cross-check must carry a named reason."
+      authority: "module 02 §6.7 B6 catalog_strategy_override; module 04 §2.2a p. 97"
+
+    - id: SR4
+      rule: >
+        Work already spent is never an input to a rewind decision. The only question is whether
+        the evidence supports the value. Do not weigh how many steps have already run, how much
+        generation cost was incurred, or how close to publish the piece is.
+      authority: >
+        Influence, Ch. 7 (Commitment and Consistency) — commitment decisions, even erroneous
+        ones, are self-perpetuating because people generate new justifications for them after
+        the fact, so commitments persist past the conditions that produced them. The Paradox of
+        Choice (sunk costs) — sensitivity to sunk costs is a mistake in any future-oriented
+        decision model.
+      practical_form: >
+        The review UI must NOT display elapsed time, step count, or accumulated cost on a gate
+        screen. Those numbers are exactly the sunk-cost prompt.
+
+    - id: SR5
+      rule: >
+        A rewind that crosses a lock (A5 or B7) requires a `git revert` of the written spec file
+        BEFORE the upstream step re-runs. The pipeline must not re-lock over a committed spec.
+      authority: "module 00 §1.1 — git is the rollback system; do not build a second one."
+      enforced_in: "Workflow::PreflightCheck at rewind time"
+
+    - id: SR6
+      rule: >
+        Deterministic placement checks are not reviewer-overridable. If a numeric rule with a page
+        citation fails, the verdict is `blocked`, not `flagged`.
+      applies_to: [P2_6]
+      authority: >
+        at_home_with_pictures p. 51 — coverage is binary: stay under two-thirds or commit fully;
+        the mid-band reads as a mistake. Module 04 §2.11 already encodes this as fail_step.
+
+    - id: SR7
+      rule: >
+        Within-run defects are decided immediately at their gate. STRATEGY changes (which style,
+        which scene, whether to repeat/extend/rotate) are batched to P2_7's weekly review and are
+        never made ad hoc mid-run.
+      authority: >
+        The Art of Small Business Social Media, Ch. 31 — an editorial calendar exists so the
+        approach is consistent and planned rather than haphazard; quick fixes seem manageable
+        short-term but do not produce meaningful results.
+
+    - id: SR8
+      rule: >
+        Every disposition is recorded with its verdict. For steps with a PieceRecord, that is a
+        HumanGate row (module 06 §2). For Track A pre-piece steps, Workflow::TrackASession
+        (module 01c §2). Track B has NO session equivalent — see open_gaps below.
+
+    - id: SR9
+      rule: >
+        `complete` is terminal (module 06 §4). A defect discovered after P3_8 publishes cannot
+        rewind the piece. It becomes an input to P2_7 and, if the defect is in a rule rather than
+        in this piece, a KbProposal in module 07 §5.
+      authority: "module 06 §4 TRANSITIONS; module 07 §1"
+
+    - id: SR10
+      rule: >
+        A borderline default applied silently by B1/B2/B4 (borderline_defaults.yml) sets a
+        `resolved_by_default` marker that B7 MUST surface before locking. A locked scene axis
+        that nobody actually looked at is the failure mode this rule exists to catch.
+      authority: "module 02 §2.1 design_note — defaults are the less-damaging error, not a decision"
+
+  # =========================================================================
+  # 5. BUDGETS — project conventions, NOT sourced from any document
+  # =========================================================================
+  budgets:
+    note: >
+      No document in the knowledge base prescribes these numbers. They operationalise the
+      Paradox of Choice maximizer principle (more iterations do not produce a better decision,
+      they produce a later one with more regret) for this pipeline. Revisit once there is data.
+    per_style:
+      max_rewinds_to_A1: 2
+      on_exhaust: "Re-open A0's go/no-go, or abandon the style. Do not narrow a third time."
+    per_scene:
+      max_rewinds_within_track_b: 2
+      on_exhaust: "The scene template is the problem. Rewind to B0 or retire the template."
+    per_piece:
+      max_rewinds_to_C2: 1
+      max_rewinds_to_C1: 1
+      max_retries_per_step: 2
+      on_exhaust: "Abandon the piece for today's run. Do not publish a piece that needed 3+ passes."
+    universal:
+      identical_retry: refuse
+      rule: >
+        A retry whose context is unchanged from the previous attempt is refused. Re-running the
+        same step against the same input is not a decision, it is a hope.
+
+  # =========================================================================
+  # 6. PER-STEP DECISION ENTRIES
+  # =========================================================================
+  # For each step: which verdicts it can produce, what triggers each, where a rewind goes,
+  # and what a rewind invalidates.
+  steps:
+
+    # ---------------- TRACK A (per_style, pre-piece) ----------------
+    A_IDEATE:
+      gate: false
+      module: "01b"
+      verdicts:
+        clean: "Candidates returned within ideation_constraints.yml caps."
+        flagged: "A candidate's sources matched promotional_language_indicators, or had <2 independent sources."
+      rewind_to: null
+      invalidates: []
+      authority: "module 01b §2.1; The Paradox of Choice (candidate cap)"
+
+    A0:
+      gate: true
+      module: "01"
+      verdicts:
+        clean: "breadth_assessment = one coherent style; min_rounds met."
+        flagged: "min_rounds_met = false — findings are thinner than the methodology requires."
+        unresolved_input: "breadth_assessment = fragments_into_substyles."
+        blocked: "Search::NoSearchPerformedError."
+      on_unresolved_input:
+        legal: [retry, rewind, abandon]
+        retry_requires: "style_name replaced with content.single_recommended_focus"
+        rewind_to: A_IDEATE
+      rewind_to: A_IDEATE
+      invalidates: [A1, A2, A3, A4, A5]
+      authority: >
+        This Is Marketing Ch. 4 / Ch. 8 (smallest viable market — a defensible specific position
+        beats the highest-volume category). Human validation gate: name the specific
+        demand-to-competition finding, not "it's popular" (module 01 §6.1).
+
+    A1:
+      gate: true
+      module: "01"
+      verdicts:
+        clean: "validate_set returned no issues and mood_clusters_found <= 1."
+        flagged: "Mechanical issues present (closeup fraction, source cap, attribution, in-situ missing)."
+        unresolved_input: "mood_clusters_found > 1 — the set spans distinct mood clusters."
+        blocked: "Search::NoSearchPerformedError."
+      on_unresolved_input:
+        legal: [retry, rewind, abandon]
+        retry_requires: "curated_images narrowed to ONE cluster"
+        rewind_to: A0
+        reasoning: >
+          Deciding at A1 is cheaper than discovering the same split after A2 spends a full
+          4-marker scoring pass (module 01 §2.1 note).
+      rewind_to: A0
+      invalidates: [A2, A3, A4, A5]
+
+    A2:
+      gate: true
+      module: "01"
+      verdicts:
+        clean: "mood resolved AND >=3 clearly supporting images across >=2 of 4 markers."
+        unresolved_input:
+          - "mood == 'mixed'"
+          - "validation bar not met (markers < 2 or images < 3)"
+      on_unresolved_input:
+        legal: [retry, rewind, abandon]
+        rewind_to: A1
+        recommended_action: return_to_a1
+        forbidden: [approve, edit]
+      rewind_to: A1
+      invalidates: [A3, A4, A5]
+      authority: >
+        mood.yml scoring.mixed_result and validation.on_fail (module 01 §2.2), p. 68-69 /
+        p. 27-28 for the four markers. This is the canonical unresolved_input case.
+
+    A3:
+      gate: true
+      module: "01"
+      verdicts:
+        clean: "contour_cross_check_passed = true."
+        contradicted: "contour_cross_check_passed = false (predicted != observed contour)."
+      on_contradicted:
+        legal: [edit, retry, rewind, abandon]
+        recommended_action: reconsider
+        edit_requires: override_reason
+        rewind_to: A1
+      rewind_to: A1
+      invalidates: [A5]
+      note: "A3 does NOT invalidate A4 — A4 consumes mood (A2), not content_type."
+
+    A4:
+      gate: true
+      module: "01"
+      verdicts:
+        clean: "consistency == 'consistent'."
+        flagged: "consistency == 'mixed', resolved by the mood tiebreaker."
+      rewind_to: A2
+      invalidates: [A5]
+      authority: "frame_form.yml determination.tiebreaker (module 01 §2.4) — mood breaks the tie"
+      note: >
+        A4 reads A2's confirmed mood. Any rewind that changes mood invalidates A4 even if A4
+        itself was clean.
+
+    A5:
+      gate: true
+      module: "01"
+      verdicts:
+        clean: "confirmed: true supplied; all four style_level values present."
+        blocked: "confirmed absent — this is the lock action and is never auto-filled."
+      rewind_to: [A1, A2, A3, A4]
+      rewind_precondition: "git revert of knowledge_base/style_specs/<slug>.yml (SR5)"
+      invalidates: [B0, B1, B2, B3, B4, B5, B6, B7, C1, C2, "all Phase 2", "all Phase 3"]
+      authority: "module 01c §1.1 — confirmed is deliberately never auto-filled"
+
+    # ---------------- TRACK B (per_scene, pre-piece) ----------------
+    B0:
+      gate: true
+      module: "02"
+      verdicts:
+        clean: "Template image asset and measurement metadata both exist."
+        blocked: "Either file missing — Track B cannot run against an uncalibrated template."
+      gate_question: >
+        Is this a REUSABLE mockup used across many pieces, not a one-off generated room?
+      rewind_to: null
+      invalidates: [B1, B2, B3, B4, B5, B6, B7]
+
+    B1:
+      gate: false
+      module: "02"
+      verdicts:
+        clean: "Unambiguous read."
+        flagged: "borderline = true; default `neutral` applied (SR10 — must surface at B7)."
+      rewind_to: B0
+      invalidates: [B6, P2_4]
+      authority: "borderline_defaults.yml wall_condition, escalate: false"
+
+    B2:
+      gate: false
+      module: "02"
+      verdicts:
+        clean: "Unambiguous read."
+        flagged: "borderline = true; default `light` applied (SR10)."
+      rewind_to: B0
+      invalidates: [B6, P2_5]
+      authority: "borderline_defaults.yml furniture_weight, escalate: false; p. 63 weight balance"
+
+    B3:
+      gate: false
+      module: "02"
+      verdicts:
+        clean: "room_type resolved."
+        unresolved_perception: "room_type == 'ambiguous'. NO safe default exists."
+      on_unresolved_perception:
+        legal: [edit, retry, rewind, abandon]
+        edit_requires: "one of [seated_room, hallway, no_furniture_wall]"
+        forbidden: [approve]
+      rewind_to: B0
+      invalidates: [P2_6]
+      authority: >
+        borderline_defaults.yml room_type escalate: true, escalation_reason "eye-level formulas
+        are not interchangeable" — p. 63 gives three different formulas (5-6" above the furniture
+        back for seated rooms; at or just above eye level for hallways; no reference point for a
+        bare wall). A wrong read produces a plausible-looking but wrong composite in P2_6.
+
+    B4:
+      gate: false
+      module: "02"
+      verdicts:
+        clean: "Unambiguous read."
+        flagged: "borderline = true; default `none` applied (SR10)."
+      rewind_to: B0
+      invalidates: [C1]
+      authority: "borderline_defaults.yml room_shape — 'none' is a legitimate common answer"
+
+    B5:
+      gate: false
+      module: "02"
+      verdicts:
+        clean: "space_math resolved."
+      rewind_to: B0
+      invalidates: [P2_1, P2_2a, P2_2b, P2_2c, P2_2d, P2_2e]
+
+    B6:
+      gate: true
+      module: "02"
+      verdicts:
+        clean: "Observation candidate stands; no override fired; cross-check clean."
+        contradicted:
+          - "content_type == minimalist_modern and the p. 97 line_only default overrides the observed candidate"
+          - "step-3 cross-check against B1/B2 flagged conflicts"
+      on_contradicted:
+        legal: [edit, retry, rewind, abandon]
+        edit_requires: catalog_strategy_override
+        forbidden: [approve]
+        reasoning: >
+          Resolve the conflict explicitly rather than defaulting to whichever was decided first
+          (module 02 §6.7, verbatim intent).
+      rewind_to: [B1, B2]
+      invalidates: [P2_4b, C1]
+      authority: "p. 97 minimalist_modern default; module 04 §2.2a"
+
+    B7:
+      gate: true
+      module: "02"
+      verdicts:
+        clean: "confirmed: true; all six axes present; no axis resolved_by_default unreviewed."
+        flagged: "One or more axes were resolved by borderline default (SR10)."
+        blocked: "confirmed absent."
+      gate_question: >
+        Could someone who has never seen the scene photo make correct placement and frame
+        decisions from these six values alone? If not, an axis is under-specified.
+      rewind_to: [B1, B2, B3, B4, B5, B6]
+      rewind_precondition: "git revert of the scene keys in style_specs/<slug>.yml (SR5)"
+      invalidates: [C1, "all Phase 2", "all Phase 3"]
+
+    # ---------------- TRACK C (daily, per piece) ----------------
+    C1:
+      gate: false
+      module: "03"
+      verdicts:
+        clean: "Adapter returned candidate_urls within the batch cap."
+        unresolved_perception: "IMAGE_GEN_PROVIDER=manual — URLs must be pasted back."
+        blocked: "candidate_count < 1."
+      on_unresolved_perception:
+        legal: [edit, retry, abandon]
+        edit_requires: candidate_urls
+      rewind_to: null
+      invalidates: [C2, "all Phase 2", "all Phase 3"]
+      authority: >
+        generation_constraints.yml batch.max_candidates_per_scene = 10, enforced in code.
+        The Paradox of Choice Ch. 5-6 (maximizer trap): a larger batch produces a worse cull.
+
+    C2_finalists:
+      gate: true
+      module: "03"
+      stage: 1
+      verdicts:
+        clean: "Finalists are a subset of candidates and within absolute_max."
+        unresolved_input: "No candidate in the batch is worth carrying forward."
+        blocked:
+          - "finalist_urls contains URLs not in candidate_urls"
+          - "finalist_urls.size > absolute_max (4)"
+      on_unresolved_input:
+        legal: [rewind, abandon]
+        rewind_to: C1
+        budget: per_piece.max_rewinds_to_C1
+      rewind_to: C1
+      invalidates: [C2_chosen, "all Phase 2", "all Phase 3"]
+
+    C2_chosen:
+      gate: true
+      module: "03"
+      stage: 2
+      verdicts:
+        clean: "chosen_url is one of the finalists."
+        unresolved_input: "None of the finalists is good enough."
+        blocked: "chosen_url not in finalist_urls."
+      on_unresolved_input:
+        legal: [rewind, abandon]
+        rewind_to: C2_finalists
+      rewind_to: [C2_finalists, C1]
+      invalidates: ["all Phase 2", "all Phase 3"]
+      authority: >
+        This Is Marketing Ch. 12 (Trust and Tension Create Forward Motion) — the culled finalist
+        is a commitment, not a tentative "we'll see if it sells". The two-stage split exists so
+        the reviewer is never asked to narrow AND pick in one screen (module 03 §6.2).
+      note: >
+        The source doc's own framing of this gate: "would a further regeneration meaningfully
+        beat this" is a judgment call agents are bad at, because they are bad at knowing when
+        they have hit good enough (Phase 2 §6). This is the satisficer gate of the pipeline.
+
+    # ---------------- PHASE 2 (daily; P2_0 and P2_7 weekly) ----------------
+    P2_0:
+      gate: true
+      module: "04"
+      cadence: weekly
+      verdicts:
+        clean: "spec.validate! passed; scene_ids present."
+        blocked: "KnowledgeBase::IncompleteSpecError — a spec axis is blank or out of range."
+      on_blocked:
+        legal: [rewind, abandon]
+        rewind_to: [A5, B7]
+        rewind_precondition: SR5
+      rewind_to: [A5, B7]
+      invalidates: ["all Phase 2", "all Phase 3"]
+      note: "Tagged HUMAN ONLY precisely because it is the checkpoint that catches a stale spec before a week of production runs against it."
+
+    P2_1:
+      gate: false
+      module: "04"
+      verdicts:
+        clean: "Branch selected; no location suitability issues."
+        flagged: "Location suitability issues (humidity, heat, pollutants, traffic clearance, children/pets)."
+      on_flagged:
+        legal: [approve, edit, rewind, abandon]
+        approve_requires: acceptance_note
+        rewind_to: B0
+        reasoning: "Reroute to a different scene template, or accept the risk explicitly."
+      rewind_to: B5
+      invalidates: [P2_2a, P2_2b, P2_2c, P2_2d, P2_2e, P2_3, P2_6]
+      authority: "location_suitability.yml, module 04 §2.10 (Phase 2 §2.5b, 5 factors)"
+
+    P2_2a:
+      gate: false
+      module: "04"
+      verdicts:
+        clean: "Focal treatment assigned."
+      rewind_to: P2_1
+      invalidates: [P2_4, P2_6]
+      authority: "p. 27-28 — focal is about placement, not mood: isolation plus an oversized frame reads as the centre of attention; the same piece in a cluster with a thin frame blends in."
+
+    P2_2b:
+      gate: false
+      module: "04"
+      verdicts:
+        clean: "Form and count assigned."
+        blocked: "base_form == stair_stepping without staircase_scene."
+      on_blocked:
+        legal: [retry, rewind]
+        retry_requires: "a different base_form from the 6 standard forms"
+      rewind_to: P2_1
+      invalidates: [P2_3, P2_4, P2_6]
+      authority: >
+        p. 63 count/focal (odd groups imply a focal point and read dynamic; even groups read
+        calmer and more ordered; a wild-card element flips even to odd); p. 68-69 subject-energy
+        override on symmetry.
+
+    P2_2c:
+      gate: false
+      module: "04"
+      verdicts:
+        clean: "Zones recorded."
+        blocked: "zones empty."
+      rewind_to: P2_1
+      invalidates: [P2_3, P2_4, P2_6]
+
+    P2_2d:
+      gate: false
+      module: "04"
+      verdicts:
+        clean: "Fitted to nook."
+      rewind_to: P2_1
+      invalidates: [P2_4, P2_6]
+
+    P2_2e:
+      gate: false
+      module: "04"
+      verdicts:
+        clean: "Heights vary across >=2 levels, or single piece."
+        flagged: "piece_count > 1 with fewer than 2 distinct height levels."
+      on_flagged:
+        legal: [approve, edit, retry]
+        approve_requires: "acceptance_note stating the flat look is deliberate for this mood"
+        edit_requires: heights_used
+      rewind_to: P2_1
+      invalidates: [P2_6]
+
+    P2_3:
+      gate: true
+      module: "04"
+      conditional: "only when the branch produced a multi-piece set"
+      verdicts:
+        clean: "fails_count == 0."
+        unresolved_input: "fails_count > 0 — the set does not read as one collection."
+      on_unresolved_input:
+        legal: [approve, rewind, abandon]
+        approve_requires: acceptance_note
+        rewind_to: C2_finalists
+        exception_to: SR2
+        exception_reasoning: >
+          The source doc names both options explicitly at this gate — "proceed with this set or
+          return to Track C for a tighter cull" (module 04 §6.4). Where the source names
+          proceed-anyway as a legitimate option, an acceptance note is enough. This is the ONE
+          documented exception to SR2 in the pipeline.
+      rewind_to: C2_finalists
+      invalidates: [P2_6]
+      authority: >
+        p. 101 theme unification — limit the count; the unifying thread may be texture, colour,
+        shape, size, intensity or balance, not only subject; repeat an element, do not clone it;
+        proximity reinforces the connection (theme sets sit tighter, touching or overlapping,
+        unlike the several inches of breathing room a general grouping needs, p. 63).
+
+    P2_4:
+      gate: false
+      module: "04"
+      verdicts:
+        clean: "Frame material and contour assigned by lookup."
+      rewind_to: [A3, B1]
+      invalidates: [P2_4b, P2_5, P2_6]
+      authority: "p. 20-21, p. 61 match vs contrast; the governing principle that the frame serves the picture"
+
+    P2_4b:
+      gate: false
+      module: "04"
+      verdicts:
+        clean: "Colour function consistent with mat intensity and wall/light pairing."
+      rewind_to: [B6, P2_4]
+      invalidates: [P2_5, P2_6]
+      authority: "p. 84 mat intensity and wall/light interaction; p. 86 colour choreography; p. 88 complementary vs tension pairing"
+
+    P2_5:
+      gate: false
+      module: "04"
+      verdicts:
+        clean: "Weight balance passes."
+        flagged: "Dark furniture with art that reads heavy."
+      on_flagged:
+        legal: [approve, retry, rewind]
+        approve_requires: acceptance_note
+        retry_via: P2_4
+        retry_requires: "a lighter frame material or mat intensity"
+      rewind_to: P2_4
+      invalidates: [P2_6]
+      authority: >
+        p. 63 — hang lighter pieces over heavier ones for harmonious balance; heaviness is
+        driven by colour and material as well as size, so a small dark painting in a strong
+        mahogany frame can outweigh a larger pale unframed one. Dark furniture REQUIRES lighter
+        art; light furniture merely ALLOWS heavier art (module 04 §2.15).
+
+    P2_6:
+      gate: false
+      module: "04"
+      verdicts:
+        clean: "All numeric checks pass; coverage_fraction outside the forbidden mid-band."
+        blocked:
+          - "coverage_fraction in (0.6667, 0.95) — forbidden mid-band"
+          - "Compositor::TemplateError — scene template measurements missing or wrong"
+      on_blocked:
+        legal: [retry, rewind, abandon]
+        forbidden: [approve, edit]
+        standing_rule: SR6
+        retry_requires: "a smaller piece size, or a commitment to fully maximalist coverage"
+        rewind_to: [P2_2a, P2_2b, B0]
+      rewind_to: [P2_2a, P2_2b]
+      invalidates: [P3_1, P3_1b, P3_2]
+      authority: >
+        p. 51 coverage cap — stay under two-thirds or commit fully; a partial overreach past
+        two-thirds reads as a mistake, and there is no in-between. p. 63 for the numbers this
+        step enforces: the 8-10" gap between the bottom of a group and the furniture below it;
+        the group no wider than the furniture and at least half its length; eye level set 5-6"
+        above the backs of couches or chairs in seated rooms, at or just above eye level in a
+        hallway; and the general drop of 3-4" because hanging too high is the most common
+        picture-placing mistake.
+      note: >
+        Tagged NOT AN AGENT/LLM TASK. Phase 2 §6 Limitation 1 is explicit that none of these
+        numeric rules can be trusted to an image-generation model. A reviewer cannot approve
+        past them either.
+
+    P2_7:
+      gate: true
+      module: "04"
+      cadence: weekly
+      verdicts:
+        clean: "Reviewer selected repeat, extend, or rotate."
+      dispositions_are: [repeat, extend, rotate]
+      rewind_to: null
+      note: >
+        This is where SR7 lands and where SR9's post-publish defects arrive. The agent may
+        summarise the numbers; it may not decide. Performance thresholds are deliberately absent
+        from this file — see open_gaps.
+
+    # ---------------- PHASE 3 (daily) ----------------
+    P3_1:
+      gate: false
+      module: "05"
+      verdicts:
+        clean: "All required Phase 2 outputs present."
+        blocked: "One or more of chosen_url, composite_url, frame_material_category, frame_contour, matting_technique, color_role_confirmed, mood, content_type, room_type is blank."
+      on_blocked:
+        legal: [rewind]
+        rewind_to: "the Phase 2 step that owns the missing field"
+      rewind_to: [P2_4, P2_4b, P2_5, P2_6]
+      invalidates: [P3_1b, P3_2, P3_3, P3_4, P3_5, P3_6, P3_7, P3_8]
+      authority: "X3 / X4 — P2_6's composite IS the Lifestyle photo; Phase 3 never re-derives it"
+
+    P3_1b:
+      gate: true
+      module: "05"
+      verdicts:
+        clean: "All required photo types present from real sources."
+        flagged: "One or more types were AI-generated and need a quality review before publish."
+      on_flagged:
+        legal: [approve, edit, retry, abandon]
+        approve_requires: acceptance_note
+        edit_requires: "a real uploaded photo URL for the unusable type"
+      rewind_to: null
+      invalidates: [P3_2]
+      constraint: >
+        Does NOT regenerate the Lifestyle composite. P2_6's composite_url is authoritative (X4).
+        A bad composite is fixed upstream in Phase 2, never overwritten here.
+
+    P3_2:
+      gate: true
+      module: "05"
+      verdicts:
+        clean: "Hero recommended, technical checks passed."
+        flagged: "technical_notes present (e.g. the 635px floor)."
+        blocked: "No photos on the piece."
+      on_flagged:
+        legal: [approve, edit, retry]
+        approve_requires: acceptance_note
+      rewind_to: P3_1b
+      invalidates: [P3_8]
+      authority: >
+        Etsy Seller Handbook via etsy_photos.yml — listing quality (multiple high-quality photos
+        plus a clear return policy) is a named ranking factor, and the first photo is the
+        search-result thumbnail (module 05 §2.1, §6.4).
+
+    P3_3:
+      gate: false
+      module: "05"
+      verdicts:
+        clean: "Title passed validation."
+        flagged: "Title validation errors."
+      on_flagged:
+        legal: [edit, retry]
+      rewind_to: null
+      invalidates: [P3_8]
+      authority: "etsy_titles.yml — the first six words must identify the piece; word order does not affect ranking, per Etsy's own statement"
+
+    P3_4:
+      gate: false
+      module: "05"
+      verdicts:
+        clean: "13 tags, no near-duplicates, angles covered."
+        flagged: "Tag validation errors."
+      on_flagged:
+        legal: [edit, retry]
+      rewind_to: null
+      invalidates: [P3_8]
+      authority: "etsy_tags.yml — fill all 13 slots; prefer multi-word long-tail phrases over single words"
+
+    P3_5:
+      gate: false
+      module: "05"
+      verdicts:
+        clean: "category_id supplied; attributes derived."
+        unresolved_perception: "category_id blank — the step refuses to auto-pick."
+      on_unresolved_perception:
+        legal: [edit, abandon]
+        edit_requires: category_id
+        forbidden: [approve]
+        reasoning: >
+          Etsy category assignment is not casually reversible and a wrong category damages
+          discoverability in a way that only shows up weeks later (module 05 §6.6).
+      rewind_to: null
+      invalidates: [P3_8]
+
+    P3_6:
+      gate: true
+      module: "05"
+      verdicts:
+        clean: "No stuffing violations; positioning claim is specific; tone confirmed."
+        flagged: "Keyword stuffing detected — a tag phrase used more than twice."
+        contradicted: "Positioning claim matched everyone / anyone / anybody / all."
+      on_contradicted:
+        legal: [edit, retry, abandon]
+        forbidden: [approve]
+        reasoning: >
+          This Is Marketing rejects "for everyone / for anyone" outright. A listing that claims a
+          universal audience has no audience. Rewrite with a specific who-is-this-for claim.
+      rewind_to: null
+      invalidates: [P3_8]
+      note: "Gated on tone ALWAYS, per the ownership tag, even when the verdict is clean."
+
+    P3_7:
+      gate: true
+      module: "05"
+      verdicts:
+        clean: "Return policy set; shipping/item ratio <= 0.4."
+        flagged: "shipping_price / item_price > 0.4."
+        blocked: "confirmed absent."
+      on_flagged:
+        legal: [approve, edit, retry]
+        approve_requires: "acceptance_note naming why (e.g. genuinely heavy item)"
+      rewind_to: null
+      invalidates: [P3_8]
+      authority: >
+        etsy_policy.yml — a return policy is part of the listing-quality ranking factor. The
+        low-item-price-plus-inflated-shipping pattern is one Etsy's ranking approach is designed
+        to work against; the 0.4 threshold is a heuristic to refine, so this warns rather than
+        blocks (module 05 §2.5).
+
+    P3_8:
+      gate: false
+      module: "05"
+      verdicts:
+        clean: "Published; etsy_listing_id recorded; baseline snapshot created."
+        unresolved_perception: "ETSY_ADAPTER=manual — payload written, listing_id must be pasted back."
+        blocked:
+          - "Required listing fields blank"
+          - "No photos attached"
+          - "Etsy::ApiError"
+      on_unresolved_perception:
+        legal: [edit, abandon]
+        edit_requires: manual_listing_id
+      rewind_to: [P3_3, P3_4, P3_5, P3_6, P3_7]
+      invalidates: []
+      terminal: true
+      standing_rule: SR9
+
+  # =========================================================================
+  # 7. SUCCESSFUL RUN
+  # =========================================================================
+  # Deliberately excludes conversion and sales metrics — deferred until there is live data.
+  successful_run:
+    scope: "One PieceRecord from creation through P3_8, plus the Track A/B specs it ran against."
+    criteria:
+      - id: S1
+        rule: "Every gate closed with a disposition that was LEGAL for its verdict."
+        check: "No HumanGate row where status=approved and verdict in [unresolved_input, unresolved_perception, blocked]"
+      - id: S2
+        rule: "Zero blocked verdicts remain unresolved at publish."
+      - id: S3
+        rule: "Every flagged verdict that was approved carries a non-empty acceptance_note."
+      - id: S4
+        rule: "Every contradicted verdict that was edited carries a non-empty override_reason."
+      - id: S5
+        rule: "All P2_6 numeric checks passed without a retry that merely shrank the art to dodge the cap."
+      - id: S6
+        rule: "kb_version does not start with 'dirty:' — the run is reproducible."
+      - id: S7
+        rule: "No budget in `budgets:` was exhausted."
+      - id: S8
+        rule: "No scene axis reached B7 marked resolved_by_default without reviewer acknowledgement (SR10)."
+    deferred:
+      - id: S9
+        rule: "Conversion, view, favourite and revenue thresholds."
+        status: not_yet_defined
+        reasoning: >
+          No document in the knowledge base states a target number. Module 05 §2.1 records that
+          Etsy treats listing engagement rate as a trust signal; module 07 §4.1 computes
+          conversion_rate. Neither says what good looks like. Inventing a threshold now would be
+          the kind of unsourced claim module 05 §2.7 exists to block. Add after a baseline
+          window of real data.
+
+  # =========================================================================
+  # 8. OPEN GAPS — known, deliberate, not oversights
+  # =========================================================================
+  open_gaps:
+    - id: G1
+      gap: "No Workflow::TrackBSession."
+      detail: >
+        Module 01c built session carry-forward for Track A only. Track B runs pre-piece
+        (piece: nil), so module 06 §3's open_gate! early-returns and no HumanGate row is written.
+        B0-B7 dispositions are therefore currently unrecorded. SR8 cannot be fully enforced for
+        Track B until this exists.
+    - id: G2
+      gap: "Performance thresholds (S9 above)."
+    - id: G3
+      gap: "Gate count reconciliation."
+      detail: >
+        The registry marks 17 steps human_gate: true. Manifest §5 enumerates the gates by track
+        rather than by step and reads as 15. This file treats the registry as canonical and
+        additionally splits C2 into C2_finalists and C2_chosen, which is 18 pause points across
+        17 gated steps. Reconcile the manifest wording, not the registry.
+    - id: G4
+      gap: "The review UI shows no verdict."
+      detail: >
+        Module 06 §8.4's gate page renders the agent proposal and offers approve / approve with
+        edits / reject unconditionally. Enforcing the legality matrix means the three buttons
+        become verdict-dependent, and reject splits into retry / rewind / abandon.

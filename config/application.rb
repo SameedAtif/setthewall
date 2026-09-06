@@ -14,6 +14,7 @@ module KnowledgeBase; end
 module Steps; end
 module Workflow; end
 module Tools; end
+module Agents; end
 
 module Setthewall
   class Application < Rails::Application
@@ -32,6 +33,7 @@ module Setthewall
       autoloader.push_dir(Rails.root.join("app/steps"), namespace: Steps)
       autoloader.push_dir(Rails.root.join("app/workflow"), namespace: Workflow)
       autoloader.push_dir(Rails.root.join("app/tools"), namespace: Tools)
+      autoloader.push_dir(Rails.root.join("app/agents"), namespace: Agents)
     end
 
     # Configuration for the application, engines, and railties goes here.

@@ -1,0 +1,36 @@
+<%= turbo_frame_tag "surveys" do %>
+  <% if @surveys.empty? %>
+    <p class="text-gray-500 text-sm mb-6">No surveys yet — run "Survey style candidates" above.</p>
+  <% else %>
+    <div class="space-y-4 mb-8">
+      <% @surveys.each do |s| %>
+        <div class="survey border rounded-lg p-4" data-survey-id="<%= s.id %>" data-status="<%= s.status %>">
+          <div class="flex justify-between text-sm text-gray-500 mb-2">
+            <span><%= s.created_at.strftime("%b %d, %H:%M") %> · <%= s.candidate_count || "default" %> candidates</span>
+            <span class="font-mono text-xs px-2 py-0.5 rounded <%= status_color(s.status) %>"><%= s.status %></span>
+          </div>
+          <% if s.running? %>
+            <p class="text-sm text-blue-700">
+              <span class="inline-block animate-pulse">&#9679;</span>
+              <%= s.progress.presence || "working" %> — started <%= time_ago_in_words(s.created_at) %> ago
+            </p>
+          <% elsif s.failed? %>
+            <p class="text-sm text-red-700"><%= s.last_error %></p>
+          <% else %>
+            <ul class="space-y-2">
+              <% s.candidates.each do |c| %>
+                <li class="text-sm">
+                  <span class="font-semibold"><%= c["name"] %></span>
+                  <span class="text-gray-500">— <%= c["trend_signal"] %></span>
+                  <span class="text-xs text-gray-400">(sources: <%= c["independent_source_count"] %>, competition: <%= c["competition_read"] %>)</span>
+                  <% if s.weak_candidates.include?(c["name"]) %><span class="text-xs text-amber-600">⚠ weak</span><% end %>
+                </li>
+              <% end %>
+            </ul>
+            <% if s.survey_notes.present? %><p class="text-xs text-gray-500 mt-2"><%= s.survey_notes %></p><% end %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+<% end %>

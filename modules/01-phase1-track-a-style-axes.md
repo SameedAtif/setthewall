@@ -269,9 +269,26 @@ rules:
 
 ### 3.1 `knowledge_base/prompts/a0_style_validation.md`
 
-This is the research brief. It is reproduced **verbatim** from the source document — do not reword it.
+This is the research brief. The methodology (numbered list) is reproduced **verbatim** from the
+source document. Two additions sit around it — a breadth pre-check before the methodology runs, and
+an explicit single-verdict requirement after it — added after a real A0 run on "Japandi" showed the
+agent fragmenting a broad style name into 7 sub-themes and then recommending two of them jointly
+instead of picking one, and separately conceding a required cross-check as "not retrievable" without
+showing an attempt at an alternate route.
 
 ```markdown
+Before running the methodology below, assess breadth: does **%{style_name}** resolve to ONE
+coherent, producible style, or does it fragment into multiple genuinely different sub-styles —
+different subject matter, different price tier, different production difficulty? A name can look
+like one style and still cover products that don't belong in the same recommendation (a $5 flat
+digital download and a $140 dimensional textured canvas are not the same business decision even if
+both get called "Japandi").
+
+If it fragments, do not average across the sub-themes or recommend more than one. Run the
+methodology below against ALL the sub-themes you find, report the full breakdown, and end with
+exactly ONE explicit pick: "If you pick only one, it's X, because Y." A recommendation joined by
+"and" is not acceptable — that means the breadth question wasn't actually resolved.
+
 Research what types of wall art designs are most likely to sell well in the **%{style_name}** style
 for a wall-hanging/print business, using a methodology that avoids the pitfalls of naively trusting
 Etsy "bestseller" labels (skewed by shop-level SEO/marketing strength, listings with hundreds of
@@ -286,19 +303,34 @@ Methodology:
    color palette, composition style, texture/medium look.
 3. Cross-check the style's demand signal against at least one independent platform (Pinterest
    trend/search volume, Google Trends) — a pattern holding across multiple independent sources is
-   more trustworthy than any single platform.
+   more trustworthy than any single platform. Direct Trends/Pinterest data often isn't retrievable
+   through a text search tool (it renders as an interactive chart, not crawlable text) — if your
+   first attempt fails, try at least ONE alternate route before conceding: search for trend reports,
+   seasonal guides, or press coverage that cites Trends/Pinterest data secondhand (e.g. "Pinterest
+   Predicts [year]", "Google Trends [style] report"). Report every route you tried, including failed
+   ones, in `cross_check_attempts` — do not silently substitute a weaker check and call the
+   requirement satisfied.
 4. Estimate competition density (approximate listing count) alongside demand, and compute a
    demand-to-competition ratio — a smaller-volume style with low competition can beat a
    high-volume, oversaturated one.
 5. Output a findings table: style/theme → recurs across N independent shops → approximate
    competition density → confirmed (or not) on the cross-check platform → recommended
    demand-to-competition verdict.
+
+Then, separately from the findings table, give exactly ONE recommended focus — not a list, not two
+items joined by "and" — with your reasoning for why that one beats the other candidates found.
 ```
 
 ### 3.2 `knowledge_base/prompts/a1_reference_set.md`
 
 ```markdown
 You are assembling a reference image set for the interior/art style: **%{style_name}**.
+
+**Every search call in this task must set `include_images: true`.** Text-only search results
+contain no usable image URLs — without this flag you will have nothing to build a candidate
+list from. Do not report or invent an image URL you did not actually receive from a call made
+with `include_images: true`; if a query returns no images, try a different query rather than
+fabricating one.
 
 Run this search process in order:
 
@@ -315,6 +347,8 @@ Run this search process in order:
 
 An image qualifies for the set only if it meets ALL of these:
 
+- It's a real URL returned by a search call — never a URL you constructed, guessed, or recalled
+  from training data.
 - Shows the piece actually framed and/or hung in a room, not just a flat product photo on white.
 - Attributed to %{style_name} by more than one independent source — it appears under that style's
   name in at least 2 of the searches above, not just one shop's own product tagging.
@@ -404,6 +438,11 @@ Return JSON matching the required schema.
 module Schemas
   module TrackA
     class StyleValidationSchema < RubyLLM::Schema
+      string :breadth_assessment,
+             enum: %w[single_coherent_style fragments_into_substyles],
+             description: "Does the candidate resolve to ONE producible style, or split into " \
+                          "multiple genuinely different sub-styles (subject, price tier, or " \
+                          "production difficulty)? Must be answered before findings are trusted."
       array :findings do
         object do
           string :theme,                 description: "Style or theme identified"
@@ -414,7 +453,16 @@ module Schemas
           string :demand_to_competition_verdict
         end
       end
-      string :recommended_style_focus
+      array :cross_check_attempts, of: :string,
+            description: "Every route tried to get Google Trends/Pinterest data, including " \
+                         "failed attempts and why they failed. Must not be empty — a bare " \
+                         "'not retrievable' with no attempt shown fails validation."
+      string :single_recommended_focus,
+             description: "Exactly ONE theme name from findings — never a list, never joined " \
+                          "by 'and'. If breadth_assessment is fragments_into_substyles, this is " \
+                          "your pick of the single best sub-theme, not an average across them."
+      string :recommendation_reasoning,
+             description: "Why this one specifically beats the other candidates found."
       string :methodology_caveats, description: "Any limits on how reliable these findings are"
     end
   end
@@ -588,11 +636,22 @@ module Steps
                            # 1 cross-check platform + competition-density lookups
         )
 
+        content = result[:content]
+        breadth_note = if content["breadth_assessment"] == "fragments_into_substyles"
+                          "⚠ #{context.fetch(:style_name)} FRAGMENTED into #{content['findings']&.size || '?'} " \
+                          "distinct sub-themes — this is not one coherent style. Read the breakdown " \
+                          "before deciding; the agent's single pick is #{content['single_recommended_focus'].inspect}, " \
+                          "not the name you originally validated."
+                        else
+                          "Resolved as one coherent style. Agent's pick: #{content['single_recommended_focus'].inspect}."
+                        end
+
         needs_human(
-          "Read the demand-to-competition findings and make the go/no-go call. The agent ran " \
-          "#{result[:search_calls_made]} live searches; committing a week's production to this " \
-          "style is your decision, not the agent's.",
-          { findings: result[:content], search_calls_made: result[:search_calls_made], brief: brief }
+          "#{breadth_note} Read the demand-to-competition findings and make the go/no-go call. " \
+          "The agent ran #{result[:search_calls_made]} live searches, tried " \
+          "#{content['cross_check_attempts']&.size || 0} route(s) for the Trends/Pinterest " \
+          "cross-check; committing a week's production to this style is your decision, not the agent's.",
+          { findings: content, search_calls_made: result[:search_calls_made], brief: brief }
         )
       rescue Search::NoSearchPerformedError => e
         fail_step("A0 could not complete: #{e.message}", { brief: brief })
@@ -639,7 +698,9 @@ module Steps
           model: Pipeline::TEXT_MODEL,
           schema: Schemas::TrackA::ReferenceSetSchema,
           task: "You are assembling a curated reference-image set for a wall-art style, following " \
-                "the search process and per-image requirements given below exactly.",
+                "the search process and per-image requirements given below exactly. Every search " \
+                "call must set include_images: true — this task is unusable without real image " \
+                "URLs, and a text-only search call will not produce any.",
           question: text,
           max_rounds: 8   # 1 retailer-guide search + 3 distinct Pinterest queries + 1-2 blog
                            # searches, per the source's own 4-step process

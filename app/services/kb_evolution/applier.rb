@@ -3,6 +3,8 @@ module KbEvolution
     ALLOWED_ROOT = Rails.root.join("knowledge_base").to_s
 
     def self.call(proposal:)
+      Workflow::RunMode.require_committed!("knowledge base write")
+
       # Belt-and-braces guardrail against writing outside knowledge_base/.
       # Model validation is one layer; this is the second.
       real_path = proposal.target_pathname.expand_path.to_s

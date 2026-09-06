@@ -6,10 +6,19 @@ module Steps
            ownership: "[AGENT-ASSISTED — human confirms]"
 
       def perform
-        result = RubyLLM.chat(model: Pipeline::VISION_MODEL)
-                        .with_schema(Schemas::TrackA::ContentTypeSchema)
-                        .ask(prompt("a3_content_type"), with: context.fetch(:reference_images))
-                        .content
+        result = Pipeline::Json.normalize(
+          RubyLLM.chat(model: Pipeline::VISION_MODEL)
+                 .with_schema(Schemas::TrackA::ContentTypeSchema)
+                 .ask(prompt("a3_content_type"), with: context.fetch(:reference_images))
+                 .content
+        )
+
+        if result.empty?
+          return needs_human(
+            "A3 got no classification back from the vision model (empty response). Re-run A3.",
+            { result: result, recommended_action: "reconsider" }
+          )
+        end
 
         unless result["contour_cross_check_passed"]
           return needs_human(

@@ -1,0 +1,45 @@
+meta:
+  source: "Project positioning, set by the shop owner"
+  citation: >
+    The Paradox of Choice — expanded choice increases the effort a decision requires, makes
+    mistakes more likely, and makes the psychological consequences of mistakes more severe; the
+    chooser/picker distinction. This Is Marketing, Ch. 4 and Ch. 8 — the smallest viable market;
+    positioning means standing for something rather than everything.
+  volatility: static
+  note: >
+    This file exists because P3_6 requires a positioning_target and nothing upstream produced one.
+    It is deliberately short. If it grows into a brand document, it has stopped being a rule file.
+
+rules:
+  positioning:
+    problem: >
+      Choosing art for a wall is a high-effort decision with no clear criteria. The buyer faces
+      unlimited options, cannot tell which would work in their actual room, and has no way to know
+      whether a choice was right until it is hanging. So the decision gets deferred indefinitely.
+
+    change_we_make: >
+      We convert an open-ended choice into a decided one. Each listing shows a specific piece, in a
+      specific kind of room, placed correctly — and says why that placement is right.
+
+    who_it_is_for: >
+      Someone who wants art on their wall and has stalled on choosing it. Not a collector building a
+      collection; a person who wants the wall finished and wants to stop deliberating about it.
+
+    what_we_do_not_claim:
+      - "for everyone"
+      - "for any room"
+      - "suits all styles"
+
+    the_three_promises:
+      - "Here is the art."
+      - "Here is where it goes."
+      - "Here is how to hang it."
+
+    positioning_target: >
+      Someone who has been putting off choosing art because they cannot picture what will work —
+      shown one piece, in a room like theirs, hung at the right height.
+
+    grounding_note: >
+      The third promise is why Phase 2's customer-education content (the no-holes planning method,
+      hanging hardware matched to real weight, conservation glass) is part of the product rather
+      than a footnote. That is also why anything reaching a customer must be fact-checked.
