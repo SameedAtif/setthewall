@@ -18,8 +18,11 @@ module Steps
         # Merge any human-provided URLs
         photos.merge!(context.fetch(:provided_urls, {}))
 
-        # Which required types are still missing?
-        missing_required = required.map(&:to_s) - photos.keys.select { |k| photos[k].present? }
+        # Which required types are still missing? Only studio/detail are ever generated — the
+        # lifestyle shot IS the Phase 2 composite (never regenerated), and scale/group/packaging
+        # are human-supplied.
+        generatable = %w[studio detail]
+        missing_required = (required.map(&:to_s) & generatable) - photos.keys.select { |k| photos[k].present? }
         skip = Array(context[:skip_types]).map(&:to_s)
         missing_required -= skip
 

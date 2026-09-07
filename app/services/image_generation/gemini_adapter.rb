@@ -19,12 +19,7 @@ module ImageGeneration
       end
 
       n.times do
-        response = connection.post("models/#{MODEL}:generateContent") do |req|
-          req.body = {
-            contents: [{ parts: parts }],
-            generationConfig: { responseModalities: ["IMAGE"] }
-          }
-        end
+        response = post_with_retry(parts)
 
         unless response.success?
           raise GenerationError, "Gemini error #{response.status}: #{response.body}"
@@ -44,6 +39,21 @@ module ImageGeneration
     def estimated_cost_usd(n:) = (COST_PER_IMAGE_USD * n).round(4)
 
     private
+
+    def post_with_retry(parts)
+      response = nil
+      3.times do |attempt|
+        response = connection.post("models/#{MODEL}:generateContent") do |req|
+          req.body = {
+            contents: [{ parts: parts }],
+            generationConfig: { responseModalities: ["IMAGE"] }
+          }
+        end
+        break if response.success?
+        sleep(2 * (attempt + 1))
+      end
+      response
+    end
 
     def extract_image(data)
       parts = data.dig("candidates", 0, "content", "parts") || []

@@ -39,11 +39,12 @@ module Steps
         broad_count = tags.count { |t| t["breadth"] == "broad" }
         errors << "#{broad_count} broad tags (max 4)" if broad_count > 4
 
-        # Style descriptor must be embedded in room/gift/alternate tags
-        style_token = spec.display_name.to_s.split.first.to_s.downcase
-        unless style_token.empty?
+        # Style descriptor must be embedded in room/gift/alternate tags — matched against the
+        # style's whole vocabulary (display name + A0 demand terms), not one literal word.
+        tokens = style_descriptor_tokens
+        unless tokens.empty?
           bare = tags.select { |t| %w[room_or_space_use gift_or_occasion alternate_use].include?(t["angle"]) }
-                     .reject { |t| t["tag"].to_s.downcase.include?(style_token) }
+                     .reject { |t| tag_has_style?(t["tag"], tokens) }
           errors << "room/gift/alternate tags missing style descriptor: #{bare.map { |t| t['tag'] }.join(', ')}" if bare.any?
         end
 
@@ -54,6 +55,21 @@ module Steps
 
         piece.update!(listing_tags: tags.map { |t| t["tag"] })
         ok({ tags: tags.map { |t| t["tag"] }, angles_covered: angles_covered })
+      end
+
+      private
+
+      def style_descriptor_tokens
+        stop = %w[and the for with from of in on to a an their its or
+                  print prints wall art decor home poster]
+        ([spec.display_name.to_s] + TrackAResearch.demand_terms)
+          .flat_map { |t| t.to_s.downcase.split(/[^a-z0-9]+/) }
+          .reject { |w| w.blank? || stop.include?(w) }
+          .uniq
+      end
+
+      def tag_has_style?(tag, tokens)
+        (tag.to_s.downcase.split(/[^a-z0-9]+/) & tokens).any?
       end
     end
   end
