@@ -155,7 +155,14 @@ module Compositor
       m = @template.fetch("measurements")
       value = m.fetch("pixels_per_inch").to_i
       raise TemplateError, "Template '#{@piece.scene_spec_id}' has invalid pixels_per_inch" if value <= 0
-      raise TemplateError, "Template '#{@piece.scene_spec_id}' pixels_per_inch is uncalibrated" if m["calibrated"] == false
+
+      if m["calibrated"] == false
+        # A speculative dry-run may proceed on the uncalibrated estimate (the dossier surfaces the
+        # flag); a committed run must not place art on unverified pixel math.
+        unless Workflow::RunMode.speculative?
+          raise TemplateError, "Template '#{@piece.scene_spec_id}' pixels_per_inch is uncalibrated"
+        end
+      end
 
       value
     end
@@ -176,6 +183,7 @@ module Compositor
         art_height_px: art_dims[:h],
         x_px: x, y_px: y,
         pixels_per_inch: m["pixels_per_inch"],
+        calibrated: m["calibrated"] != false,
         coverage_fraction: (art_area.to_f / wall_area).round(4),
         eye_level_anchor: m[KnowledgeBase::RuleSet.load("eye_level").rules["by_room_type"][@piece.room_type]["anchor"]]
       }
