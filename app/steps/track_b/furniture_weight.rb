@@ -4,10 +4,12 @@ module Steps
       step id: "B2", mechanism: :llm_vision, ownership: "[AGENT-READY]"
 
       def perform
-        result = RubyLLM.chat(model: Pipeline::VISION_MODEL)
-                        .with_schema(Schemas::TrackB::FurnitureWeightSchema)
-                        .ask(prompt("b2_furniture_weight"), with: Pipeline::KB_ROOT.join(context.fetch(:scene_image)))
-                        .content
+        result = Pipeline::Json.normalize(
+          RubyLLM.chat(model: Pipeline::VISION_MODEL)
+                 .with_schema(Schemas::TrackB::FurnitureWeightSchema)
+                 .ask(prompt("b2_furniture_weight"), with: Pipeline::KB_ROOT.join(context.fetch(:scene_image)))
+                 .content
+        )
 
         if result["borderline"]
           result["furniture_weight"] = rules("borderline_defaults")

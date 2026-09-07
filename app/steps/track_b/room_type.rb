@@ -4,10 +4,12 @@ module Steps
       step id: "B3", mechanism: :llm_vision, ownership: "[AGENT-READY]"
 
       def perform
-        result = RubyLLM.chat(model: Pipeline::VISION_MODEL)
-                        .with_schema(Schemas::TrackB::RoomTypeSchema)
-                        .ask(prompt("b3_room_type"), with: Pipeline::KB_ROOT.join(context.fetch(:scene_image)))
-                        .content
+        result = Pipeline::Json.normalize(
+          RubyLLM.chat(model: Pipeline::VISION_MODEL)
+                 .with_schema(Schemas::TrackB::RoomTypeSchema)
+                 .ask(prompt("b3_room_type"), with: Pipeline::KB_ROOT.join(context.fetch(:scene_image)))
+                 .content
+        )
 
         if result["room_type"] == "ambiguous"
           # This is enforced from the rule file explicitly — the escalate flag is the machine-

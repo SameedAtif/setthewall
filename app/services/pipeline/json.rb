@@ -8,6 +8,7 @@ module Pipeline
 
     def normalize(content)
       return content if content.is_a?(Hash)
+      return first_hash(content) if content.is_a?(Array)
       return {} if content.blank?
 
       parsed = parse(content.to_s) || parse(extract_object(content.to_s))
@@ -15,6 +16,10 @@ module Pipeline
 
       Rails.logger.warn("[Pipeline::Json] no valid JSON object in: #{content.to_s.truncate(300).inspect}")
       {}
+    end
+
+    def first_hash(arr)
+      arr.find { |e| e.is_a?(Hash) } || {}
     end
 
     def parse(text)

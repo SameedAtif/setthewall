@@ -13,12 +13,20 @@ module Steps
       #                              minimalist_modern → line_only default in step 2
       def perform
         # === Step 1 — observation ===
-        step1 = RubyLLM.chat(model: Pipeline::VISION_MODEL)
-                      .with_schema(Schemas::TrackB::ColorRoleObservationSchema)
-                      .ask(prompt("b6_color_role"), with: Pipeline::KB_ROOT.join(context.fetch(:scene_image)))
-                      .content
+        step1 = Pipeline::Json.normalize(
+          RubyLLM.chat(model: Pipeline::VISION_MODEL)
+                .with_schema(Schemas::TrackB::ColorRoleObservationSchema)
+                .ask(prompt("b6_color_role"), with: Pipeline::KB_ROOT.join(context.fetch(:scene_image)))
+                .content
+        )
 
         candidate = step1["candidate_role"]
+        if candidate.blank?
+          return needs_human(
+            "B6 got no colour-role candidate back from the vision model. Re-run B6.",
+            { result: step1, recommended_action: "reconsider" }
+          )
+        end
 
         # === Step 2 — Content Type override (human-decided) ===
         # Rule from color_role_observation.yml: if content_type is minimalist_modern, line_only

@@ -4,10 +4,12 @@ module Steps
       step id: "B1", mechanism: :llm_vision, ownership: "[AGENT-READY]"
 
       def perform
-        result = RubyLLM.chat(model: Pipeline::VISION_MODEL)
-                        .with_schema(Schemas::TrackB::WallConditionSchema)
-                        .ask(prompt("b1_wall_condition"), with: Pipeline::KB_ROOT.join(context.fetch(:scene_image)))
-                        .content
+        result = Pipeline::Json.normalize(
+          RubyLLM.chat(model: Pipeline::VISION_MODEL)
+                 .with_schema(Schemas::TrackB::WallConditionSchema)
+                 .ask(prompt("b1_wall_condition"), with: Pipeline::KB_ROOT.join(context.fetch(:scene_image)))
+                 .content
+        )
 
         apply_borderline_default!(result, :wall_condition)
 
