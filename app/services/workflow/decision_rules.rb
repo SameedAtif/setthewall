@@ -10,6 +10,7 @@ module Workflow
     # the YAML; move it into decision_rules.yml if it ever needs per-step reasoning.
     TIERS = {
       "A_IDEATE" => 1, "B1" => 1, "B2" => 1, "B4" => 1, "B5" => 1, "C1" => 1,
+      "A6" => 1, "A7" => 1,
       "P2_2a" => 1, "P2_2b" => 1, "P2_2c" => 1, "P2_2d" => 1, "P2_2e" => 1,
       "P2_4" => 1, "P2_4b" => 1, "P3_1" => 1, "P3_3" => 1, "P3_4" => 1, "P3_8" => 1,
       "A1" => 2, "A2" => 2, "A3" => 2, "A4" => 2, "B3" => 2, "B6" => 2,

@@ -10,7 +10,8 @@ RSpec.describe KnowledgeBase::SceneSpecWriter do
     slug = "test-scene-writer-#{SecureRandom.hex(4)}"
     KnowledgeBase::StyleSpecWriter.create_or_update_style_level(
       slug: slug, name: "T", mood: "calm_ordered",
-      content_type: "minimalist_modern", frame_form: "angular"
+      content_type: "minimalist_modern", frame_form: "angular",
+      production_model: { "fulfillment_type" => "physical", "piece_count" => 1 }
     )
     track_kb_file(Pipeline::KB_ROOT.join("style_specs", "#{slug}.yml"))
     slug

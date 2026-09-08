@@ -6,8 +6,6 @@ module Steps
            ownership: "[AGENT-ASSISTED — human enforces batch cap]"
 
       # context: { candidate_count: (optional Integer) }
-      # piece: a fresh PieceRecord with style_spec_slug and scene_spec_id set — apply_spec!
-      #        must have been called on it already so the axis values are denormalised.
       def perform
         constraints = rules("generation_constraints").rules
         cap  = constraints["batch"]["max_candidates_per_scene"]
@@ -17,52 +15,74 @@ module Steps
           return fail_step("candidate_count must be at least 1", { requested: context[:candidate_count] })
         end
 
-        # === Step 1 — synthesise the prompt ===
-        synthesis = RubyLLM.chat(model: Pipeline::TEXT_MODEL)
-                           .with_schema(Schemas::TrackC::PromptSynthesisSchema)
-                           .ask(build_synthesis_prompt).content
+        # Selection happens in code, one (subject, pattern) pair per batch item, so the synthesis
+        # call never sees a list to blend.
+        pairs = Art::SubjectSceneSelector.pairs(spec, want)
 
-        gen_prompt = synthesis["image_generation_prompt"]
-
-        # === Step 2 — call the image generator ===
         adapter = ImageGeneration::Adapter.build
-        result  = adapter.generate(prompt: gen_prompt, n: want)
+        urls = []
+        prompt_files = []
+        contributions = []
 
-        # Persist the prompt on the piece regardless of adapter outcome, so it's reproducible
-        # and available for the review UI even in the manual case.
+        pairs.each do |pair|
+          synthesis = RubyLLM.chat(model: Pipeline::TEXT_MODEL)
+                             .with_schema(Schemas::TrackC::PromptSynthesisSchema)
+                             .ask(build_synthesis_prompt(pair)).content
+
+          gen_prompt = synthesis["image_generation_prompt"]
+          contributions.concat(Array(synthesis["axis_contributions"]))
+
+          result = adapter.generate(prompt: gen_prompt, n: 1)
+          urls.concat(result.urls)
+          if result.raw_response.is_a?(Hash) && result.raw_response[:prompt_file]
+            prompt_files << result.raw_response[:prompt_file]
+          end
+        end
+
         piece.update!(
           batch_count: want,
-          candidate_urls: result.urls
+          candidate_urls: urls,
+          candidate_subjects: pairs.map { |p| p[:subject] && p[:subject]["subject"] },
+          candidate_patterns: pairs.map { |p| p[:pattern] && p[:pattern]["pattern_id"] }
         )
 
-        if result.raw_response.is_a?(Hash) && result.raw_response[:pending]
+        if prompt_files.any?
           needs_human(
-            "IMAGE_GEN_PROVIDER=manual: generate #{want} candidates from the prompt at " \
-            "#{result.raw_response[:prompt_file]} and paste the resulting image URLs back " \
-            "into this piece via candidate_urls.",
-            { prompt_file: result.raw_response[:prompt_file],
-              n_requested: want, adapter: adapter.name, prompt: gen_prompt }
+            "IMAGE_GEN_PROVIDER=manual: generate #{want} candidates from the prompt file(s) at " \
+            "#{prompt_files.join(', ')} and paste the resulting image URLs back into this piece.",
+            { prompt_files: prompt_files, n_requested: want, adapter: adapter.name }
           )
         else
-          ok({
-            candidate_urls: result.urls,
-            estimated_cost_usd: result.estimated_cost_usd,
-            adapter: adapter.name,
-            prompt: gen_prompt,
-            axis_contributions: synthesis["axis_contributions"]
-          })
+          ok({ candidate_urls: urls, adapter: adapter.name, axis_contributions: contributions })
         end
       end
 
       private
 
-      def build_synthesis_prompt
-        prompt("c1_generation_prompt_synthesis",
-               style_name: spec.display_name,
-               mood:         piece.mood,
-               content_type: piece.content_type,
-               color_role:   piece.color_role,
-               room_shape:   piece.room_shape)
+      def build_synthesis_prompt(pair)
+        base = { style_name: spec.display_name, mood: piece.mood,
+                 content_type: piece.content_type, color_role: piece.color_role }
+
+        if pair[:subject].present? && pair[:pattern].present?
+          prompt("c1_generation_prompt_synthesis_scene",
+                 **base,
+                 recurring_subject: pair[:subject]["subject"],
+                 narrative_structure: pair[:pattern]["narrative_structure"],
+                 light_logic: pair[:pattern]["light_logic"],
+                 temporal_quality: pair[:pattern]["temporal_quality"],
+                 room_shape_constraint: room_shape_constraint)
+        else
+          prompt("c1_generation_prompt_synthesis", **base, room_shape: piece.room_shape)
+        end
+      end
+
+      def room_shape_constraint
+        case piece.room_shape
+        when "narrow"          then "compose with strong vertical lines."
+        when "low_ceilinged"   then "compose with strong horizontal lines."
+        when "small_closed_in" then "keep the composition open and uncluttered, with visual breathing room."
+        else ""
+        end
       end
     end
   end

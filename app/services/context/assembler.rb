@@ -2,6 +2,11 @@ module Context
   # Builds a step's context from the run's base values plus prior step results. This is the
   # cross-step carry-forward for the conductor (the piece-pipeline equivalent of module 01c's
   # TrackASequence::SOURCES), now extended across Track A, Track B, and the piece pipeline.
+  #
+  # Taint rule: a step whose recorded disposition is `rewind`/`abandon`, or whose status is
+  # `failed`, must not contribute values downstream. A blocked step's output is treated as
+  # absent, so the next step either fails cleanly or (for the A5/B7 locks) cannot satisfy its
+  # required axes and escalates instead of locking a rejected value.
   class Assembler
     def self.for(step_id, run)
       new(step_id, run).build
@@ -10,7 +15,8 @@ module Context
     def initialize(step_id, run)
       @step_id = step_id
       @run = run
-      @results = results_by_step
+      @entries = entries_by_step
+      @results = @entries.transform_values { |e| (e["data"] || {}).stringify_keys }
     end
 
     def build
@@ -31,10 +37,17 @@ module Context
       }.compact
     end
 
-    def results_by_step
+    def entries_by_step
       Array(@run.step_results).each_with_object({}) do |r, acc|
-        acc[r["step_id"]] = (r["data"] || {}).stringify_keys if r["step_id"]
+        acc[r["step_id"]] = r if r["step_id"]
       end
+    end
+
+    def tainted?(step_id)
+      entry = @entries[step_id]
+      return false unless entry
+
+      entry["status"] == "failed" || %w[rewind abandon].include?(entry["disposition"])
     end
 
     def dig(*keys) = @results.dig(*keys)
@@ -44,6 +57,8 @@ module Context
     end
 
     def reference_images
+      return [] if tainted?("A1")
+
       images = dig("A1", "candidates", "images")
       Array(images).filter_map { |i| i["url"] if i.is_a?(Hash) }
     end
@@ -52,18 +67,28 @@ module Context
       dig("A0", "style_name_used") || @run.dossier_data["style_name"]
     end
 
-    def mood = result_of("A2")["mood"]
-    def content_type = result_of("A3")["content_type"]
-    def frame_form = result_of("A4")["frame_form"]
+    def mood = tainted?("A2") ? nil : result_of("A2")["mood"]
+    def content_type = tainted?("A3") ? nil : result_of("A3")["content_type"]
+    def frame_form = tainted?("A4") ? nil : result_of("A4")["frame_form"]
+
+    def production_model
+      return nil if tainted?("A0")
+
+      dig("A0", "findings", "production_model")
+    end
+
+    def scene_axis(step, key)
+      tainted?(step) ? nil : dig(step, key)
+    end
 
     def scene_axes
       {
-        wall_condition: dig("B1", "wall_condition"),
-        furniture_weight: dig("B2", "furniture_weight"),
-        room_type: dig("B3", "room_type"),
-        room_shape: dig("B4", "room_shape"),
-        space_math: dig("B5", "space_math"),
-        color_role: dig("B6", "color_role")
+        wall_condition: scene_axis("B1", "wall_condition"),
+        furniture_weight: scene_axis("B2", "furniture_weight"),
+        room_type: scene_axis("B3", "room_type"),
+        room_shape: scene_axis("B4", "room_shape"),
+        space_math: scene_axis("B5", "space_math"),
+        color_role: scene_axis("B6", "color_role")
       }
     end
 
@@ -73,10 +98,11 @@ module Context
       when "A2", "A3"    then { reference_images: reference_images }
       when "A4"          then { reference_images: reference_images, mood: mood }
       when "A5"          then { style_name: style_name_used, mood: mood,
-                                content_type: content_type, frame_form: frame_form }
+                                content_type: content_type, frame_form: frame_form,
+                                production_model: production_model }
       when "B6"          then { content_type: content_type,
-                                wall_condition: dig("B1", "wall_condition"),
-                                furniture_weight: dig("B2", "furniture_weight") }
+                                wall_condition: scene_axis("B1", "wall_condition"),
+                                furniture_weight: scene_axis("B2", "furniture_weight") }
       when "B7"          then { axes: scene_axes }
       else {}
       end
@@ -84,14 +110,19 @@ module Context
 
     # Tier 3 confirm steps never auto-fill `confirmed` in the committed flow, but a speculative
     # full run must provisionally complete them so downstream steps can run against the staged
-    # spec. The decision still escalates to the dossier; this only unblocks the dry run.
+    # spec. The provisional confirm only fires when every required axis is clean — a tainted
+    # upstream value means the lock must NOT write it, and the step escalates instead.
     def provisional
       case @step_id
-      when "A5" then { confirmed: true }
-      when "B7" then { confirmed: true }
+      when "A5" then axes_clean? ? { confirmed: true } : {}
+      when "B7" then scene_axes.values.all?(&:present?) ? { confirmed: true } : {}
       when "C2" then c2_context
       else {}
       end
+    end
+
+    def axes_clean?
+      mood.present? && content_type.present? && frame_form.present?
     end
 
     def c2_context

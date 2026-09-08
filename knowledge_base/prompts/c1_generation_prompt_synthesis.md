@@ -11,12 +11,16 @@ The spec for this piece is:
 
 Compose the prompt in this order:
 
-1. Lead with the subject matter and rendering approach (from Content Type).
-2. Add the mood layer (energy and palette).
-3. Add the colour treatment this piece plays in the room (from Color Role) as a SATURATION and
+1. Lead with the rendering approach (from Content Type) — how literally and densely the subject is
+   rendered. Content Type is a rendering-density instruction only; it does NOT specify what the
+   subject is, so do not invent a subject to satisfy it.
+2. Add the colour treatment this piece plays in the room (from Color Role) as a SATURATION and
    INTENSITY instruction — high chroma and strong contrast against a neutral wall where the role
    calls for it. Do NOT invent a compositional structure or geometry from the role name; the role
    describes the piece's job in the room, not its internal layout.
+3. Mood affects PALETTE ONLY. Use it to guide colour temperature and energy in the palette. Do NOT
+   translate mood into composition density, framing weight, arrangement, or "energy of the
+   depiction" — mood describes how the piece will be hung, not what is drawn inside it.
 4. If room shape is narrow / low_ceilinged / small_closed_in, add the corresponding line
    orientation constraint:
    - narrow → strong vertical lines in the composition

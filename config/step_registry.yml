@@ -49,6 +49,18 @@ phase_1:
         mechanism: human
         human_gate: true
         klass: "Steps::TrackA::LockStyleEntry"
+      - id: A6
+        title: "Research recurring subjects"
+        ownership: "[AGENT-READY]"
+        mechanism: llm_text
+        human_gate: false
+        klass: "Steps::TrackA::SubjectResearch"
+      - id: A7
+        title: "Research recurring scene patterns"
+        ownership: "[AGENT-READY]"
+        mechanism: llm_text
+        human_gate: false
+        klass: "Steps::TrackA::SceneResearch"
 
   track_b:
     cadence: per_scene

@@ -13,7 +13,7 @@ module Agents
       P3_1 P3_1b P3_2 P3_3 P3_4 P3_5 P3_6 P3_7 P3_8
     ].freeze
 
-    STYLE_ORDER = %w[A0 A1 A2 A3 A4 A5 B0 B1 B2 B3 B4 B5 B6 B7].freeze
+    STYLE_ORDER = %w[A0 A1 A2 A3 A4 A5 A6 A7 B0 B1 B2 B3 B4 B5 B6 B7].freeze
     FULL_ORDER  = (STYLE_ORDER + ORDER).freeze
 
     SCOPES = {
@@ -90,6 +90,7 @@ module Agents
       context = Context::Assembler.for(step_id, @run)
       result  = Workflow::StepDispatcher.call(step_id: step_id, piece: piece, context: context)
       record_step!(step_id, result)
+      capture_reference_images!(result) if step_id == "A1"
 
       tier = Workflow::DecisionRules.tier_for(step_id)
       return if tier == 3 && escalate!(step_id, "tier_3_gate")
@@ -121,6 +122,17 @@ module Agents
       @run.update!(piece_record: piece) if piece
     end
 
+    # ImageQa compares candidates against A1's curated reference set, which it reads from
+    # dossier_data["A1"]["curated_images"]. Populate that key from A1's own step result.
+    def capture_reference_images!(result)
+      candidates = result.data&.dig(:candidates) || result.data&.dig("candidates")
+      images = candidates&.dig(:images) || candidates&.dig("images")
+      urls = Array(images).filter_map { |i| i["url"] if i.is_a?(Hash) }
+      return if urls.empty?
+
+      @run.update!(dossier_data: @run.dossier_data.merge("A1" => { "curated_images" => urls }))
+    end
+
     def close_gate(step_id, result, findings)
       verdict = Workflow::DecisionRules.verdict_for(step_id: step_id, result: result, findings: findings)
       legal   = Workflow::DecisionRules.legal_dispositions(step_id: step_id, verdict: verdict)
@@ -139,6 +151,20 @@ module Agents
       Workflow::GateCloser.call(run: @run, step_id: step_id, verdict: verdict,
                                 disposition: disposition, reviewer_kind: "agent", findings: findings)
       record_disposition!(step_id, verdict, disposition)
+
+      return unless disposition == "rewind"
+
+      claims = findings.select(&:blocking?).map(&:claim).join(" | ")
+      escalate!(step_id, "rewind", claims)
+      clear_side_effects!(step_id)
+    end
+
+    # A rewinded step must not leave its side effects on the piece — a rejected cull pick must not
+    # feed the compositor.
+    def clear_side_effects!(step_id)
+      return unless %w[C2 C2_finalists C2_chosen].include?(step_id)
+
+      piece&.update!(chosen_url: nil)
     end
 
     def acceptance_note(findings)
@@ -149,7 +175,7 @@ module Agents
     end
 
     def gated?(step_id)
-      Workflow::DecisionRules.gated_step_ids.include?(step_id) || step_id == "C2"
+      Workflow::DecisionRules.gated_step_ids.include?(step_id) || %w[C2 P2_6].include?(step_id)
     end
 
     def record_step!(step_id, result)

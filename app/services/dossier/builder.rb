@@ -51,6 +51,8 @@ module Dossier
         "#{label} — needs your decision#{msg.present? ? ": #{truncate(msg, 300)}" : ''}"
       when "step_error"
         "#{label} — failed: #{e['divergence'] || 'unknown error'}"
+      when "rewind"
+        "#{label} — blocked by a QA check and must be re-run: #{e['divergence']}"
       when "verifier_divergence"
         "#{label} — the QA checks disagreed (proposer: #{e.dig('divergence', 'proposer')}, " \
         "verifier: #{e.dig('divergence', 'verifier')})"

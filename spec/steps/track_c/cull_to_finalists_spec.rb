@@ -45,4 +45,14 @@ RSpec.describe Steps::TrackC::CullToFinalists do
     result = described_class.call(piece: piece, context: { finalist_urls: %w[a b], chosen_url: "c" })
     expect(result).to be_failed
   end
+
+  it "logs the chosen candidate's subject and pattern" do
+    piece = create(:piece_record, candidate_urls: %w[a b c],
+                                  candidate_subjects: %w[cottage moth moon],
+                                  candidate_patterns: %w[p1 p2 p1])
+    result = described_class.call(piece: piece, context: { finalist_urls: %w[a b], chosen_url: "b" })
+    expect(result).to be_ok
+    expect(piece.reload.chosen_subject).to eq("moth")
+    expect(piece.reload.chosen_pattern).to eq("p2")
+  end
 end

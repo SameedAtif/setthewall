@@ -65,4 +65,24 @@ RSpec.describe Compositor::Runner do
   ensure
     File.delete(result&.output_path) rescue nil
   end
+
+  it "raises when declared image dimensions mismatch the actual image" do
+    write_template("mismatch", full_measurements.merge("image_width_px" => 1000, "image_height_px" => 1000))
+    piece = piece_for("mismatch")
+    expect { described_class.call(piece: piece) }
+      .to raise_error(Compositor::TemplateError, /declares 1000x1000/)
+  end
+
+  it "emits computed placement geometry for QA" do
+    write_template("seated-geo", full_measurements)
+    piece = piece_for("seated-geo")
+    result = described_class.call(piece: piece)
+    m = result.measurements
+    expect(m[:furniture_width_px]).to eq(800)
+    expect(m[:group_width_px]).to be_positive
+    expect(m[:furniture_gap_px]).to be_positive
+    expect(m[:drop_applied_inches]).to be_within(0.01).of(3.5)
+  ensure
+    File.delete(result&.output_path) rescue nil
+  end
 end

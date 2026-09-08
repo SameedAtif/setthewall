@@ -7,7 +7,7 @@ module Schemas
             description: "Which phrase came from which axis — for auditability" do
         object do
           string :axis,
-                 enum: %w[content_type mood color_role frame_form room_shape]
+                 enum: %w[content_type mood color_role frame_form room_shape subject narrative]
           string :phrase_added
         end
       end

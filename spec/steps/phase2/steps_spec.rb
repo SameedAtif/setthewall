@@ -12,6 +12,23 @@ RSpec.describe Steps::Phase2::LoadStyleSpec do
     result = described_class.call(piece: nil, context: { style_slug: "nonexistent-#{SecureRandom.hex(4)}" })
     expect(result).to be_failed
   end
+
+  it "blocks when the piece's fulfillment_type contradicts the spec" do
+    spec, = build_test_spec
+    piece = create(:piece_record, style_spec_slug: spec.slug, scene_spec_id: "s1",
+                                  fulfillment_type: "digital")
+    result = described_class.call(piece: piece, context: { style_slug: spec.slug })
+    expect(result).to be_failed
+    expect(result.message).to include("fulfillment_type")
+  end
+
+  it "passes when the piece's fulfillment_type matches the spec" do
+    spec, = build_test_spec
+    piece = create(:piece_record, style_spec_slug: spec.slug, scene_spec_id: "s1",
+                                  fulfillment_type: "physical")
+    result = described_class.call(piece: piece, context: { style_slug: spec.slug })
+    expect(result).to be_ok
+  end
 end
 
 RSpec.describe Steps::Phase2::AssignFrame do

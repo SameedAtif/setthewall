@@ -92,6 +92,21 @@ RSpec.describe Steps::TrackB do
         expect(result.data[:space_math]).to eq("single")
       end
     end
+
+    it "escalates when the production model is multi-piece but the scene reads single" do
+      slug = "b5-multi-#{SecureRandom.hex(4)}"
+      KnowledgeBase::StyleSpecWriter.create_or_update_style_level(
+        slug: slug, name: "T", mood: "calm_ordered", content_type: "minimalist_modern",
+        frame_form: "angular", production_model: { "fulfillment_type" => "digital", "piece_count" => 6 }
+      )
+      track_kb_file(Pipeline::KB_ROOT.join("style_specs", "#{slug}.yml"))
+
+      stub_llm(content: { "space_math" => "single", "reasoning" => "fills the space" }) do
+        result = described_class::SpaceMath.call(piece: nil, context: scene_ctx(style_slug: slug))
+        expect(result).to be_awaiting_human
+        expect(result.message).to include("multi-piece")
+      end
+    end
   end
 
   describe "ColorRole (B6)" do

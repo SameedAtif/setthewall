@@ -11,7 +11,27 @@ module Steps
                  .content
         )
 
-        ok({ space_math: result["space_math"], reasoning: result["reasoning"] })
+        space_math = result["space_math"]
+
+        if space_math == "single" && production_piece_count > 1
+          return needs_human(
+            "A0 selected a multi-piece production model (piece_count=#{production_piece_count}) " \
+            "but this scene's geometry only supports a single piece. Escalating rather than " \
+            "silently choosing one.",
+            { space_math: space_math, piece_count: production_piece_count }
+          )
+        end
+
+        ok({ space_math: space_math, reasoning: result["reasoning"] })
+      end
+
+      private
+
+      def production_piece_count
+        spec = KnowledgeBase::StyleSpec.load(context.fetch(:style_slug))
+        spec.production_model["piece_count"].to_i
+      rescue StandardError
+        1
       end
     end
   end

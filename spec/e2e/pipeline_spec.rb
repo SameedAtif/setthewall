@@ -108,7 +108,7 @@ RSpec.describe "full daily pipeline", type: :model do
           dispatch("P3_4", piece, product_type: "print")
           dispatch("P3_5", piece)
           dispatch("P3_5", piece, category_id: "1")
-          dispatch("P3_6", piece, positioning_target: "calm minimalists")
+          dispatch("P3_6", piece, positioning_target: "calm minimalists", dimensions: "8x10", sizes: "One size")
           dispatch("P3_6", piece, positioning_target: "calm minimalists", confirmed: true)
           dispatch("P3_7", piece)
           dispatch("P3_7", piece, return_policy: "30 days", shipping_price_usd: 5, item_price_usd: 50, confirmed: true)

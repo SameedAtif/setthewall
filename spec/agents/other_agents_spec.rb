@@ -46,6 +46,15 @@ RSpec.describe Agents::ImageQa do
     end
   end
 
+  it "advisories a candidate that does not depict its specified subject" do
+    piece = create(:piece_record, candidate_urls: ["https://x/1.jpg"], candidate_subjects: ["cottage"])
+    stub_llm(content: { "per_image" => [{ "index" => 1, "axis_mismatches" => [], "subject_conforms" => false }],
+                        "constraint_violations" => [] }) do
+      f = described_class.call(run: run_with(piece), step_id: "C1", result: Object.new, context: {})
+      expect(f).to include(an_object_having_attributes(severity: "advisory", claim: a_string_including("subject")))
+    end
+  end
+
   it "uses lifestyle photos for P3_1b" do
     piece = create(:piece_record, photos: { "a" => "https://x/p.jpg" })
     stub_llm(content: { "per_image" => [{ "index" => 1, "axis_mismatches" => [] }], "constraint_violations" => [] }) do

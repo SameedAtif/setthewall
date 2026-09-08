@@ -27,11 +27,12 @@ module Steps
         ) if invalid.any?
 
         spec = KnowledgeBase::StyleSpecWriter.create_or_update_style_level(
-          slug:         context.fetch(:style_slug),
-          name:         context.fetch(:style_name),
-          mood:         context.fetch(:mood),
-          content_type: context.fetch(:content_type),
-          frame_form:   context.fetch(:frame_form)
+          slug:             context.fetch(:style_slug),
+          name:             context.fetch(:style_name),
+          mood:             context.fetch(:mood),
+          content_type:     context.fetch(:content_type),
+          frame_form:       context.fetch(:frame_form),
+          production_model: context[:production_model]
         )
 
         ok({ style_spec_path: spec.path.to_s, slug: spec.slug },

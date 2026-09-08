@@ -29,17 +29,12 @@ module KnowledgeBase
       color_role:       %w[accent_highlighter color_burst unifier saturator line_only]
     }.freeze
 
-    attr_reader :slug, :name, :style_level, :scenes, :path
+    attr_reader :slug, :name, :style_level, :scenes, :path, :production_model,
+                :subject_research, :scene_research
 
-    # The slug's human name, for listing copy. `name` is the A0 research label (which can carry a
-    # price band and narrowing detail); this is the market-facing term — "whimsigoth-v1" → "Whimsigoth".
-    def display_name
-      slug.to_s
-          .sub(/-v\d+\z/i, "")
-          .sub(/-\d+\z/, "")
-          .tr("-", " ")
-          .humanize
-    end
+    # The buyer-facing name, for listing copy. `name` is validated at lock time (A5) to be a
+    # short, keyword-usable phrase; A0's full research sentence lives in production_model.
+    def display_name = name.to_s
 
     def self.load(slug)
       path = Workflow::RunMode.write_root.join("style_specs", "#{slug}.yml")
@@ -55,11 +50,14 @@ module KnowledgeBase
     end
 
     def initialize(raw, path)
-      @path        = path
-      @slug        = raw.fetch("slug")
-      @name        = raw.fetch("name")
-      @style_level = raw.fetch("style_level").symbolize_keys
-      @scenes      = raw.fetch("scenes", {})
+      @path             = path
+      @slug             = raw.fetch("slug")
+      @name             = raw.fetch("name")
+      @style_level      = raw.fetch("style_level").symbolize_keys
+      @scenes           = raw.fetch("scenes", {})
+      @production_model = (raw["production_model"] || {}).stringify_keys
+      @subject_research = (raw["subject_research"] || {}).stringify_keys
+      @scene_research   = (raw["scene_research"] || {}).stringify_keys
     end
 
     def scene(scene_id)
@@ -81,10 +79,22 @@ module KnowledgeBase
         end
       end
 
+      validate_production_model!
       raise IncompleteSpecError, "#{slug}: no scene templates defined" if scenes.empty?
       scene_ids.each { |id| scene(id).validate! }
 
       true
+    end
+
+    def validate_production_model!
+      ft = production_model["fulfillment_type"]
+      pc = production_model["piece_count"]
+      raise IncompleteSpecError, "#{slug}: production_model.fulfillment_type is blank" if ft.blank?
+      unless %w[digital physical].include?(ft.to_s)
+        raise IncompleteSpecError, "#{slug}: production_model.fulfillment_type='#{ft}' not in [digital, physical]"
+      end
+      raise IncompleteSpecError, "#{slug}: production_model.piece_count is blank" if pc.blank?
+      raise IncompleteSpecError, "#{slug}: production_model.piece_count='#{pc}' must be >= 1" if pc.to_i < 1
     end
   end
 end

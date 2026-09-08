@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_09_06_130000) do
+ActiveRecord::Schema[8.0].define(version: 2026_09_06_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -181,6 +181,11 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_06_130000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "color_role_confirmed"
+    t.string "fulfillment_type"
+    t.string "chosen_subject"
+    t.string "chosen_pattern"
+    t.jsonb "candidate_subjects", default: [], null: false
+    t.jsonb "candidate_patterns", default: [], null: false
     t.index ["etsy_listing_id"], name: "index_piece_records_on_etsy_listing_id", unique: true
     t.index ["kb_version"], name: "index_piece_records_on_kb_version"
     t.index ["status"], name: "index_piece_records_on_status"

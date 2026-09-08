@@ -8,6 +8,14 @@ module Steps
         adapter = Etsy::Adapter.build
         live_tree = adapter.fetch_category_tree
 
+        if live_tree.empty?
+          return fail_step(
+            "Etsy taxonomy fetch returned 0 nodes — infrastructure failure (broken endpoint or " \
+            "auth), not a normal validation failure to retry past.",
+            { taxonomy_nodes: live_tree.size }
+          )
+        end
+
         # Category selection: use human-supplied category_id when given, otherwise leave as nil
         # and require the human to pick — automatic category picking from a live taxonomy is
         # error-prone, and Etsy's category assignment is not casually reversible.

@@ -8,6 +8,25 @@ module Steps
       def perform
         return ok({ description: piece.listing_description }) if context[:confirmed]
 
+        dimensions = context[:dimensions]
+        sizes      = context[:sizes]
+        if dimensions.blank? || sizes.blank?
+          return fail_step(
+            "Cannot write a description — dimensions and sizes must be known before the model " \
+            "can write non-contradictory copy.",
+            { dimensions: dimensions, sizes: sizes }
+          )
+        end
+
+        if (dims = parsed_inches(dimensions)) &&
+           Art::PrintResolution.oversized?(width_in: dims[0], height_in: dims[1])
+          return fail_step(
+            "Offered dimensions #{dimensions} exceed the generator's honest print ceiling " \
+            "(max #{Art::PrintResolution.max_inches_per_dimension.round(1)}\" per side at 300 DPI).",
+            { dimensions: dimensions }
+          )
+        end
+
         result = RubyLLM.chat(model: Pipeline::TEXT_MODEL)
                         .with_schema(Schemas::Phase3::DescriptionSchema)
                         .ask(prompt("p3_step6_description",
@@ -16,10 +35,10 @@ module Steps
                                     mood: piece.mood,
                                     color_role: piece.color_role_confirmed,
                                     product_type: context.fetch(:product_type, "wall art print"),
-                                    dimensions: context.fetch(:dimensions, "See listing"),
-                                    sizes: context.fetch(:sizes, "Single size"),
+                                    dimensions: dimensions,
+                                    sizes: sizes,
                                     included: context.fetch(:included, "Print only"),
-                                    fulfillment_type: context.fetch(:fulfillment_type, "physical"),
+                                    fulfillment_type: context.fetch(:fulfillment_type, piece.fulfillment_type.presence || "physical"),
                                     turnaround_days: context.fetch(:turnaround_days, 3),
                                     positioning_target: context.fetch(:positioning_target, default_positioning_target),
                                     trend_evidence: trend_evidence))
@@ -59,6 +78,11 @@ module Steps
 
       def default_positioning_target
         rules("positioning").rules.dig("positioning", "positioning_target")
+      end
+
+      def parsed_inches(dimensions)
+        match = dimensions.to_s.match(/(\d+(?:\.\d+)?)\s*[x×]\s*(\d+(?:\.\d+)?)/)
+        match && [match[1].to_f, match[2].to_f]
       end
 
       def trend_evidence

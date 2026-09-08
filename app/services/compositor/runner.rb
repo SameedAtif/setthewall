@@ -14,15 +14,15 @@ module Compositor
       art = load_art_image
       art_dims = compute_art_dimensions
 
-      x, y = compute_position(art_dims)
-      x, y = clamp_to_bounds(art_dims, x, y)
+      pos = compute_position(art_dims)
+      x, y = clamp_to_bounds(art_dims, pos[:x], pos[:y])
 
       composited = paste_art_on_template(art, x: x, y: y, w: art_dims[:w], h: art_dims[:h])
       output_path = write_output(composited)
 
       Result.new(
         output_path: output_path,
-        measurements: measurements_summary(art_dims, x, y)
+        measurements: measurements_summary(art_dims, x, y, pos)
       )
     end
 
@@ -36,7 +36,27 @@ module Compositor
       required = %w[image_path measurements]
       missing  = required - raw.keys
       raise TemplateError, "Template missing: #{missing.join(', ')}" if missing.any?
+      validate_image_dimensions!(raw)
       raw
+    end
+
+    def validate_image_dimensions!(raw)
+      m = raw["measurements"] || {}
+      declared_w = m["image_width_px"].to_i
+      declared_h = m["image_height_px"].to_i
+      return if declared_w <= 0 || declared_h <= 0
+
+      image_path = Pipeline::KB_ROOT.join(raw["image_path"]).to_s
+      return unless File.exist?(image_path)
+
+      img = Vips::Image.new_from_file(image_path)
+      return if img.width == declared_w && img.height == declared_h
+
+      raise TemplateError,
+            "Template '#{@piece.scene_spec_id}' declares #{declared_w}x#{declared_h} " \
+            "but the image is #{img.width}x#{img.height}"
+    rescue Vips::Error
+      nil
     end
 
     def load_art_image
@@ -104,9 +124,6 @@ module Compositor
       end
 
       center_y = if @piece.room_type == "seated_room"
-                   # "Center 5-6" above the back of the couch/chairs" — but the anchor is the TOP
-                   # of the furniture, so the piece CENTER sits ABOVE that anchor by 5.5" + half
-                   # the piece height.
                    inches_above = by_room["formula_inches"].to_f
                    furniture_top_y = anchor_y.to_i
                    furniture_top_y - (inches_above * ppi).to_i - (art_dims[:h] / 2)
@@ -114,24 +131,25 @@ module Compositor
                    anchor_y.to_i
       end
 
-      # Apply the general drop rule (P2-P14): drop 3-4" — "most people hang too high"
-      drop_px = (eye_rules["general_drop"]["formula_inches"].to_f.abs * ppi).to_i
+      drop_inches = eye_rules["general_drop"]["formula_inches"].to_f.abs
+      drop_px = (drop_inches * ppi).to_i
       center_y += drop_px
 
       y = center_y - (art_dims[:h] / 2)
 
       # === Furniture 8-10" gap check (§2.11) — validate, don't silently fix ===
+      gap_px = nil
       if @piece.room_type == "seated_room"
         gap_px = anchor_y.to_i - (y + art_dims[:h])
         gap_inches = gap_px.to_f / ppi
         if gap_inches < 8 || gap_inches > 10
-          # Adjust to the midpoint of the range (9")
           target_gap_px = (9.0 * ppi).to_i
           y = anchor_y.to_i - target_gap_px - art_dims[:h]
+          gap_px = target_gap_px
         end
       end
 
-      [x, y]
+      { x: x, y: y, gap_px: gap_px, drop_inches: drop_inches }
     end
 
     def paste_art_on_template(art, x:, y:, w:, h:)
@@ -174,7 +192,7 @@ module Compositor
       dst.to_s
     end
 
-    def measurements_summary(art_dims, x, y)
+    def measurements_summary(art_dims, x, y, pos)
       m = @template["measurements"]
       wall_area = m["wall_zone"]["width"].to_i * m["wall_zone"]["height"].to_i
       art_area  = art_dims[:w] * art_dims[:h]
@@ -185,7 +203,11 @@ module Compositor
         pixels_per_inch: m["pixels_per_inch"],
         calibrated: m["calibrated"] != false,
         coverage_fraction: (art_area.to_f / wall_area).round(4),
-        eye_level_anchor: m[KnowledgeBase::RuleSet.load("eye_level").rules["by_room_type"][@piece.room_type]["anchor"]]
+        eye_level_anchor: m[KnowledgeBase::RuleSet.load("eye_level").rules["by_room_type"][@piece.room_type]["anchor"]],
+        furniture_width_px: m["furniture_width_px"],
+        group_width_px: art_dims[:w],
+        furniture_gap_px: pos[:gap_px],
+        drop_applied_inches: pos[:drop_inches]
       }
     end
   end

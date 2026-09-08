@@ -24,6 +24,13 @@ module Schemas
              description: "Exactly ONE theme name from findings — never a list, never joined " \
                           "by 'and'. If breadth_assessment is fragments_into_substyles, this is " \
                           "your pick of the single best sub-theme, not an average across them."
+      object :production_model do
+        string :fulfillment_type, enum: %w[digital physical],
+               description: "How the winning sub-theme is actually sold — digital download or " \
+                            "physical printed/shipped product."
+        integer :piece_count, description: "1 for a single-piece style; >1 for multi-piece sets"
+        string :price_tier_usd, description: "Observed price band, e.g. '40-57'"
+      end
       string :recommendation_reasoning,
              description: "Why this one specifically beats the other candidates found."
       string :methodology_caveats, description: "Any limits on how reliable these findings are"

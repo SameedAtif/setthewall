@@ -4,7 +4,7 @@ module Workflow
   # and their human gates carry the running context forward across steps.
   class TrackRunner
     SEQUENCES = {
-      "track_a" => %w[A0 A1 A2 A3 A4 A5].freeze,
+      "track_a" => %w[A0 A1 A2 A3 A4 A5 A6 A7].freeze,
       "track_b" => %w[B0 B1 B2 B3 B4 B5 B6 B7].freeze
     }.freeze
 

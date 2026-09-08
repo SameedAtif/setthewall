@@ -11,6 +11,9 @@ RSpec.describe "scene axis validation" do
         mood: calm_ordered
         content_type: minimalist_modern
         frame_form: angular
+      production_model:
+        fulfillment_type: physical
+        piece_count: 1
       scenes:
         s1:
           name: S1

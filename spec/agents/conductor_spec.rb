@@ -84,6 +84,52 @@ RSpec.describe Agents::Conductor do
     expect(run.step_results.filter_map { |r| r["disposition"] }).to include("rewind")
   end
 
+  it "escalates a rewind with the blocking claim" do
+    allow(Workflow::PreflightCheck).to receive(:call!).and_return(kb_result)
+    allow(Workflow::StepDispatcher).to receive(:call).and_return(Result.new(status: :awaiting_human, data: {}))
+    allow(Agents::Registry).to receive(:for).and_return([fake_agent(severity: "blocking")])
+
+    run = described_class.run_speculative(style_slug: "japandi", scene_spec_id: "s1")
+
+    expect(run.escalations.map { |e| e["reason"] }).to include("rewind")
+  end
+
+  it "gates P2_6 so placement QA runs, but leaves non-gated steps alone" do
+    run = PipelineRunRecord.create!(run_id: "run-#{SecureRandom.hex(4)}", kb_version: "test")
+    conductor = described_class.new(run)
+    expect(conductor.send(:gated?, "P2_6")).to be(true)
+    expect(conductor.send(:gated?, "P2_1")).to be(false)
+  end
+
+  describe "#clear_side_effects!" do
+    it "clears chosen_url for a rewound C2" do
+      piece = create(:piece_record, chosen_url: "u1")
+      run = PipelineRunRecord.create!(run_id: "run-#{SecureRandom.hex(4)}", kb_version: "test",
+                                      piece_record: piece)
+      described_class.new(run).send(:clear_side_effects!, "C2")
+      expect(piece.reload.chosen_url).to be_nil
+    end
+
+    it "does nothing for a non-C2 step" do
+      piece = create(:piece_record, chosen_url: "u1")
+      run = PipelineRunRecord.create!(run_id: "run-#{SecureRandom.hex(4)}", kb_version: "test",
+                                      piece_record: piece)
+      described_class.new(run).send(:clear_side_effects!, "A3")
+      expect(piece.reload.chosen_url).to eq("u1")
+    end
+  end
+
+  describe "#capture_reference_images!" do
+    it "populates A1 curated images into dossier_data" do
+      run = PipelineRunRecord.create!(run_id: "run-#{SecureRandom.hex(4)}", kb_version: "test",
+                                      dossier_data: {})
+      result = Result.new(status: :awaiting_human,
+                          data: { candidates: { "images" => [{ "url" => "u1" }, { "url" => "u2" }] } })
+      described_class.new(run).send(:capture_reference_images!, result)
+      expect(run.reload.dossier_data.dig("A1", "curated_images")).to eq(%w[u1 u2])
+    end
+  end
+
   it "accepts advisories with an acceptance note" do
     allow(Workflow::PreflightCheck).to receive(:call!).and_return(kb_result)
     allow(Workflow::StepDispatcher).to receive(:call).and_return(Result.new(status: :awaiting_human, data: {}))

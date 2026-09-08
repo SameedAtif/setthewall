@@ -74,6 +74,43 @@ RSpec.describe Context::Assembler do
     ])
     expect(described_class.for("A5", run)[:confirmed]).to be(true)
   end
+
+  it "does not thread a rewinded step's value" do
+    run = run_with([
+      { "step_id" => "A2", "data" => { "result" => { "mood" => "calm_ordered" } }, "disposition" => "approve" },
+      { "step_id" => "A3", "data" => { "result" => { "content_type" => "minimalist_modern" } }, "disposition" => "rewind" },
+      { "step_id" => "A4", "data" => { "result" => { "frame_form" => "angular" } }, "disposition" => "approve" }
+    ])
+    ctx = described_class.for("A5", run)
+    expect(ctx[:content_type]).to be_nil
+    expect(ctx[:mood]).to eq("calm_ordered")
+  end
+
+  it "does not provisionally confirm A5 when an axis is tainted" do
+    run = run_with([
+      { "step_id" => "A3", "data" => { "result" => { "content_type" => "minimalist_modern" } }, "disposition" => "rewind" }
+    ])
+    expect(described_class.for("A5", run)[:confirmed]).to be_nil
+  end
+
+  it "does not provisionally confirm B7 when a scene axis is tainted" do
+    run = run_with([
+      { "step_id" => "B1", "data" => { "wall_condition" => "neutral" } },
+      { "step_id" => "B6", "data" => { "color_role" => "line_only" }, "disposition" => "rewind" }
+    ])
+    ctx = described_class.for("B7", run)
+    expect(ctx[:axes][:color_role]).to be_nil
+    expect(ctx[:confirmed]).to be_nil
+  end
+
+  it "treats a failed step as tainted" do
+    run = run_with([
+      { "step_id" => "A4", "status" => "failed", "data" => { "error" => "boom" } }
+    ])
+    ctx = described_class.for("A5", run)
+    expect(ctx[:frame_form]).to be_nil
+    expect(ctx[:confirmed]).to be_nil
+  end
 end
 
 RSpec.describe Workflow::GateCloser do

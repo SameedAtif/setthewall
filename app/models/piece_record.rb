@@ -34,7 +34,8 @@ class PieceRecord < ApplicationRecord
       room_type: scene.room_type,
       room_shape: scene.room_shape,
       space_math: scene.space_math,
-      color_role: scene.color_role
+      color_role: scene.color_role,
+      fulfillment_type: spec.production_model["fulfillment_type"]
     )
   end
 

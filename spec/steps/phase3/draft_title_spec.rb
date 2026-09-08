@@ -1,8 +1,8 @@
 require "rails_helper"
 
 RSpec.describe Steps::Phase3::DraftTitle do
-  def validate(title, first_six: title.to_s.split.first(6).join(" "))
-    described_class.new(piece: nil, context: {}).send(:validate_title, title, { "first_six_words" => first_six }, {})
+  def validate(title)
+    described_class.new(piece: nil, context: {}).send(:validate_title, title, {})
   end
 
   it "rejects a blank title" do
@@ -25,11 +25,31 @@ RSpec.describe Steps::Phase3::DraftTitle do
     expect(validate("Japandi wall art print 🎨")).to include(a_string_matching(/emoji/))
   end
 
-  it "rejects a mismatched first_six_words report" do
-    expect(validate("Japandi minimalist line art print", first_six: "something else")).to include(a_string_matching(/first_six_words/))
-  end
-
   it "accepts a clean, literal descriptor-first title" do
     expect(validate("Japandi minimalist line art print")).to be_empty
+  end
+
+  it "retries once with the validator's message, then computes first_six_words in code" do
+    piece = build_piece
+    piece.save!
+
+    calls = 0
+    bad  = { "title" => "Beautiful stunning print", "occasion_word_included" => false, "reasoning" => "" }
+    good = { "title" => "Japandi minimalist line art print", "occasion_word_included" => false, "reasoning" => "" }
+
+    chat = Object.new
+    chat.define_singleton_method(:with_schema) { |_s| chat }
+    chat.define_singleton_method(:ask) do |_msg = nil, **_k|
+      calls += 1
+      Struct.new(:content).new(calls == 1 ? bad : good)
+    end
+
+    stub_singleton(RubyLLM, :chat, ->(*_a, **_k) { chat }) do
+      result = described_class.call(piece: piece, context: {})
+      expect(result).to be_ok
+      expect(piece.reload.listing_title).to eq("Japandi minimalist line art print")
+      expect(result.data[:first_six_words]).to eq("Japandi minimalist line art print")
+    end
+    expect(calls).to eq(2)
   end
 end

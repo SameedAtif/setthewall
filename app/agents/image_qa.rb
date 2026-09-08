@@ -26,6 +26,12 @@ module Agents
                    [cite("qa_rules.rules.image_qa.conformance_axes")],
                    { index: img["index"], mismatches: mismatches })
         end
+
+        if img["subject_conforms"] == false
+          findings << advisory("Candidate #{img['index']} does not depict its specified subject.",
+                               [cite("qa_rules.rules.image_qa.conformance_axes")],
+                               { index: img["index"] })
+        end
       end
 
       violations = Array(result["constraint_violations"])
@@ -59,11 +65,22 @@ module Agents
         Locked axes: mood=#{piece_axis(:mood)}, content_type=#{piece_axis(:content_type)},
         color_role=#{piece_axis(:color_role)}, frame_form=#{piece_axis(:frame_form)}.
 
+        #{subject_lines}
+
         The final images are the curated REFERENCE set for this style. Candidates should sit inside
         their visual range. For each candidate, list which of the locked axes it fails to read as
         (empty list means it conforms), and report any negative-prompt constraint violation.
         Aesthetic preference is out of scope.
       P
+    end
+
+    def subject_lines
+      subjects = Array(@run.piece_record&.candidate_subjects).compact
+      return "No subject was specified per candidate." if subjects.empty?
+
+      "Each candidate was specified a subject (1-based): " +
+        subjects.each_with_index.map { |s, i| "##{i + 1}: #{s}" }.join(", ") +
+        ". Report subject_conforms=false when a candidate does not depict its specified subject."
     end
 
     def candidate_urls

@@ -15,9 +15,44 @@ RSpec.describe Steps::TrackC::GenerateArt do
       stub_singleton(ImageGeneration::Adapter, :build, -> { ImageGeneration::ManualAdapter.new }) do
         result = described_class.call(piece: piece, context: { candidate_count: 2 })
         expect(result).to be_awaiting_human
-        expect(result.data[:prompt_file]).to be_present
+        expect(result.data[:prompt_files].size).to eq(2)
       end
     end
+  end
+
+  it "keeps mood out of content and content_type out of subject" do
+    tpl = Pipeline::KB_ROOT.join("prompts", "c1_generation_prompt_synthesis.md").read
+    expect(tpl).not_to include("energy and palette")
+    expect(tpl).not_to include("lead with the subject matter")
+    expect(tpl).to include("PALETTE ONLY")
+  end
+
+  it "passes exactly one subject and pattern to the scene synthesis prompt" do
+    spec, = build_test_spec(slug: "c1-scene")
+    KnowledgeBase::StyleSpecWriter.write_subject_research(
+      spec.slug,
+      shops_sampled: 8, recurring_subjects: [{ "subject" => "cottage", "recurs_across_shops" => 5 },
+                                             { "subject" => "moth", "recurs_across_shops" => 4 }],
+      rejected_subjects: []
+    )
+    KnowledgeBase::StyleSpecWriter.write_scene_research(
+      spec.slug,
+      shops_sampled: 8,
+      scene_patterns: [{ "pattern_id" => "p1", "narrative_structure" => "n", "light_logic" => "l",
+                         "temporal_quality" => "t", "recurs_across_shops" => 5 }],
+      rejected_patterns: []
+    )
+    spec = KnowledgeBase::StyleSpec.load("c1-scene")
+    piece = build_piece(slug: "c1-scene")
+    piece.save!
+
+    step = described_class.new(piece: piece, context: {})
+    prompt = step.send(:build_synthesis_prompt,
+                       { subject: { "subject" => "cottage" },
+                         pattern: { "narrative_structure" => "n", "light_logic" => "l", "temporal_quality" => "t" } })
+
+    expect(prompt).to include("cottage")
+    expect(prompt).not_to include("moth")
   end
 end
 
@@ -71,5 +106,18 @@ RSpec.describe Steps::Phase3::ShippingAndReturns do
     })
     expect(result).to be_ok
     expect(result.data[:warnings]).not_to be_empty
+  end
+end
+
+RSpec.describe Steps::Phase3::FillAttributes do
+  it "fails when the taxonomy fetch returns zero nodes" do
+    piece = create(:piece_record)
+    adapter = double("adapter")
+    allow(adapter).to receive(:fetch_category_tree).and_return([])
+    stub_singleton(Etsy::Adapter, :build, -> { adapter }) do
+      result = described_class.call(piece: piece, context: {})
+      expect(result).to be_failed
+      expect(result.message).to include("taxonomy")
+    end
   end
 end

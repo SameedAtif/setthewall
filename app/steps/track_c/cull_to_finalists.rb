@@ -61,7 +61,12 @@ module Steps
           return fail_step("chosen_url is not in finalist_urls", { chosen: chosen, finalists: finalists_requested })
         end
 
-        piece.update!(chosen_url: chosen)
+        index = piece.candidate_urls.index(chosen)
+        piece.update!(
+          chosen_url: chosen,
+          chosen_subject: index && piece.candidate_subjects[index],
+          chosen_pattern: index && piece.candidate_patterns[index]
+        )
         ok({ finalist_urls: finalists_requested, chosen_url: chosen })
       end
     end

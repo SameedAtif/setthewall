@@ -67,7 +67,7 @@ RSpec.describe Steps::Phase3::WriteDescription do
     piece = piece_with(listing_tags: ["minimalist wall art"])
     content = good.merge("full_description" => "minimalist wall art " * 5)
     stub_llm(content: content) do
-      result = described_class.call(piece: piece, context: { positioning_target: "x" })
+      result = described_class.call(piece: piece, context: { positioning_target: "x", dimensions: "8x10", sizes: "One size" })
       expect(result).to be_awaiting_human
       expect(result.data[:violations]).not_to be_empty
     end
@@ -76,7 +76,7 @@ RSpec.describe Steps::Phase3::WriteDescription do
   it "flags a generic positioning claim" do
     piece = piece_with
     stub_llm(content: good.merge("positioning_claim" => "for everyone who loves art")) do
-      result = described_class.call(piece: piece, context: { positioning_target: "x" })
+      result = described_class.call(piece: piece, context: { positioning_target: "x", dimensions: "8x10", sizes: "One size" })
       expect(result).to be_awaiting_human
     end
   end
@@ -84,7 +84,7 @@ RSpec.describe Steps::Phase3::WriteDescription do
   it "persists a good description and pauses for tone confirmation" do
     piece = piece_with
     stub_llm(content: good) do
-      result = described_class.call(piece: piece, context: { positioning_target: "x" })
+      result = described_class.call(piece: piece, context: { positioning_target: "x", dimensions: "8x10", sizes: "One size" })
       expect(result).to be_awaiting_human
       expect(piece.reload.listing_description).to eq("8x10 print")
     end
@@ -94,6 +94,23 @@ RSpec.describe Steps::Phase3::WriteDescription do
     piece = piece_with(listing_description: "d")
     result = described_class.call(piece: piece, context: { confirmed: true })
     expect(result).to be_ok
+  end
+
+  it "routes the piece's fulfillment_type into the description prompt" do
+    piece = piece_with
+    piece.update!(fulfillment_type: "digital")
+    stub_llm(content: good) do |chat|
+      described_class.call(piece: piece, context: { positioning_target: "x", dimensions: "8x10", sizes: "One size" })
+      asked = chat.asked.find { |a| a[:message].to_s.include?("Write an Etsy listing description") }
+      expect(asked[:message]).to include("digital")
+    end
+  end
+
+  it "fails instead of writing placeholder copy when sizes are unknown" do
+    piece = piece_with
+    result = described_class.call(piece: piece, context: { positioning_target: "x" })
+    expect(result).to be_failed
+    expect(result.message).to include("dimensions and sizes")
   end
 end
 

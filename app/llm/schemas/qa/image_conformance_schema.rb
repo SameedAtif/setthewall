@@ -6,6 +6,8 @@ module Schemas
           integer :index, description: "1-based index of the candidate image"
           array :axis_mismatches, of: :string,
                 description: "Which locked axes this candidate fails to read as (empty if it conforms)"
+          boolean :subject_conforms,
+                  description: "Whether the candidate depicts the subject it was specified to depict"
         end
       end
       array :constraint_violations, of: :string,

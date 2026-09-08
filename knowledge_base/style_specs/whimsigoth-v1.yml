@@ -2,7 +2,12 @@
 # scene axes appended by Track B (module 02).
 ---
 slug: whimsigoth-v1
-name: Celestial sun/moon maximalist prints (physical, $12–55)
+name: Whimsigoth
+production_model:
+  research_focus: "Celestial sun/moon maximalist prints (physical, $12–55)"
+  fulfillment_type: physical
+  piece_count: 1
+  price_tier_usd: [12, 55]
 locked_at: '2026-09-01'
 style_level:
   mood: bold_active
