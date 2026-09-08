@@ -63,6 +63,18 @@ RSpec.describe Steps::TrackA::BuildReferenceSet do
       expect(result.data[:issues]).to include("no candidate images returned")
     end
   end
+
+  it "scripts the named retailer and Pinterest queries in code, scoped by domain" do
+    step = described_class.new(piece: nil, context: { style_name: "Japandi" })
+    queries = step.send(:scripted_queries)
+
+    expect(queries.map { |q| q[:query] }).to include(
+      "Japandi", "Japandi wall art", "Japandi gallery wall", "Japandi living room"
+    )
+    expect(queries.find { |q| q[:include_domains] == ["westelm.com"] }[:query]).to eq("Japandi")
+    expect(queries.count { |q| q[:include_domains] == ["pinterest.com"] }).to eq(3)
+    expect(queries).to all(include(include_images: true))
+  end
 end
 
 RSpec.describe Steps::Phase3::DraftTitle do

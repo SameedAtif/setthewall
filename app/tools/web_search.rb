@@ -21,10 +21,16 @@ module Tools
           desc: "Number of results to return. Default 5, max 10."
     param :include_images, type: :boolean, required: false,
           desc: "Set true to also retrieve real image URLs found on the result pages. Default false (text only)."
+    param :include_domains, type: :array, required: false,
+          desc: "Only return results from these domains, e.g. [\"etsy.com\", \"pinterest.com\"]. " \
+                "Use this to scope a query to a specific retailer, marketplace, or platform."
+    param :exclude_domains, type: :array, required: false,
+          desc: "Exclude results from these domains (e.g. known-promotional or aggregator domains)."
 
-    def execute(query:, max_results: 5, include_images: false)
+    def execute(query:, max_results: 5, include_images: false, include_domains: [], exclude_domains: [])
       max_results = max_results.to_i.clamp(1, 10)
-      Rails.logger.info("WebSearch: #{query.inspect} (images=#{include_images})")
+      Rails.logger.info("WebSearch: #{query.inspect} (images=#{include_images}, " \
+                        "domains=#{Array(include_domains).join(',')})")
 
       response = connection.post("search") do |req|
         req.body = {
@@ -34,7 +40,9 @@ module Tools
           include_answer: false,
           search_depth: "basic",
           include_images: include_images,
-          include_image_descriptions: include_images
+          include_image_descriptions: include_images,
+          include_domains: Array(include_domains).map(&:to_s).reject(&:blank?),
+          exclude_domains: Array(exclude_domains).map(&:to_s).reject(&:blank?)
         }
       end
 

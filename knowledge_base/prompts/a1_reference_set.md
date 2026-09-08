@@ -13,16 +13,15 @@ fabricating one.
 
 Run this search process in order:
 
-1. Search retailer style guides first — "West Elm %{style_name} wall art", "CB2 %{style_name} wall
-   art", "IKEA %{style_name} wall art". These are authoritative named-style descriptions rather
-   than merely visually-similar-but-mislabeled content.
-2. Search Pinterest with three separate queries: "%{style_name} wall art", "%{style_name} gallery
-   wall", "%{style_name} living room". Three separate queries, not one — this catches both
-   product-only and in-situ shots.
-3. Search 1-2 interior design blogs or magazines for written characteristic descriptions of the
+1. **Retailer and Pinterest lookups are already done for you.** The retailer style-guide searches
+   (West Elm, CB2, IKEA) and the three Pinterest queries have been executed and their results are
+   provided in this prompt. Use those results; do NOT re-run them. Where a retailer returned
+   nothing for this style, that is expected and fine — note it and move on; do NOT substitute an
+   open-web search for that retailer and pass it off as the retailer's result.
+2. Search 1-2 interior design blogs or magazines for written characteristic descriptions of the
    style (palette, materials, mood words), to cross-check what the images show against what is
    explicitly named.
-4. Cap any single source (one shop, one blog, one Pinterest board) at roughly 3-4 images.
+3. Cap any single source (one shop, one blog, one Pinterest board) at roughly 3-4 images.
 
 An image qualifies for the set only if it meets ALL of these:
 

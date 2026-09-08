@@ -13,8 +13,11 @@ module Search
     #               reached, so a QA layer can reject a run that stopped short without reading prose.
     # on_progress:  optional callback invoked with a short message at each checkpoint, so a
     #               long-running job can surface progress (UI) without polling the terminal.
+    # scripted:     optional list of { query:, include_images:, include_domains: } — queries that
+    #               are already specified by the caller and are executed in code (not composed by
+    #               the model), with their results injected into the evidence the model sees.
     def initialize(model:, schema:, task:, question:, max_rounds: DEFAULT_MAX_ROUNDS, min_rounds: nil,
-                   on_progress: nil)
+                   on_progress: nil, scripted: [])
       @model       = model
       @schema      = schema
       @task        = task
@@ -22,13 +25,14 @@ module Search
       @max_rounds  = max_rounds
       @min_rounds  = min_rounds
       @on_progress = on_progress || ->(_message) { }
+      @scripted    = Array(scripted)
     end
 
     # Runs in two phases:
-    #   1. research — a chat with the search tool (no schema) gathers evidence and writes a
-    #      thorough, cited research report. Qwen's compatible-mode endpoint ignores
-    #      `response_format` (structured output) whenever tools are present, so the schema
-    #      cannot be enforced on a tool-using chat.
+    #   1. research — scripted queries execute in code first, then a chat with the search tool
+    #      (no schema) gathers the remaining evidence and writes a thorough, cited research report.
+    #      Qwen's compatible-mode endpoint ignores `response_format` (structured output) whenever
+    #      tools are present, so the schema cannot be enforced on a tool-using chat.
     #   2. extraction — a separate, tool-free chat asks for the structured answer. Structured
     #      output is still not guaranteed here (Qwen honors `response_format` inconsistently),
     #      so the extraction prompt inlines the schema and normalize_content parses whatever
@@ -37,25 +41,52 @@ module Search
       start_index = (Thread.current[:web_search_trace] || []).size
 
       emit_progress("researching (live web search, up to #{@max_rounds} searches)")
+      scripted_results = run_scripted_queries
       research_chat     = build_research_chat
-      research_response = research_chat.ask(@question)
+      research_response = research_chat.ask(research_question(scripted_results))
       tool_calls        = count_tool_calls(research_chat)
+      total_calls       = tool_calls + scripted_results.size
 
-      if tool_calls.zero?
+      if total_calls.zero?
         raise NoSearchPerformedError,
-              "Model answered without calling the search tool. Refusing to accept an " \
+              "No search was performed. Refusing to accept an " \
               "unsearched answer — this defeats the purpose of the step. Retry, or check " \
               "TAVILY_API_KEY is set."
       end
 
       emit_progress("extracting structured results")
-      { content: extract_structured(research_response.content), search_calls_made: tool_calls,
-        min_rounds_met: @min_rounds ? tool_calls >= @min_rounds : nil,
+      { content: extract_structured(research_response.content), search_calls_made: total_calls,
+        min_rounds_met: @min_rounds ? total_calls >= @min_rounds : nil,
         transcript: research_chat.messages,
         searches: (Thread.current[:web_search_trace] || [])[start_index..] || [] }
     end
 
     private
+
+    def run_scripted_queries
+      @scripted.filter_map do |spec|
+        next if spec.blank? || spec[:query].blank?
+
+        result = Tools::WebSearch.new.execute(
+          query: spec[:query],
+          include_images: spec.fetch(:include_images, false),
+          include_domains: Array(spec[:include_domains]),
+          exclude_domains: Array(spec[:exclude_domains])
+        )
+        { query: spec[:query], result: result }
+      end
+    end
+
+    def research_question(scripted_results)
+      return @question if scripted_results.empty?
+
+      evidence = scripted_results.map do |r|
+        "Query (already executed): #{r[:query]}\n#{r[:result].to_json}"
+      end.join("\n\n")
+
+      "#{@question}\n\nThese queries were already executed and their results are provided below. " \
+      "Use them; do not re-run them.\n\n#{evidence}"
+    end
 
     def emit_progress(message)
       Rails.logger.info("[ReasonedRunner] #{message}")

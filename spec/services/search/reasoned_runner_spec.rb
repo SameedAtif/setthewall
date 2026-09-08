@@ -127,4 +127,46 @@ RSpec.describe Search::ReasonedRunner do
       expect(result[:min_rounds_met]).to be_nil
     end
   end
+
+  def stub_web_search_tool
+    tool = instance_double(Tools::WebSearch)
+    allow(Tools::WebSearch).to receive(:new).and_return(tool)
+    allow(tool).to receive(:execute)
+      .and_return({ results: [{ title: "t", url: "u", snippet: "c" }], images: [] })
+    tool
+  end
+
+  it "executes scripted queries in code and counts them toward the search total" do
+    tool = stub_web_search_tool
+    stub_llm(content: { "summary" => "x" }, tool_calls: 2) do |chat|
+      result = described_class.call(
+        model: "x", schema: schema, task: "t", question: "q",
+        scripted: [{ query: "q1", include_images: true, include_domains: ["etsy.com"] }]
+      )
+
+      expect(result[:search_calls_made]).to eq(3)
+      expect(tool).to have_received(:execute).with(
+        query: "q1", include_images: true, include_domains: ["etsy.com"], exclude_domains: []
+      )
+      expect(chat.asked.first[:message]).to include("already executed")
+    end
+  end
+
+  it "does not raise when only scripted queries ran" do
+    stub_web_search_tool
+    stub_llm(content: { "summary" => "x" }, tool_calls: 0) do
+      result = described_class.call(
+        model: "x", schema: schema, task: "t", question: "q",
+        scripted: [{ query: "q1" }]
+      )
+      expect(result[:search_calls_made]).to eq(1)
+    end
+  end
+
+  it "raises when neither the model nor scripted queries searched" do
+    stub_llm(content: { "summary" => "x" }, tool_calls: 0) do
+      expect { described_class.call(model: "x", schema: schema, task: "t", question: "q") }
+        .to raise_error(Search::NoSearchPerformedError)
+    end
+  end
 end

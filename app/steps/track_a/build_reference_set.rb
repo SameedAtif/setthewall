@@ -19,9 +19,9 @@ module Steps
                 "call must set include_images: true — this task is unusable without real image " \
                 "URLs, and a text-only search call will not produce any.",
           question: text,
-          max_rounds: 8,  # 1 retailer-guide search + 3 distinct Pinterest queries + 1-2 blog
-          # searches, per the source's own 4-step process
-          min_rounds: 5   # search floor — the 3 Pinterest queries are required, not a suggestion
+          max_rounds: 8,  # remaining blog/adjacent searches after the scripted retailer+Pinterest pass
+          min_rounds: 5,
+          scripted: scripted_queries
         )
         result = search_result[:content]
         issues = validate_set(result)
@@ -39,6 +39,21 @@ module Steps
       end
 
       private
+
+      # The named-source lookups the methodology prescribes are executed in code — one query per
+      # retailer, scoped to that retailer's domain, and three Pinterest queries — rather than left
+      # to the model to re-derive from prose. The model still runs the remaining judgment queries.
+      def scripted_queries
+        style = context.fetch(:style_name)
+        [
+          { query: style, include_images: true, include_domains: ["westelm.com"] },
+          { query: style, include_images: true, include_domains: ["cb2.com"] },
+          { query: style, include_images: true, include_domains: ["ikea.com"] },
+          { query: "#{style} wall art", include_images: true, include_domains: ["pinterest.com"] },
+          { query: "#{style} gallery wall", include_images: true, include_domains: ["pinterest.com"] },
+          { query: "#{style} living room", include_images: true, include_domains: ["pinterest.com"] }
+        ]
+      end
 
       # Mechanical checks only. The curation judgment stays with the human.
       def validate_set(result)

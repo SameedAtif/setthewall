@@ -105,6 +105,15 @@ RSpec.describe Tools::WebSearch do
     expect(tool.execute(query: "q", max_results: 99)).to eq({ error: "no results found", query: "q" })
   end
 
+  it "passes include_domains and exclude_domains to the API" do
+    stub_search(body: { "results" => [{ "title" => "t", "url" => "u", "content" => "c" }] }) do |b|
+      expect(b[:include_domains]).to eq(%w[etsy.com pinterest.com])
+      expect(b[:exclude_domains]).to eq(["spam.com"])
+    end
+
+    tool.execute(query: "q", include_domains: %w[etsy.com pinterest.com], exclude_domains: ["spam.com"])
+  end
+
   it "records the query and URLs into the thread-local search trace" do
     Thread.current[:web_search_trace] = []
     stub_search(body: {
