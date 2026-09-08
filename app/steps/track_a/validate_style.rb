@@ -45,7 +45,7 @@ module Steps
           "cross-check; committing a week's production to this style is your decision, not the agent's.",
           { findings: content, search_calls_made: result[:search_calls_made],
             min_rounds_met: result[:min_rounds_met], brief: brief,
-            style_name_used: style_name_used }
+            style_name_used: style_name_used, searches: result[:searches] }
         )
       rescue Search::NoSearchPerformedError => e
         fail_step("A0 could not complete: #{e.message}", { brief: brief })

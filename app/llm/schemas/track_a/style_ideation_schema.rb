@@ -18,6 +18,9 @@ module Schemas
       end
       string :survey_notes,
              description: "Anything about the survey itself worth flagging — sparse data, conflicting signals, etc."
+      string :recommended_focus,
+             description: "The single best candidate name to pursue — exactly one, the one with " \
+                          "the strongest independent support. Never a list, never joined by 'and'."
     end
   end
 end

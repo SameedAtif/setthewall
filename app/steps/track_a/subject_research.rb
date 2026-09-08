@@ -7,11 +7,13 @@ module Steps
 
       # context: { style_slug:, style_name: }
       def perform
+        question = prompt("a_subject_research", style_name: context.fetch(:style_name))
+
         result = Search::ReasonedRunner.call(
           model: Pipeline::TEXT_MODEL,
           schema: Schemas::TrackA::SubjectResearchSchema,
           task: "You are researching the recurring subjects of a wall-art style from real listings.",
-          question: prompt("a_subject_research", style_name: context.fetch(:style_name)),
+          question: question,
           max_rounds: 8,
           min_rounds: 4
         )
@@ -30,7 +32,7 @@ module Steps
 
         KnowledgeBase::StyleSpecWriter.write_subject_research(context.fetch(:style_slug), data)
 
-        ok({ subject_research: data })
+        ok({ subject_research: data, prompt: question, searches: result[:searches] })
       rescue Search::NoSearchPerformedError => e
         fail_step("A6 subject research could not complete: #{e.message}", {})
       end

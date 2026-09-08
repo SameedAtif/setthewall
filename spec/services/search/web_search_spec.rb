@@ -104,4 +104,22 @@ RSpec.describe Tools::WebSearch do
                                double("connection", post: double("response", success?: true, body: JSON.generate("results" => []))))
     expect(tool.execute(query: "q", max_results: 99)).to eq({ error: "no results found", query: "q" })
   end
+
+  it "records the query and URLs into the thread-local search trace" do
+    Thread.current[:web_search_trace] = []
+    stub_search(body: {
+      "results" => [{ "title" => "t", "url" => "u", "content" => "c" }],
+      "images" => [{ "url" => "https://img1", "description" => "x" }]
+    })
+
+    tool.execute(query: "q", include_images: true)
+
+    trace = Thread.current[:web_search_trace]
+    expect(trace.size).to eq(1)
+    expect(trace.first[:query]).to eq("q")
+    expect(trace.first[:result_urls]).to eq(["u"])
+    expect(trace.first[:image_urls]).to eq(["https://img1"])
+  ensure
+    Thread.current[:web_search_trace] = nil
+  end
 end

@@ -11,7 +11,8 @@ RSpec.describe Steps::TrackA::IdeateStyleCandidates do
         { "name" => "Weak candidate", "trend_signal" => "x", "independent_source_count" => 1,
           "sources" => [], "competition_read" => "unknown" }
       ],
-      "survey_notes" => "sparse"
+      "survey_notes" => "sparse",
+      "recommended_focus" => "Warm minimalist textured abstract"
     }
   end
 
@@ -24,13 +25,14 @@ RSpec.describe Steps::TrackA::IdeateStyleCandidates do
     captured
   end
 
-  it "returns candidates for the human to pick from" do
+  it "returns candidates with a recommended focus for the speculative run to pick" do
     stub_reasoned_runner(content: ideation_content) do
       result = described_class.call(piece: nil, context: {})
       expect(result).to be_awaiting_human
       expect(result.data[:candidates].size).to eq(2)
       expect(result.data[:weak_candidates]).to eq(["Weak candidate"])
-      expect(result.message).to include("Pick ONE")
+      expect(result.data[:recommended_focus]).to eq("Warm minimalist textured abstract")
+      expect(result.message).to include("Recommended focus")
     end
   end
 

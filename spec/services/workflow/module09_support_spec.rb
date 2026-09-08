@@ -161,8 +161,7 @@ RSpec.describe Dossier::Builder do
     expect(markdown).to include("# Run run-x — japandi / s1")
     expect(markdown).to include("## Open questions")
     expect(markdown).to include("Lock the style-level entry (A5) — needs your decision")
-    expect(markdown).to include("## Step by step")
-    expect(markdown).to include("⚠ Validate the style is worth pursuing (A0) — needs your review")
+    expect(markdown).to include("## Validate the style is worth pursuing (A0) — needs your review")
     expect(markdown).to include("## Why we think this will work")
     expect(markdown).to include("- clean")
     expect(markdown).to include("## What we could not verify")
@@ -170,28 +169,26 @@ RSpec.describe Dossier::Builder do
     expect(markdown).to include("## If you approve")
   end
 
-  it "copies images into the run dir, references them relatively, and shows listing data" do
+  it "renders step images relatively and shows listing data" do
     src = Rails.root.join("tmp", "test_images")
     src.mkpath
     %w[a.jpg b.jpg].each { |f| FileUtils.touch(src.join(f)) }
 
-    piece = create(:piece_record, candidate_urls: [src.join("a.jpg").to_s],
-                                  chosen_url: src.join("a.jpg").to_s,
-                                  composite_url: src.join("b.jpg").to_s,
-                                  photos: { "detail" => src.join("b.jpg").to_s },
-                                  listing_title: "Celestial Sun Moon Print",
+    piece = create(:piece_record, listing_title: "Celestial Sun Moon Print",
                                   listing_tags: %w[celestial sun moon])
     run = PipelineRunRecord.create!(run_id: "run-img", kb_version: "abc", style_slug: "whimsigoth-v1",
                                     scene_spec_id: "behind_sofa_light_neutral", piece_record: piece,
-                                    step_results: [], escalations: [])
+                                    step_results: [
+                                      { "step_id" => "C1", "status" => "ok",
+                                        "data" => { "candidate_urls" => [src.join("a.jpg").to_s] } },
+                                      { "step_id" => "P2_6", "status" => "ok",
+                                        "data" => { "composite_url" => src.join("b.jpg").to_s } }
+                                    ], escalations: [])
 
     markdown = described_class.call(run: run)
 
-    expect(markdown).to include("## Images")
-    expect(markdown).to include("![composite](images/b.jpg)")
-    expect(markdown).to include("![chosen](images/a.jpg)")
-    expect(markdown).to include("![candidate 1](images/a.jpg)")
-    expect(markdown).to include("![detail](images/b.jpg)")
+    expect(markdown).to include("![a.jpg](images/a.jpg)")
+    expect(markdown).to include("![b.jpg](images/b.jpg)")
     expect(Rails.root.join("tmp", "runs", "run-img", "images", "a.jpg").exist?).to be(true)
     expect(markdown).to include("Celestial Sun Moon Print")
     expect(markdown).to include("celestial, sun, moon")
@@ -201,36 +198,47 @@ RSpec.describe Dossier::Builder do
   end
 
   it "falls back to the original path when an image file is missing" do
-    piece = create(:piece_record, candidate_urls: ["/nonexistent/missing.jpg"])
+    piece = create(:piece_record)
     run = PipelineRunRecord.create!(run_id: "run-miss", kb_version: "abc", style_slug: "whimsigoth-v1",
                                     scene_spec_id: "behind_sofa_light_neutral", piece_record: piece,
-                                    step_results: [], escalations: [])
+                                    step_results: [
+                                      { "step_id" => "C1", "status" => "ok",
+                                        "data" => { "candidate_urls" => ["/nonexistent/missing.jpg"] } }
+                                    ], escalations: [])
 
-    expect(described_class.call(run: run)).to include("![candidate 1](/nonexistent/missing.jpg)")
+    expect(described_class.call(run: run)).to include("![missing.jpg](/nonexistent/missing.jpg)")
   end
 
-  it "renders A0 research findings from the gate" do
-    create(:human_gate, step_id: "A0", gate_kind: "a0", agent_proposal: {
-      "findings" => { "findings" => [
-        { "theme" => "Celestial", "demand_to_competition_verdict" => "Produce",
-          "independent_shops" => 5, "competition_density" => "medium",
-          "cross_check_confirmed" => true, "cross_check_platform" => "Pinterest" }
-      ] }
-    }.to_json)
+  it "renders A0 research findings" do
     run = PipelineRunRecord.create!(run_id: "run-res", kb_version: "abc", style_slug: "japandi",
-                                    scene_spec_id: "s1", step_results: [], escalations: [])
+                                    scene_spec_id: "s1", step_results: [
+                                      { "step_id" => "A0", "status" => "awaiting_human", "message" => "x",
+                                        "data" => { "findings" => { "findings" => [
+                                          { "theme" => "Celestial", "demand_to_competition_verdict" => "Produce",
+                                            "independent_shops" => 5, "competition_density" => "medium",
+                                            "cross_check_confirmed" => true, "cross_check_platform" => "Pinterest" }
+                                        ] } } }
+                                    ], escalations: [])
 
     markdown = described_class.call(run: run)
     expect(markdown).to include("**Celestial** — Produce")
     expect(markdown).to include("cross-check confirmed via Pinterest")
   end
 
-  it "notes when A0 returned no findings" do
-    create(:human_gate, step_id: "A0", gate_kind: "a0",
-                        agent_proposal: { "findings" => { "findings" => [] } }.to_json)
-    run = PipelineRunRecord.create!(run_id: "run-res2", kb_version: "abc", style_slug: "japandi",
-                                    scene_spec_id: "s1", step_results: [], escalations: [])
+  it "renders a prompt and searches in a step section" do
+    run = PipelineRunRecord.create!(run_id: "run-rich", kb_version: "abc", style_slug: "japandi",
+                                    scene_spec_id: "s1", step_results: [
+                                      { "step_id" => "A6", "status" => "ok",
+                                        "data" => { "prompt" => "Describe the subjects.",
+                                                    "searches" => [{ "query" => "whimsigoth wall art",
+                                                                     "result_urls" => ["https://x/1"],
+                                                                     "image_urls" => ["https://x/img.jpg"] }] } }
+                                    ], escalations: [])
 
-    expect(described_class.call(run: run)).to include("A0 returned no demand-to-competition findings")
+    markdown = described_class.call(run: run)
+    expect(markdown).to include("## Research recurring subjects (A6) — completed")
+    expect(markdown).to include("Describe the subjects.")
+    expect(markdown).to include("whimsigoth wall art")
+    expect(markdown).to include("https://x/1")
   end
 end

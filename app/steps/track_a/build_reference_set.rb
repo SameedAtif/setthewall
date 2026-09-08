@@ -31,7 +31,8 @@ module Steps
           "#{issues.any? ? "Automated checks flagged: #{issues.join('; ')}" : 'Automated checks passed.'}",
           { candidates: result, issues: issues, criteria: criteria.rules["image_requirements"],
             search_calls_made: search_result[:search_calls_made],
-            min_rounds_met: search_result[:min_rounds_met] }
+            min_rounds_met: search_result[:min_rounds_met],
+            prompt: text, searches: search_result[:searches] }
         )
       rescue Search::NoSearchPerformedError => e
         fail_step("A1 could not complete: #{e.message}", { text: text })

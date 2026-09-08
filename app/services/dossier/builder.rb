@@ -1,8 +1,9 @@
 module Dossier
   # Module 09 §8 — assembles the reviewable report from the run, its escalations, its QA findings,
-  # the piece's outputs, the locked style spec, and the A0 research gate. Ordering is deliberate:
-  # open questions come second, before the step-by-step, and the report never opens with cost or
-  # duration (SR4). Images are embedded as markdown so the report reads as a document.
+  # the piece's outputs, the locked style spec, and the A0 research gate. The report is one section
+  # per step (A_IDEATE → P3_8), each telling the step's own story: what it found, what it
+  # recommended, the prompt it issued, the live searches it ran (with the links they surfaced), and
+  # the images it produced. The report never opens with cost or duration (SR4).
   class Builder
     def self.call(run:) = new(run).call
 
@@ -11,8 +12,9 @@ module Dossier
     def call
       sections = [header]
       sections << what_we_propose if piece
-      sections.concat([open_questions, research, the_style, the_scene,
-                       images, step_by_step, why_it_will_work, cannot_verify, if_you_approve])
+      sections << open_questions
+      sections.concat(step_sections)
+      sections.concat([why_it_will_work, cannot_verify, if_you_approve])
       sections.join("\n\n")
     end
 
@@ -63,22 +65,114 @@ module Dossier
       end
     end
 
-    def research
-      "## The research behind this style\n" + research_lines.join("\n")
+    # --- Per-step sections -------------------------------------------------
+
+    def step_sections
+      Array(@run.step_results).map { |r| step_section(r) }
     end
 
-    def research_lines
-      findings = a0_findings
-      return ["No A0 research recorded for this style yet."] if findings.nil?
-      return ["A0 returned no demand-to-competition findings."] if findings.empty?
+    def step_section(record)
+      lines = ["## #{step_title(record['step_id'])} (#{record['step_id']}) — #{status_word(record['status'])}"]
+      lines << ""
 
-      findings.map do |f|
-        cross = f["cross_check_confirmed"] ? "confirmed" : "not confirmed"
-        "- **#{f['theme']}** — #{f['demand_to_competition_verdict']} " \
-        "(shops: #{f['independent_shops']}, competition: #{f['competition_density']}, " \
-        "cross-check #{cross} via #{f['cross_check_platform']})"
+      narrative = step_narrative(record)
+      lines << narrative if narrative.present?
+
+      prompt = prompt_for(record)
+      if prompt.present?
+        lines << ""
+        lines << "### Prompt issued"
+        lines << "```"
+        lines << prompt.to_s
+        lines << "```"
+      end
+
+      searches = searches_for(record)
+      if searches.any?
+        lines << ""
+        lines << "### Live searches (queries the model generated from the prompt above, and the links they surfaced)"
+        searches.each { |s| lines.concat(search_lines(s)) }
+      end
+
+      images = step_images(record)
+      if images.any?
+        lines << ""
+        lines << "### Images"
+        images.each { |u| lines << "![#{File.basename(u.to_s)}](#{relative(u)})" }
+      end
+
+      lines.join("\n")
+    end
+
+    def status_word(status)
+      { "ok" => "completed", "awaiting_human" => "needs your review",
+        "failed" => "failed" }.fetch(status.to_s, status.to_s)
+    end
+
+    def step_narrative(record)
+      parts = []
+      message = record["message"].to_s.strip
+      parts << message if message.present?
+
+      if record["step_id"] == "A0"
+        findings = a0_findings
+        parts.concat(findings.map { |f| finding_line(f) }) if findings.present?
+      end
+
+      summary = narrative_summary(record)
+      parts << summary if summary.present?
+
+      parts.join("\n\n")
+    end
+
+    def finding_line(f)
+      cross = f["cross_check_confirmed"] ? "confirmed" : "not confirmed"
+      "- **#{f['theme']}** — #{f['demand_to_competition_verdict']} " \
+      "(shops: #{f['independent_shops']}, competition: #{f['competition_density']}, " \
+      "cross-check #{cross} via #{f['cross_check_platform']})"
+    end
+
+    def narrative_summary(record)
+      data = (record["data"] || {}).except("brief", "searches", "prompt", "criteria",
+                                           "prompts", "candidates", "findings", "axes")
+      return "" if data.empty?
+
+      data.map { |k, v| "#{k}=#{truncate(v.inspect, 400)}" }.join("  ·  ")
+    end
+
+    def prompt_for(record)
+      record.dig("data", "prompt").presence ||
+        record.dig("data", "brief").presence ||
+        Array(record.dig("data", "prompts")).join("\n\n").presence
+    end
+
+    def searches_for(record)
+      Array(record.dig("data", "searches")).select { |s| s.is_a?(Hash) }
+    end
+
+    def search_lines(search)
+      lines = ["- **`#{search['query']}`**"]
+      Array(search["result_urls"]).each { |u| lines << "  - #{u}" }
+      Array(search["image_urls"]).each { |u| lines << "  - 🖼 #{u}" }
+      lines
+    end
+
+    def step_images(record)
+      case record["step_id"]
+      when "A1"
+        Array(record.dig("data", "candidates", "images")).filter_map { |i| i["url"] if i.is_a?(Hash) }
+      when "C1"
+        Array(record.dig("data", "candidate_urls"))
+      when "P2_6"
+        [record.dig("data", "composite_url")].compact
+      when "P3_1b"
+        (record.dig("data", "photos") || {}).values.compact
+      else
+        []
       end
     end
+
+    # --- Shared helpers ----------------------------------------------------
 
     def a0_findings
       step_findings = step_dig("A0", "findings", "findings")
@@ -88,36 +182,6 @@ module Dossier
       return nil unless gate
 
       Array(JSON.parse(gate.agent_proposal || "{}").dig("findings", "findings"))
-    end
-
-    def the_style
-      lines = ["## The style"]
-      lines << "- **mood:** #{style_value(:mood, 'A2') || '—'}"
-      lines << "- **content_type:** #{style_value(:content_type, 'A3') || '—'}"
-      lines << "- **frame_form:** #{style_value(:frame_form, 'A4') || '—'}"
-      lines.join("\n")
-    end
-
-    def the_scene
-      lines = ["## The scene (#{@run.scene_spec_id})"]
-      { wall_condition: "B1", furniture_weight: "B2", room_type: "B3",
-        room_shape: "B4", space_math: "B5", color_role: "B6" }.each do |axis, step|
-        value = step_dig(step, axis.to_s).presence || committed_scene_axis(axis)
-        lines << "- **#{axis}:** #{value || '—'}"
-      end
-      lines.join("\n")
-    end
-
-    def style_value(axis, step)
-      step_dig(step, "result", axis.to_s).presence || spec&.style_level&.[](axis)
-    rescue StandardError
-      nil
-    end
-
-    def committed_scene_axis(axis)
-      spec&.scene(@run.scene_spec_id)&.public_send(axis)
-    rescue StandardError
-      nil
     end
 
     def spec
@@ -135,25 +199,6 @@ module Dossier
       step_data(step_id).dig(*keys)
     end
 
-    def images
-      lines = ["## Images"]
-      lines << "### The piece placed in the scene (composite)"
-      lines << (piece&.composite_url.presence ? "![composite](#{relative(piece.composite_url)})" : "_(none)_")
-      lines << "### The chosen piece (art only)"
-      lines << (piece&.chosen_url.presence ? "![chosen](#{relative(piece.chosen_url)})" : "_(none)_")
-      lines << "### Candidate batch"
-      candidates = Array(piece&.candidate_urls)
-      if candidates.empty?
-        lines << "_(none)_"
-      else
-        candidates.each_with_index { |url, i| lines << "![candidate #{i + 1}](#{relative(url)})" }
-      end
-      lines << "### Lifestyle photos"
-      photos = (piece&.photos || {}).select { |_, v| v.present? }
-      photos.empty? ? lines << "_(none)_" : photos.each { |k, v| lines << "![#{k}](#{relative(v)})" }
-      lines.join("\n")
-    end
-
     # Copy a local image into the run's own directory and return a path relative to dossier.md, so
     # the report is self-contained and renders in any markdown viewer. Remote URLs pass through.
     def relative(original)
@@ -166,26 +211,6 @@ module Dossier
       "images/#{File.basename(original)}"
     rescue StandardError
       original
-    end
-
-    def step_by_step
-      rows = Array(@run.step_results).map { |r| step_line(r) }
-      "## Step by step\n" + rows.join("\n")
-    end
-
-    def step_line(record)
-      label = "#{step_title(record['step_id'])} (#{record['step_id']})"
-      case record["status"]
-      when "ok"
-        "✓ #{label}"
-      when "awaiting_human"
-        "⚠ #{label} — needs your review: #{truncate(record['message'].to_s, 200)}"
-      when "failed"
-        reason = record.dig("data", "error") || record["message"] || "no error recorded"
-        "✗ #{label} — failed: #{truncate(reason.to_s, 200)}"
-      else
-        "- #{label} — #{record['status']}"
-      end
     end
 
     def message_for(step_id)

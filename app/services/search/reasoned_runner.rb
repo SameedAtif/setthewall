@@ -34,6 +34,8 @@ module Search
     #      so the extraction prompt inlines the schema and normalize_content parses whatever
     #      shape the model returns.
     def call
+      start_index = (Thread.current[:web_search_trace] || []).size
+
       emit_progress("researching (live web search, up to #{@max_rounds} searches)")
       research_chat     = build_research_chat
       research_response = research_chat.ask(@question)
@@ -49,7 +51,8 @@ module Search
       emit_progress("extracting structured results")
       { content: extract_structured(research_response.content), search_calls_made: tool_calls,
         min_rounds_met: @min_rounds ? tool_calls >= @min_rounds : nil,
-        transcript: research_chat.messages }
+        transcript: research_chat.messages,
+        searches: (Thread.current[:web_search_trace] || [])[start_index..] || [] }
     end
 
     private

@@ -60,7 +60,8 @@ RSpec.describe Agents::Conductor do
     expect(run.scope).to eq("style")
     expect(run.step_results.map { |r| r["step_id"] }).to eq(described_class::STYLE_ORDER)
     expect(run.escalations.map { |e| e["step_id"] }).to include("A0", "A5", "B0", "B7")
-    expect(run.dossier_markdown).to include("## The style", "## The scene")
+    expect(run.dossier_markdown).to include("## Survey style candidates (A_IDEATE)")
+    expect(run.dossier_markdown).to include("## Validate the style is worth pursuing (A0)")
   end
 
   it "runs the full scope across Track A, Track B, and the piece pipeline" do
@@ -127,6 +128,23 @@ RSpec.describe Agents::Conductor do
                           data: { candidates: { "images" => [{ "url" => "u1" }, { "url" => "u2" }] } })
       described_class.new(run).send(:capture_reference_images!, result)
       expect(run.reload.dossier_data.dig("A1", "curated_images")).to eq(%w[u1 u2])
+    end
+  end
+
+  describe "#capture_ideation_pick!" do
+    it "threads the recommended candidate into the style name" do
+      run = PipelineRunRecord.create!(run_id: "run-#{SecureRandom.hex(4)}", kb_version: "test",
+                                      dossier_data: { "style_name" => "original" })
+      result = Result.new(status: :awaiting_human, data: { recommended_focus: "Gothic naturalist" })
+      described_class.new(run).send(:capture_ideation_pick!, result)
+      expect(run.reload.dossier_data["style_name"]).to eq("Gothic naturalist")
+    end
+
+    it "does nothing when no recommendation is present" do
+      run = PipelineRunRecord.create!(run_id: "run-#{SecureRandom.hex(4)}", kb_version: "test",
+                                      dossier_data: { "style_name" => "original" })
+      described_class.new(run).send(:capture_ideation_pick!, Result.new(status: :ok, data: {}))
+      expect(run.reload.dossier_data["style_name"]).to eq("original")
     end
   end
 

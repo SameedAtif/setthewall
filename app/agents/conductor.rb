@@ -13,7 +13,7 @@ module Agents
       P3_1 P3_1b P3_2 P3_3 P3_4 P3_5 P3_6 P3_7 P3_8
     ].freeze
 
-    STYLE_ORDER = %w[A0 A1 A2 A3 A4 A5 A6 A7 B0 B1 B2 B3 B4 B5 B6 B7].freeze
+    STYLE_ORDER = %w[A_IDEATE A0 A1 A2 A3 A4 A5 A6 A7 B0 B1 B2 B3 B4 B5 B6 B7].freeze
     FULL_ORDER  = (STYLE_ORDER + ORDER).freeze
 
     SCOPES = {
@@ -90,6 +90,7 @@ module Agents
       context = Context::Assembler.for(step_id, @run)
       result  = Workflow::StepDispatcher.call(step_id: step_id, piece: piece, context: context)
       record_step!(step_id, result)
+      capture_ideation_pick!(result) if step_id == "A_IDEATE"
       capture_reference_images!(result) if step_id == "A1"
 
       tier = Workflow::DecisionRules.tier_for(step_id)
@@ -131,6 +132,15 @@ module Agents
       return if urls.empty?
 
       @run.update!(dossier_data: @run.dossier_data.merge("A1" => { "curated_images" => urls }))
+    end
+
+    # The speculative run auto-picks A_IDEATE's recommended candidate and uses it as the style
+    # name A0 validates. The human go/no-go remains at A0 (Tier 3); this only threads the pick.
+    def capture_ideation_pick!(result)
+      name = result.data&.dig(:recommended_focus) || result.data&.dig("recommended_focus")
+      return if name.blank?
+
+      @run.update!(dossier_data: @run.dossier_data.merge("style_name" => name))
     end
 
     def close_gate(step_id, result, findings)

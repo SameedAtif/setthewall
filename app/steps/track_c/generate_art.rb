@@ -23,6 +23,7 @@ module Steps
         urls = []
         prompt_files = []
         contributions = []
+        prompts = []
 
         pairs.each do |pair|
           synthesis = RubyLLM.chat(model: Pipeline::TEXT_MODEL)
@@ -30,6 +31,7 @@ module Steps
                              .ask(build_synthesis_prompt(pair)).content
 
           gen_prompt = synthesis["image_generation_prompt"]
+          prompts << gen_prompt
           contributions.concat(Array(synthesis["axis_contributions"]))
 
           result = adapter.generate(prompt: gen_prompt, n: 1)
@@ -50,10 +52,11 @@ module Steps
           needs_human(
             "IMAGE_GEN_PROVIDER=manual: generate #{want} candidates from the prompt file(s) at " \
             "#{prompt_files.join(', ')} and paste the resulting image URLs back into this piece.",
-            { prompt_files: prompt_files, n_requested: want, adapter: adapter.name }
+            { prompt_files: prompt_files, n_requested: want, adapter: adapter.name, prompts: prompts }
           )
         else
-          ok({ candidate_urls: urls, adapter: adapter.name, axis_contributions: contributions })
+          ok({ candidate_urls: urls, adapter: adapter.name,
+               axis_contributions: contributions, prompts: prompts })
         end
       end
 
