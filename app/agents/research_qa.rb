@@ -11,6 +11,7 @@ module Agents
 
       findings.concat(search_floor(d))
       findings.concat(check_source_independence(d))
+      findings.concat(check_host_diversity(d))
       findings.concat(check_promotional_framing(d))
 
       if @step_id == "A0" && d.dig("findings", "breadth_assessment") == "fragments_into_substyles"
@@ -79,6 +80,50 @@ module Agents
       [advisory("Source language matches promotional-framing patterns (#{hits.join(', ')}). " \
                 "Treat the trend claim as one source's marketing, not neutral evidence.",
                 [cite("ideation_constraints.rules.promotional_language_indicators")], { matched: hits })]
+    end
+
+    # Recompute source reach from the search trace's URLs rather than trusting the step's
+    # self-reported counts: flag low host diversity, and flag a reported source count that exceeds
+    # the number of distinct hosts actually retrieved.
+    def check_host_diversity(d)
+      urls = Array(d["searches"]).flat_map do |s|
+        Array(s["result_urls"]) + Array(s["image_urls"])
+      end
+      hosts = Search::SourceAnalysis.distinct_hosts(urls)
+      return [] if hosts.empty?
+
+      findings = []
+      min_hosts = qa_rules.dig("source_independence", "min_distinct_hosts").to_i
+      if hosts.size < min_hosts
+        findings << advisory(
+          "Search results span only #{hosts.size} host(s) (#{hosts.join(', ')}). " \
+          "A source-independence claim needs broader reach than this.",
+          [cite("qa_rules.rules.research_qa.source_independence")], { hosts: hosts }
+        )
+      end
+
+      reported = reported_source_count(d)
+      if reported && reported > hosts.size
+        findings << advisory(
+          "The step reports #{reported} independent source(s) but only #{hosts.size} distinct " \
+          "host(s) were retrieved. Recompute independence from the URLs, not the self-report.",
+          [cite("qa_rules.rules.research_qa.source_independence")],
+          { reported: reported, distinct_hosts: hosts.size }
+        )
+      end
+
+      findings
+    end
+
+    def reported_source_count(d)
+      case @step_id
+      when "A0"
+        Array(d.dig("findings", "findings")).map { |f| f["independent_shops"].to_i }.max
+      when "A_IDEATE"
+        Array(d["candidates"]).map { |c| c["independent_source_count"].to_i }.max
+      when "A1"
+        Array(d.dig("candidates", "images")).map { |i| Array(i["attributing_sources"]).size }.max
+      end
     end
   end
 end

@@ -14,7 +14,9 @@ rules:
       on_fail: blocking
     source_independence:
       min_sources_per_item: 2
+      min_distinct_hosts: 3
       restates: "reference_set_criteria.yml image_requirements"
+      convention_note: "min_distinct_hosts is a project convention; a signal needs 3+ hosts."
       on_fail: advisory
 
   axis_qa:

@@ -58,6 +58,26 @@ RSpec.describe "QA agents" do
                                result: result(data: { candidates: { mood_clusters_found: [{ "label" => "calm" }, { "label" => "bold" }] } }), context: {})
       expect(f).to include(an_object_having_attributes(severity: "blocking"))
     end
+
+    it "flags low host diversity from the search trace" do
+      data = { searches: [{ "result_urls" => ["https://etsy.com/a", "https://etsy.com/b"], "image_urls" => [] }] }
+      f = described_class.call(run: run, step_id: "A0", result: result(data: data), context: {})
+      expect(f).to include(an_object_having_attributes(severity: "advisory", claim: a_string_including("host")))
+    end
+
+    it "flags a reported source count exceeding the distinct host count" do
+      data = { searches: [{ "result_urls" => ["https://etsy.com/a"] }],
+               findings: { findings: [{ "independent_shops" => 6, "theme" => "x" }] } }
+      f = described_class.call(run: run, step_id: "A0", result: result(data: data), context: {})
+      expect(f).to include(an_object_having_attributes(severity: "advisory", claim: a_string_including("Recompute")))
+    end
+
+    it "does not flag when host diversity is sufficient" do
+      data = { searches: [{ "result_urls" => %w[https://etsy.com/a https://pinterest.com/b
+                                               https://westelm.com/c https://cb2.com/d] }] }
+      f = described_class.call(run: run, step_id: "A0", result: result(data: data), context: {})
+      expect(f.map(&:claim).none? { |c| c.include?("host") }).to be(true)
+    end
   end
 
   describe Agents::AxisQa do
