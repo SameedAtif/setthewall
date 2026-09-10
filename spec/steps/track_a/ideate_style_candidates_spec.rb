@@ -51,6 +51,11 @@ RSpec.describe Steps::TrackA::IdeateStyleCandidates do
     expect(captured[:question]).to include("bold and colorful")
   end
 
+  it "interpolates the current year from the system clock" do
+    captured = capture_runner_call { described_class.call(piece: nil, context: {}) }
+    expect(captured[:question]).to include(Date.current.year.to_s)
+  end
+
   it "forwards the on_progress callback to the runner" do
     callback = ->(_message) { }
     captured = capture_runner_call { described_class.call(piece: nil, context: { on_progress: callback }) }

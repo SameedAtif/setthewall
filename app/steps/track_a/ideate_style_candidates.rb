@@ -21,7 +21,8 @@ module Steps
         end
 
         question = prompt("a_ideate_style_candidates",
-                          candidate_count: count, direction_clause: direction_clause)
+                          candidate_count: count, direction_clause: direction_clause,
+                          current_year: Date.current.year)
 
         result = Search::ReasonedRunner.call(
           model: Pipeline::TEXT_MODEL,

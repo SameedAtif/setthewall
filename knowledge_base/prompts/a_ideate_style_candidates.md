@@ -3,6 +3,9 @@ candidate styles worth considering for a wall-hanging print business.
 
 %{direction_clause}
 
+The current year is %{current_year}. Date-anchored trend claims must reference %{current_year};
+do not anchor on an older year from training data.
+
 This is a SHALLOW, WIDE survey — not a deep validation of any one style. Do not attempt to
 compute a rigorous demand-to-competition ratio for each candidate; that level of scrutiny is a
 separate, later step (Step A0) applied to whichever ONE candidate gets chosen from this list.

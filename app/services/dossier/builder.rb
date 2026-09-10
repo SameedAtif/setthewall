@@ -152,7 +152,12 @@ module Dossier
 
     def search_lines(search)
       lines = ["- **`#{search['query']}`**"]
-      Array(search["result_urls"]).each { |u| lines << "  - #{u}" }
+      results = Array(search["results"]).select { |r| r.is_a?(Hash) }
+      if results.any?
+        results.each { |r| lines << "  - #{r['title'].to_s.strip.presence || r['url']} — #{r['url']}" }
+      else
+        Array(search["result_urls"]).each { |u| lines << "  - #{u}" }
+      end
       Array(search["image_urls"]).each { |u| lines << "  - 🖼 #{u}" }
       lines
     end

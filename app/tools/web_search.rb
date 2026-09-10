@@ -64,7 +64,10 @@ module Tools
                results.flat_map { |r| normalize_images(r["images"]) }
       images = images.uniq { |img| img[:url] }.first(MAX_IMAGES)
 
-      trace(query, results.map { |r| r["url"] }, images.map { |i| i[:url] })
+      normalized = results.map do |r|
+        { title: r["title"], url: r["url"], snippet: r["content"].to_s.truncate(500) }
+      end
+      trace(query, normalized, images.map { |i| i[:url] })
 
       if results.empty? && images.empty?
         Rails.logger.info("WebSearch: #{query.inspect} -> 0 results")
@@ -73,12 +76,7 @@ module Tools
 
       Rails.logger.info("WebSearch: #{query.inspect} -> #{results.size} results, #{images.size} images")
 
-      {
-        results: results.map { |r|
-          { title: r["title"], url: r["url"], snippet: r["content"].to_s.truncate(500) }
-        },
-        images: images
-      }
+      { results: normalized, images: images }
     rescue Faraday::Error, JSON::ParserError => e
       trace(query, [], [])
       { error: "search tool error: #{e.message}", query: query }
@@ -86,12 +84,13 @@ module Tools
 
     private
 
-    # Records every search query and the URLs it returned, so the dossier can show the exact
-    # queries issued and the links they surfaced (and how the query text was generated upstream).
-    def trace(query, result_urls, image_urls)
+    # Records every search query and what it surfaced, so the dossier can show the exact queries
+    # issued, the links (with titles) they returned, and how the query text was generated upstream.
+    def trace(query, results, image_urls)
       (Thread.current[:web_search_trace] ||= []) << {
         query: query,
-        result_urls: result_urls,
+        result_urls: results.map { |r| r[:url] },
+        results: results,
         image_urls: image_urls
       }
     end

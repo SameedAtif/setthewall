@@ -128,6 +128,7 @@ RSpec.describe Tools::WebSearch do
     expect(trace.first[:query]).to eq("q")
     expect(trace.first[:result_urls]).to eq(["u"])
     expect(trace.first[:image_urls]).to eq(["https://img1"])
+    expect(trace.first[:results]).to eq([{ title: "t", url: "u", snippet: "c" }])
   ensure
     Thread.current[:web_search_trace] = nil
   end
