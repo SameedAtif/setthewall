@@ -18,8 +18,11 @@ sustained demand).
 
 Methodology:
 
-1. Sample wall art listings across many different independent Etsy shops (not one bestseller list)
-   searching **%{style_name}** wall art, plus 2-3 closely adjacent style terms if relevant.
+1. Sample wall art listings across many different independent Etsy shops (not one bestseller list).
+   The **%{style_name}** wall-art marketplace search has already been run and its results are
+   provided in this prompt — use them. Run 2-3 closely adjacent style terms yourself as
+   additional samples, and read seller/shop identity from the result URLs so your "recurs across
+   N independent shops" figure is a real count, not an assumption.
 2. Identify recurring design attributes across listings from *different* shops — subject matter,
    color palette, composition style, texture/medium look.
 3. Cross-check the style's demand signal against at least one independent platform (Pinterest

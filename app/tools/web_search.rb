@@ -16,7 +16,10 @@ module Tools
     DESC
 
     param :query, type: :string,
-          desc: "A focused search query, 2-6 words works best."
+          desc: "Describe the thing you are looking for (e.g. \"whimsigoth wall art\", \"specimen " \
+                "plate print\"), not your research task. Do NOT stack task or marketplace jargon " \
+                "(\"Etsy listing\", \"bestseller\", \"analysis\") — those words retrieve SEO " \
+                "roundups about selling, not the primary sources themselves."
     param :max_results, type: :integer, required: false,
           desc: "Number of results to return. Default 5, max 10."
     param :include_images, type: :boolean, required: false,

@@ -16,7 +16,8 @@ module Steps
           question: brief,
           max_rounds: 8,  # A0's methodology needs: 1 style search + 2-3 adjacent terms +
           # 1 cross-check platform + competition-density lookups
-          min_rounds: 4   # search floor — the cross-check + competition lookups are not optional
+          min_rounds: 4,  # search floor — the cross-check + competition lookups are not optional
+          scripted: scripted_queries
         )
 
         content = result[:content]
@@ -49,6 +50,14 @@ module Steps
         )
       rescue Search::NoSearchPerformedError => e
         fail_step("A0 could not complete: #{e.message}", { brief: brief })
+      end
+
+      private
+
+      # The marketplace sample is scripted: query the product as a listing would title it, scoped
+      # to the marketplace domain. The model keeps the adjacent-term and cross-check judgment.
+      def scripted_queries
+        [{ query: "#{context.fetch(:style_name)} wall art", include_domains: ["etsy.com"] }]
       end
     end
   end

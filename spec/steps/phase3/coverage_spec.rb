@@ -77,6 +77,15 @@ RSpec.describe Steps::TrackA::BuildReferenceSet do
   end
 end
 
+RSpec.describe Steps::TrackA::ValidateStyle do
+  it "scripts the marketplace sample scoped to Etsy" do
+    step = described_class.new(piece: nil, context: { style_name: "Japandi" })
+    expect(step.send(:scripted_queries)).to eq(
+      [{ query: "Japandi wall art", include_domains: ["etsy.com"] }]
+    )
+  end
+end
+
 RSpec.describe Steps::Phase3::DraftTitle do
   it "pauses for a title that fails validation" do
     piece = build_piece
