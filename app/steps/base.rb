@@ -27,7 +27,9 @@ module Steps
     def self.call(...) = new(...).call
 
     def call
+      Workflow::StepLogging.log("Running #{self.class.name.demodulize}")
       result = perform
+      Workflow::StepLogging.log("Step result: #{result.status}")
       piece&.log_step!(
         step_id: self.class.step_id,
         mechanism: self.class.mechanism,
@@ -36,6 +38,7 @@ module Steps
       )
       result
     rescue StandardError => e
+      Workflow::StepLogging.log("#{e.class}: #{e.message}", level: :error)
       piece&.update(status: "failed", last_error: "#{self.class.step_id}: #{e.message}")
       raise
     end

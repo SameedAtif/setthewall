@@ -18,7 +18,5 @@ end
 RSpec.describe "domain error classes" do
   it "defines the cross-file error constants" do
     expect(Compositor::TemplateError).to be_a(Class)
-    expect(KbEvolution::ProposalGenerationError).to be_a(Class)
-    expect(KbEvolution::ProposalListSchema).to be_a(Class)
   end
 end

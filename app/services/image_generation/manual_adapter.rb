@@ -8,7 +8,7 @@ module ImageGeneration
     def generate(prompt:, n:, style_reference: [])
       out_dir = Rails.root.join("tmp", "manual_gen_prompts")
       out_dir.mkpath
-      file = out_dir.join("prompt_#{Time.current.to_i}.txt")
+      file = out_dir.join("prompt_#{Time.current.to_i}_#{SecureRandom.hex(4)}.txt")
       file.write(<<~TXT)
         # Manual image-generation prompt
         # Count requested: #{n}

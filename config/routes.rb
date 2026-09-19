@@ -2,24 +2,34 @@ Rails.application.routes.draw do
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
-  # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
 
-  # Pipeline dashboard + actions
-  root "pipeline#index"
-  post "pipeline/ideate",        to: "pipeline#ideate"
-  get  "pipeline/surveys",       to: "pipeline#surveys"
-  post "pipeline/track_a",       to: "pipeline#start_track_a"
-  post "pipeline/track_b",       to: "pipeline#start_track_b"
-  post "pipeline/daily",         to: "pipeline#start_daily"
-  post "pipeline/refresh_stats", to: "pipeline#refresh_stats"
-  post "pipeline/export",        to: "pipeline#export"
-  post "pipeline/propose",       to: "pipeline#propose"
+  root "runs#index"
 
-  resources :reviews, only: [:index]
-  resources :dossier_reviews, only: [:index, :show, :update]
-  resources :human_gates, only: [:show, :update]
-  resources :kb_proposals, only: [:index, :show, :update] do
-    member { post :apply }
+  # Locally generated media (e.g. C1 candidates saved under tmp/) lives outside public/, so serve
+  # it through a checked controller instead of exposing the filesystem.
+  get "media/*path", to: "media#show", as: :media, format: false
+
+  # Notebook UI: a run is one page of step cells.
+  resources :runs, only: [:index, :show, :create] do
+    member do
+      post :run_next
+      post :run_to_decision
+      post :approve
+      post :abandon
+    end
+
+    resources :steps, only: [], controller: "run_steps" do
+      member do
+        post :run
+        post :interpret
+        post :decide
+        post :decision
+        post :narrow
+        post :color_role
+        post :note
+        get  :composer
+      end
+    end
   end
 end

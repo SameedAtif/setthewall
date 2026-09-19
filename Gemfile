@@ -60,6 +60,10 @@ gem "faraday"
 # Image compositing (Step 6) — deterministic, not an LLM
 gem "ruby-vips"
 
+# Render the dossier markdown in the notebook UI (pure Ruby, no native extension)
+gem "kramdown"
+gem "kramdown-parser-gfm"
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"

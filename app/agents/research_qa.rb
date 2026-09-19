@@ -26,12 +26,23 @@ module Agents
       if @step_id == "A1"
         clusters = Array(d.dig("candidates", "mood_clusters_found"))
         if clusters.size > 1
-          findings << blocking(
-            "Reference set spans #{clusters.size} mood clusters. Narrowing now is cheaper than " \
-            "discovering the same split after A2's full scoring pass.",
-            [cite("decision_rules.rules.steps.A1.on_unresolved_input")],
-            { clusters: clusters.filter_map { |c| c["label"] } }
-          )
+          dominant = d.dig("candidates", "dominant_mood").to_s
+          shared   = Array(d.dig("candidates", "shared_qualities"))
+          if dominant.present? && dominant != "mixed" && shared.any?
+            findings << pass(
+              "Reference set spans #{clusters.size} camps and reconciles to a #{dominant} mood " \
+              "via shared qualities: #{shared.join(', ')}.",
+              [cite("reference_set_criteria.rules.mood_reconciliation")]
+            )
+          else
+            findings << blocking(
+              "Reference set spans #{clusters.size} mood clusters with no reconcilable common " \
+              "mood#{dominant.present? ? " (dominant_mood=#{dominant})" : ''}. Narrow to one mood " \
+              "before A2 spends a full scoring pass.",
+              [cite("decision_rules.rules.steps.A1.on_unresolved_input")],
+              { clusters: clusters.filter_map { |c| c["label"] }, dominant_mood: dominant.presence }
+            )
+          end
         end
       end
 

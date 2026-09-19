@@ -26,10 +26,4 @@ namespace :run do
     CommitRunJob.perform_now(run_id: run.run_id)
     puts "Committed. Listing: #{run.reload.piece_record&.etsy_listing_id}"
   end
-
-  desc "Rerun from a step with guidance. rake run:rerun id=... step=A1 notes='...'"
-  task rerun: :environment do
-    RerunFromStepJob.perform_now(run_id: ENV.fetch("id"), step_id: ENV.fetch("step"),
-                                 guidance: ENV["notes"])
-  end
 end

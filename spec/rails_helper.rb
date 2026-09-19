@@ -24,6 +24,7 @@ RSpec.configure do |config|
   config.include LlmStubs
   config.include AdapterStubs
   config.include PipelineHelpers
+  config.include ActiveJob::TestHelper
 
   # Remove any knowledge-base files a spec wrote (see PipelineHelpers#track_kb_file).
   config.after(:each) do

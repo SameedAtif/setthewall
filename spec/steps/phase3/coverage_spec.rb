@@ -11,13 +11,106 @@ RSpec.describe Steps::TrackC::GenerateArt do
   it "pauses for the manual adapter" do
     piece = build_piece
     piece.save!
-    stub_llm(content: { "image_generation_prompt" => "p", "axis_contributions" => [], "negative_prompt" => "" }) do
+    log_path = nil
+    stub_llm(content: { "scene_description" => "a calm plaster surface" }) do
       stub_singleton(ImageGeneration::Adapter, :build, -> { ImageGeneration::ManualAdapter.new }) do
         result = described_class.call(piece: piece, context: { candidate_count: 2 })
         expect(result).to be_awaiting_human
         expect(result.data[:prompt_files].size).to eq(2)
+        log_path = result.data[:image_prompt_log]
       end
     end
+  ensure
+    File.delete(log_path) if log_path && File.exist?(log_path)
+  end
+
+  it "writes a durable image-prompt log and exposes the prompts" do
+    piece = build_piece
+    piece.save!
+    content = { "scene_description" => "plaster surface with soft ridges" }
+    stub_llm(content: content) do
+      stub_singleton(ImageGeneration::Adapter, :build, -> { ImageGeneration::ManualAdapter.new }) do
+        result = described_class.call(piece: piece, context: { candidate_count: 2 })
+
+        expect(result).to be_awaiting_human
+        prompts = result.data[:prompts]
+        expect(prompts.size).to eq(2)
+        expect(prompts.first).to include("plaster surface with soft ridges")
+        expect(prompts.first).to include("no watermark, no signature") # negative clause from the rule file
+
+        log_path = result.data[:image_prompt_log]
+        expect(File.exist?(log_path)).to be(true)
+        records = File.readlines(log_path).map { |line| JSON.parse(line) }
+        expect(records.size).to eq(2)
+        expect(records.first["scene_description"]).to eq("plaster surface with soft ridges")
+        expect(records.first["image_generation_prompt"]).to include("plaster surface with soft ridges")
+        expect(records.first["ok"]).to be(true)
+      ensure
+        File.delete(log_path) if log_path && File.exist?(log_path)
+      end
+    end
+  end
+
+  it "fails a candidate whose synthesis is not the parsed schema" do
+    piece = build_piece
+    piece.save!
+    log_path = nil
+    stub_llm(content: "not a hash") do
+      stub_singleton(ImageGeneration::Adapter, :build, -> { ImageGeneration::ManualAdapter.new }) do
+        result = described_class.call(piece: piece, context: { candidate_count: 2 })
+
+        expect(result).to be_failed
+        expect(result.message).to include("no candidates")
+        log_path = result.data[:image_prompt_log]
+      end
+    end
+  ensure
+    File.delete(log_path) if log_path && File.exist?(log_path)
+  end
+
+  it "passes A1 reference images to the adapter as style references" do
+    piece = build_piece
+    piece.save!
+    ref = build_art_image.to_s
+    adapter = double("adapter", name: "fake")
+    allow(adapter).to receive(:generate).and_return(
+      ImageGeneration::Result.new(urls: ["u"], provider: "fake", model: "fake",
+                                  estimated_cost_usd: 0.0, raw_response: nil)
+    )
+    log_path = nil
+    stub_llm(content: { "scene_description" => "surface" }) do
+      stub_singleton(ImageGeneration::Adapter, :build, -> { adapter }) do
+        result = described_class.call(piece: piece,
+                                      context: { candidate_count: 1, reference_images: [ref] })
+        expect(result).to be_ok
+        log_path = result.data[:image_prompt_log]
+      end
+    end
+
+    expect(adapter).to have_received(:generate).with(prompt: anything, n: 1, style_reference: [ref])
+  ensure
+    File.delete(log_path) if log_path && File.exist?(log_path)
+  end
+
+  it "builds an original piece in the reference set's tradition" do
+    piece = build_piece
+    piece.save!
+    log_path = nil
+    stub_llm(content: { "scene_description" => "surface" }) do
+      stub_singleton(ImageGeneration::Adapter, :build, -> { ImageGeneration::ManualAdapter.new }) do
+        result = described_class.call(piece: piece, context: {
+          candidate_count: 1,
+          reference_essence: { mood: "calm_ordered", qualities: ["flat printed surface imitating plaster"] }
+        })
+        log_path = result.data[:image_prompt_log]
+
+        expect(result).to be_awaiting_human
+        expect(result.data[:prompts].first).to include("same tradition as the reference set")
+        expect(result.data[:prompts].first).to include("flat printed surface imitating plaster")
+      end
+    end
+  ensure
+    File.delete(log_path) if log_path && File.exist?(log_path)
   end
 
   it "keeps mood out of content and content_type out of subject" do

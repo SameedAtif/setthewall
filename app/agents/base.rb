@@ -31,6 +31,7 @@ module Agents
       findings = Array(evaluate)
       raise "#{self.class.agent_id} returned no findings for #{@step_id}" if findings.empty?
 
+      Workflow::StepLogging.log("QA #{self.class.agent_id}: #{findings.size} finding(s)")
       findings.each { |f| persist!(f) }
       findings
     end

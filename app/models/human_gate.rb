@@ -1,6 +1,5 @@
 class HumanGate < ApplicationRecord
   belongs_to :piece_record, optional: true
-  belongs_to :track_run, optional: true
 
   STATUSES = %w[open approved rejected edited].freeze
   validates :status, inclusion: { in: STATUSES }

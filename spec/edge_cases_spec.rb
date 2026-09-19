@@ -25,11 +25,3 @@ RSpec.describe Steps::Phase2::AssignFrame do
     expect(step.send(:pick_metal_finish, KnowledgeBase::RuleSet.load("frame_material"))).to eq("black_metal")
   end
 end
-
-RSpec.describe "KbProposals read guard", type: :request do
-  it "shows a proposal whose target file is missing" do
-    proposal = create(:kb_proposal, target_path: "knowledge_base/rules/nonexistent_#{SecureRandom.hex(4)}.yml")
-    get kb_proposal_path(proposal)
-    expect(response).to have_http_status(:ok)
-  end
-end

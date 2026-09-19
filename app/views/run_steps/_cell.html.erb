@@ -1,0 +1,82 @@
+<div id="run_step_<%= step.id %>" data-running="<%= step.running? %>" class="border rounded-lg mb-4 overflow-hidden <%= "border-yellow-300 bg-yellow-50/40" if step.stale? %>">
+  <div class="flex items-center justify-between bg-gray-50 px-3 py-2 border-b">
+    <div class="flex items-center gap-2 min-w-0">
+      <span class="font-mono text-xs text-gray-400">[<%= index %>]</span>
+      <span class="font-semibold truncate"><%= run_step_title(step.step_id) %></span>
+      <span class="font-mono text-xs text-gray-400 shrink-0"><%= step.step_id %></span>
+    </div>
+    <span class="font-mono text-xs px-2 py-0.5 rounded shrink-0 inline-flex items-center gap-1 <%= status_color(step.status) %>">
+      <%= render "run_steps/spinner" if step.running? || step.queued? %>
+      <%= step.status %>
+    </span>
+  </div>
+
+  <div class="p-3">
+    <% if step.stale? %>
+      <p class="text-xs text-yellow-700 mb-2">Stale — re-run to refresh this and all downstream cells.</p>
+    <% elsif step.failed? && step.message.present? %>
+      <p class="mb-2 rounded border border-red-200 bg-red-50 p-2 text-xs text-red-700"><%= step.message %></p>
+    <% end %>
+
+    <% readable = step.summary.presence || (step.awaiting_human? ? nil : step.message) %>
+    <% if readable.present? %>
+      <details>
+        <summary class="cursor-pointer select-none text-xs font-medium text-gray-500">
+          <span class="details-see-more">See more</span>
+          <span class="details-hide">Hide</span>
+        </summary>
+        <p class="mt-1 text-sm text-gray-800 whitespace-pre-wrap"><%= readable %></p>
+      </details>
+    <% elsif !step.awaiting_human? && step.output.blank? %>
+      <p class="text-sm text-gray-400 italic">Not run yet.</p>
+    <% end %>
+
+    <% if step.output.present? %>
+      <div class="mt-3 border-t border-gray-100 pt-3">
+        <%= render_step_output(step) %>
+        <details class="mt-2">
+          <summary class="cursor-pointer text-xs text-gray-400">Raw JSON</summary>
+          <pre class="mt-1 bg-gray-50 border rounded p-2 text-xs overflow-auto"><%= JSON.pretty_generate(step.output) %></pre>
+        </details>
+      </div>
+    <% end %>
+
+    <% if step.awaiting_human? %>
+      <%= render "run_steps/decision", run: run, step: step %>
+    <% else %>
+      <div class="mt-3 flex flex-wrap items-center gap-2">
+        <% case step.status %>
+        <% when "pending" %>
+          <%= button_to "Run this step", run_run_step_path(run, step),
+                class: "bg-gray-900 text-white px-3 py-1.5 rounded text-sm hover:bg-gray-700" %>
+        <% when "stale", "failed" %>
+          <%= button_to "Re-run this step", run_run_step_path(run, step),
+                class: "bg-gray-900 text-white px-3 py-1.5 rounded text-sm hover:bg-gray-700" %>
+        <% when "done" %>
+          <%= button_to "Regenerate this step", run_run_step_path(run, step),
+                class: "bg-white border text-gray-800 px-2.5 py-1 rounded text-xs hover:bg-gray-50" %>
+          <details class="inline-block align-top">
+            <summary class="cursor-pointer select-none text-xs text-gray-500">Add a note</summary>
+            <%= form_with url: note_run_step_path(run, step), method: :post, class: "mt-1 space-y-1" do |f| %>
+              <%= f.text_area :note, rows: 2, placeholder: "A note for the record…",
+                    class: "w-full border rounded p-2 text-sm" %>
+              <%= f.submit "Save note",
+                    class: "bg-white border text-gray-800 px-2.5 py-1 rounded text-xs hover:bg-gray-50" %>
+            <% end %>
+          </details>
+        <% else %>
+          <span class="text-xs text-gray-500">Working…</span>
+        <% end %>
+      </div>
+    <% end %>
+
+    <% if step.logs.present? || step.running? || step.queued? %>
+      <div id="run_step_<%= step.id %>_log"
+           class="mt-3 max-h-48 overflow-auto rounded bg-gray-900 p-2 font-mono text-[11px] leading-relaxed text-gray-100">
+        <% Array(step.logs).each do |entry| %>
+          <%= render "run_steps/log_line", entry: entry %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>

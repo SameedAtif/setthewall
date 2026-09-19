@@ -34,6 +34,7 @@ module Tools
       max_results = max_results.to_i.clamp(1, 10)
       Rails.logger.info("WebSearch: #{query.inspect} (images=#{include_images}, " \
                         "domains=#{Array(include_domains).join(',')})")
+      Workflow::StepLogging.log("Search: #{query}")
 
       response = connection.post("search") do |req|
         req.body = {
@@ -50,7 +51,7 @@ module Tools
       end
 
       unless response.success?
-        trace(query, [], [])
+        trace(query, [], [], error: "search request failed (HTTP #{response.status})")
         return { error: "search request failed (HTTP #{response.status})", query: query }
       end
 
@@ -75,10 +76,11 @@ module Tools
       end
 
       Rails.logger.info("WebSearch: #{query.inspect} -> #{results.size} results, #{images.size} images")
+      Workflow::StepLogging.log("#{results.size} results, #{images.size} images")
 
       { results: normalized, images: images }
-    rescue Faraday::Error, JSON::ParserError => e
-      trace(query, [], [])
+    rescue Faraday::Error, JSON::ParserError, Timeout::Error => e
+      trace(query, [], [], error: e.message)
       { error: "search tool error: #{e.message}", query: query }
     end
 
@@ -86,13 +88,15 @@ module Tools
 
     # Records every search query and what it surfaced, so the dossier can show the exact queries
     # issued, the links (with titles) they returned, and how the query text was generated upstream.
-    def trace(query, results, image_urls)
-      (Thread.current[:web_search_trace] ||= []) << {
+    def trace(query, results, image_urls, error: nil)
+      entry = {
         query: query,
         result_urls: results.map { |r| r[:url] },
         results: results,
         image_urls: image_urls
       }
+      entry[:error] = error if error.present?
+      (Thread.current[:web_search_trace] ||= []) << entry
     end
 
     def normalize_images(images)
@@ -106,6 +110,9 @@ module Tools
     def connection
       @connection ||= Faraday.new(url: "https://api.tavily.com/") do |f|
         f.request :json
+        # Bound every call so a stuck connection can never hang the research step.
+        f.options.open_timeout = ENV.fetch("SEARCH_OPEN_TIMEOUT_SECONDS", 8).to_i
+        f.options.timeout      = ENV.fetch("SEARCH_READ_TIMEOUT_SECONDS", 15).to_i
         f.adapter Faraday.default_adapter
       end
     end

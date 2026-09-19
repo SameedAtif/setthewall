@@ -48,3 +48,14 @@ Also report `mood_clusters_found`: group the images into the distinct mood camps
 spans (for example "calm botanical" vs "bold celestial"), with the 1-based image indices in each. If
 the set is one coherent mood, report a single camp. Catching a split here is much cheaper than
 discovering it after A2's full scoring pass.
+
+Then reconcile the camps rather than stopping at the split. Report:
+- `shared_qualities`: what the camps have in common — palette, material, surface treatment, level
+  of abstraction, styling.
+- `dominant_mood`: the single mood to move forward with (`calm_ordered` or `bold_active`). Stylistic
+  variation within one overall mood is expected and is NOT a reason to return `mixed`.
+- `reconciliation_note`: how the camps reconcile into `dominant_mood`.
+
+Only return `dominant_mood: "mixed"` when the camps genuinely point at different moods and cannot be
+reconciled into one. A set that shares a palette and material but varies in styling is one mood, not
+a split.

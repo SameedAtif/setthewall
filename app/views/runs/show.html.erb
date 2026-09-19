@@ -1,0 +1,11 @@
+<div class="flex min-h-screen">
+  <%= render "runs/sidebar", runs: @runs, current: @run %>
+
+  <main class="flex-1 p-6 max-w-4xl">
+    <% if @run.nil? %>
+      <p class="text-gray-500">No runs yet. Create one from the sidebar.</p>
+    <% else %>
+      <%= render "runs/notebook", run: @run %>
+    <% end %>
+  </main>
+</div>

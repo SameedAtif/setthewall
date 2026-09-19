@@ -136,6 +136,24 @@ RSpec.describe Steps::TrackB do
       end
     end
 
+    it "completes with the documented default when the human confirms line_only" do
+      stub_llm(content: observation.merge("candidate_role" => "color_burst")) do
+        result = described_class::ColorRole.call(piece: nil, context: scene_ctx(content_type: "minimalist_modern", wall_condition: "neutral", furniture_weight: "light", color_role_override: "line_only"))
+        expect(result).to be_ok
+        expect(result.data[:color_role]).to eq("line_only")
+        expect(result.data[:override_pending]).to be(false)
+      end
+    end
+
+    it "completes with the observed role when the human keeps it with a reason" do
+      stub_llm(content: observation.merge("candidate_role" => "color_burst")) do
+        result = described_class::ColorRole.call(piece: nil, context: scene_ctx(content_type: "minimalist_modern", wall_condition: "neutral", furniture_weight: "light", color_role_override: "color_burst", catalog_strategy_override: "one color statement per room"))
+        expect(result).to be_ok
+        expect(result.data[:color_role]).to eq("color_burst")
+        expect(result.data[:override_reason]).to include("one color statement per room")
+      end
+    end
+
     it "flags a color_burst / busy-wall conflict" do
       stub_llm(content: observation.merge("candidate_role" => "color_burst")) do
         result = described_class::ColorRole.call(piece: nil, context: scene_ctx(content_type: "detailed_representational", wall_condition: "busy", furniture_weight: "light"))

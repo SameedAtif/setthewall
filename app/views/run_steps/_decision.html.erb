@@ -1,0 +1,54 @@
+<div class="mt-3 rounded border border-amber-200 bg-amber-50/60 p-3">
+  <div class="text-xs font-semibold uppercase tracking-wide text-amber-800">Needs your decision</div>
+  <% if step.message.present? %>
+    <p class="mt-1 text-sm text-gray-800 whitespace-pre-wrap"><%= step.message %></p>
+  <% end %>
+
+  <%= render "run_steps/narrow", run: run, step: step %>
+
+  <% color_role_pending = step.step_id == "B6" && step.output["override_pending"] %>
+  <%= render "run_steps/color_role", run: run, step: step if color_role_pending %>
+
+  <% options = step.decision_options.presence || Llm::DecisionOptions.fallback_for(step) %>
+  <% if step.mood_unresolved? %>
+    <%# An unresolved set can't be approved — re-run to reconcile, narrow, or rewind/abandon. %>
+    <% options = options.select { |o| %w[retry rewind abandon].include?(o["intent"]) } %>
+  <% end %>
+  <% if step.mood_mixed? && step.context_override.blank? %>
+    <%# A reported unreconcilable split can't be fixed by an identical retry. %>
+    <% options = options.select { |o| %w[rewind abandon].include?(o["intent"]) } %>
+  <% end %>
+  <% if color_role_pending %>
+    <%# The color-role panel is the single, self-contained decision for B6 (incl. rewind/abandon). %>
+    <% options = [] %>
+  <% end %>
+  <% if options.any? %>
+    <%= form_with url: decide_run_step_path(run, step), method: :post, class: "mt-3 space-y-2" do |f| %>
+      <% options.each_with_index do |option, index| %>
+        <label class="flex cursor-pointer items-start gap-2 rounded border border-transparent p-2 hover:bg-white/60">
+          <%= radio_button_tag "option_index", index, index.zero? && step.mood_clusters.size <= 1, class: "mt-0.5" %>
+          <span class="min-w-0">
+            <span class="block text-sm font-medium text-gray-900"><%= option["label"] %></span>
+            <% if option["description"].present? %>
+              <span class="block text-xs text-gray-600"><%= option["description"] %></span>
+            <% end %>
+            <% if option["edits"].present? %>
+              <span class="mt-1 block"><%= render "run_steps/edits", edits: option["edits"] %></span>
+            <% end %>
+          </span>
+        </label>
+      <% end %>
+      <%= f.submit "Apply decision",
+            class: "bg-gray-900 text-white px-3 py-1.5 rounded text-sm hover:bg-gray-700" %>
+    <% end %>
+  <% end %>
+
+  <details class="mt-3">
+    <summary class="cursor-pointer select-none text-xs text-blue-700">
+      Something else — write your own
+    </summary>
+    <div class="mt-1">
+      <%= render "run_steps/feedback_composer", run: run, step: step %>
+    </div>
+  </details>
+</div>

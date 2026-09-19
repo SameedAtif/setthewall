@@ -23,6 +23,16 @@ module Schemas
                 description: "1-based indices of the images that belong to this camp"
         end
       end
+      array :shared_qualities, of: :string,
+            description: "The qualities the mood camps share — palette, material, surface " \
+                         "treatment, level of abstraction, styling. Non-empty when the camps " \
+                         "reconcile into one mood."
+      string :dominant_mood, enum: %w[calm_ordered bold_active mixed],
+             description: "The single mood to move forward with after reconciling the camps. Use " \
+                          "'mixed' ONLY when the camps genuinely cannot be reconciled — stylistic " \
+                          "variation within one mood is not a reason to return 'mixed'."
+      string :reconciliation_note,
+             description: "How the camps reconcile into dominant_mood, or why they cannot."
     end
   end
 end

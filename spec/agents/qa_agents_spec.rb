@@ -59,6 +59,29 @@ RSpec.describe "QA agents" do
       expect(f).to include(an_object_having_attributes(severity: "blocking"))
     end
 
+    it "does not block A1 when the camps reconcile to a dominant mood" do
+      data = { candidates: {
+        mood_clusters_found: [{ "label" => "calm" }, { "label" => "bold" }],
+        dominant_mood: "calm_ordered",
+        shared_qualities: ["warm neutral", "troweled plaster"]
+      } }
+      f = described_class.call(run: run, step_id: "A1", result: result(data: data), context: {})
+
+      expect(f).not_to include(an_object_having_attributes(severity: "blocking"))
+      expect(f).to include(an_object_having_attributes(severity: "pass"))
+    end
+
+    it "blocks A1 when the dominant mood is mixed" do
+      data = { candidates: {
+        mood_clusters_found: [{ "label" => "calm" }, { "label" => "bold" }],
+        dominant_mood: "mixed",
+        shared_qualities: ["warm neutral"]
+      } }
+      f = described_class.call(run: run, step_id: "A1", result: result(data: data), context: {})
+
+      expect(f).to include(an_object_having_attributes(severity: "blocking"))
+    end
+
     it "flags low host diversity from the search trace" do
       data = { searches: [{ "result_urls" => ["https://etsy.com/a", "https://etsy.com/b"], "image_urls" => [] }] }
       f = described_class.call(run: run, step_id: "A0", result: result(data: data), context: {})
@@ -138,9 +161,10 @@ RSpec.describe "QA agents" do
       expect(f).to include(an_object_having_attributes(severity: "pass"))
     end
 
-    it "blocks B6 when override is pending" do
+    it "does not block B6 when the override is pending a human decision" do
       f = described_class.call(run: run, step_id: "B6", result: result(data: { override_pending: true, conflicts: [] }), context: {})
-      expect(f).to include(an_object_having_attributes(severity: "blocking"))
+      expect(f).not_to include(an_object_having_attributes(severity: "blocking"))
+      expect(f).to include(an_object_having_attributes(severity: "pass"))
     end
 
     it "blocks B6 on cross-check conflicts" do

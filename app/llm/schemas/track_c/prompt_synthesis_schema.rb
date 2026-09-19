@@ -1,18 +1,12 @@
 module Schemas
   module TrackC
     class PromptSynthesisSchema < RubyLLM::Schema
-      string :image_generation_prompt,
-             description: "The final constructed prompt to send to the image-generation API"
-      array :axis_contributions,
-            description: "Which phrase came from which axis — for auditability" do
-        object do
-          string :axis,
-                 enum: %w[content_type mood color_role frame_form room_shape subject narrative]
-          string :phrase_added
-        end
-      end
-      string :negative_prompt,
-             description: "The negative-prompt clause: no watermark, no signature, etc."
+      # The LLM writes only the SCENE/SURFACE description. C1 assembles the final image-generation
+      # prompt deterministically from knowledge_base/prompts/c1_image_prompt.md plus
+      # knowledge_base/rules/generation_prompt_template.yml, so prompt structure is a file edit and
+      # the axis directives + negative clause are always applied.
+      string :scene_description,
+             description: "One continuous description of the artwork's own surface/imagery, for the image-generation prompt"
     end
   end
 end

@@ -7,7 +7,12 @@ module Agents
   #   style  — Track A + Track B (A0 → B7), locks the style/scene spec, no piece.
   #   piece  — Track C → Phase 3 (C1 → P3_8) against an already-locked spec.
   #   full   — style + piece in one pass, one dossier.
+  #
+  # The per-step execution (dispatch + QA + gate closure) lives in Workflow::StepExecution, shared
+  # with the notebook's Workflow::CellRunner.
   class Conductor
+    include Workflow::GateHelpers
+
     ORDER = %w[
       C1 C2 P2_0 P2_1 P2_3 P2_4 P2_4b P2_5 P2_6
       P3_1 P3_1b P3_2 P3_3 P3_4 P3_5 P3_6 P3_7 P3_8
@@ -45,20 +50,12 @@ module Agents
       run
     end
 
-    # Seed a PieceRecord for the piece pipeline from the committed style/scene spec, denormalising
-    # the axis values C1 onward read. Returns nil when the spec isn't locked yet — a fresh style's
-    # Track A/B locks it first (committed, or in the staged spec of a full run).
+    # Seed a PieceRecord for the piece pipeline from the committed style/scene spec. Returns nil
+    # when the spec isn't locked yet — a fresh style's Track A/B locks it first (committed, or in
+    # the staged spec of a full run).
     def self.build_piece(style_slug:, scene_spec_id:, kb_version:)
-      spec  = KnowledgeBase::StyleSpec.load(style_slug)
-      scene = spec.scene(scene_spec_id)
-
-      piece = PieceRecord.create!(style_spec_slug: style_slug, scene_spec_id: scene_spec_id,
-                                  kb_version: kb_version, status: "pending")
-      piece.apply_spec!(spec, scene)
-      piece.save!
-      piece
-    rescue KnowledgeBase::IncompleteSpecError
-      nil
+      Workflow::PieceBuilder.build(style_slug: style_slug, scene_spec_id: scene_spec_id,
+                                   kb_version: kb_version)
     end
 
     def initialize(run) = @run = run
@@ -85,107 +82,17 @@ module Agents
     def piece = @run.piece_record
 
     def execute(step_id)
-      ensure_piece! if step_id == "C1" && piece.nil?
-
-      context = Context::Assembler.for(step_id, @run)
-      result  = Workflow::StepDispatcher.call(step_id: step_id, piece: piece, context: context)
-      record_step!(step_id, result)
-      capture_ideation_pick!(result) if step_id == "A_IDEATE"
-      capture_reference_images!(result) if step_id == "A1"
-
-      tier = Workflow::DecisionRules.tier_for(step_id)
-      return if tier == 3 && escalate!(step_id, "tier_3_gate")
-      return unless gated?(step_id)
-
-      findings = Agents::Registry.for(step_id).flat_map do |klass|
-        klass.call(run: @run, step_id: step_id, result: result, context: context, role: "proposer")
-      end
-
-      if tier == 2
-        verification = Agents::BlindVerifier.call(run: @run, step_id: step_id, result: result,
-                                                  context: context, proposer_findings: findings)
-        return escalate!(step_id, "verifier_divergence", verification.divergence) unless verification.agreed
-      end
-
-      close_gate(step_id, result, findings)
+      outcome = Workflow::StepExecution.call(run: @run, step_id: step_id, piece: piece)
+      record_step!(step_id, outcome.result)
+      record_disposition!(step_id, outcome.verdict, outcome.disposition) if outcome.disposition.present?
     rescue StandardError => e
-      # A transient step failure (API 5xx, timeout) must not kill the whole run — record it and
-      # escalate so the dossier surfaces it for a re-run.
-      failed = Struct.new(:status, :data, keyword_init: true).new(status: :failed, data: { "error" => e.message })
-      record_step!(step_id, failed)
-      escalate!(step_id, "step_error", e.message)
-    end
-
-    def ensure_piece!
-      piece = self.class.build_piece(style_slug: @run.style_slug,
-                                     scene_spec_id: @run.scene_spec_id,
-                                     kb_version: @run.kb_version)
-      @run.update!(piece_record: piece) if piece
-    end
-
-    # ImageQa compares candidates against A1's curated reference set, which it reads from
-    # dossier_data["A1"]["curated_images"]. Populate that key from A1's own step result.
-    def capture_reference_images!(result)
-      candidates = result.data&.dig(:candidates) || result.data&.dig("candidates")
-      images = candidates&.dig(:images) || candidates&.dig("images")
-      urls = Array(images).filter_map { |i| i["url"] if i.is_a?(Hash) }
-      return if urls.empty?
-
-      @run.update!(dossier_data: @run.dossier_data.merge("A1" => { "curated_images" => urls }))
-    end
-
-    # The speculative run auto-picks A_IDEATE's recommended candidate and uses it as the style
-    # name A0 validates. The human go/no-go remains at A0 (Tier 3); this only threads the pick.
-    def capture_ideation_pick!(result)
-      name = result.data&.dig(:recommended_focus) || result.data&.dig("recommended_focus")
-      return if name.blank?
-
-      @run.update!(dossier_data: @run.dossier_data.merge("style_name" => name))
-    end
-
-    def close_gate(step_id, result, findings)
-      verdict = Workflow::DecisionRules.verdict_for(step_id: step_id, result: result, findings: findings)
-      legal   = Workflow::DecisionRules.legal_dispositions(step_id: step_id, verdict: verdict)
-
-      # A blocking finding always rewinds (the "blocked" verdict permits rewind); otherwise approve.
-      disposition = findings.any?(&:blocking?) ? "rewind" : "approve"
-      unless legal.include?(disposition)
-        escalate!(step_id, "no_legal_agent_disposition", { verdict: verdict })
-        return
-      end
-
-      Workflow::DecisionRules.validate_disposition!(
-        step_id: step_id, verdict: verdict, disposition: disposition, reviewer_kind: "agent",
-        payload: { citations: findings.flat_map(&:citations), acceptance_note: acceptance_note(findings) }
+      # Safety net: StepExecution already converts step errors into a failed result, but recording
+      # itself must never tear down the whole run.
+      failed = Workflow::StepExecution::FailureResult.new(
+        status: :failed, data: { "error" => e.message }, message: nil
       )
-      Workflow::GateCloser.call(run: @run, step_id: step_id, verdict: verdict,
-                                disposition: disposition, reviewer_kind: "agent", findings: findings)
-      record_disposition!(step_id, verdict, disposition)
-
-      return unless disposition == "rewind"
-
-      claims = findings.select(&:blocking?).map(&:claim).join(" | ")
-      escalate!(step_id, "rewind", claims)
-      clear_side_effects!(step_id)
-    end
-
-    # A rewinded step must not leave its side effects on the piece — a rejected cull pick must not
-    # feed the compositor.
-    def clear_side_effects!(step_id)
-      return unless %w[C2 C2_finalists C2_chosen].include?(step_id)
-
-      piece&.update!(chosen_url: nil)
-    end
-
-    def acceptance_note(findings)
-      advisories = findings.select(&:advisory?)
-      return nil if advisories.empty?
-
-      "Accepted #{advisories.size} advisory finding(s): #{advisories.map(&:claim).join(' | ')}"
-    end
-
-    def gated?(step_id)
-      Workflow::DecisionRules.gated_step_ids.include?(step_id) || %w[C2 P2_6].include?(step_id)
+      record_step!(step_id, failed)
+      record_escalation!(step_id, "step_error", e.message)
     end
 
     def record_step!(step_id, result)
@@ -204,14 +111,6 @@ module Agents
 
     def append_step_result(entry)
       @run.update!(step_results: Array(@run.step_results) + [entry])
-    end
-
-    def escalate!(step_id, reason, divergence = nil)
-      @run.update!(escalations: Array(@run.escalations) + [{
-        "step_id" => step_id, "reason" => reason, "divergence" => divergence,
-        "at" => Time.current.iso8601
-      }.compact])
-      true
     end
   end
 end

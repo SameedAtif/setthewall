@@ -2,7 +2,7 @@ module Workflow
   class StatusMachine
     # Legal transitions.
     # Any → failed is always allowed (any step can raise). failed → running requires an
-    # explicit resume (see ResumePieceJob).
+    # explicit resume (see Workflow::CellRerunner).
     TRANSITIONS = {
       "pending"        => %w[running failed],
       "running"        => %w[pending awaiting_human complete failed],

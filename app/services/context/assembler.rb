@@ -20,10 +20,17 @@ module Context
     end
 
     def build
-      base.merge(derived).merge(provisional)
+      base.merge(derived).merge(provisional).merge(step_override)
     end
 
     private
+
+    # A per-step context override set when the reviewer re-runs a step with a new scope (e.g. A1
+    # narrowed to a single mood cluster). Merged last so it wins.
+    def step_override
+      entry = RunStep.find_by(pipeline_run_record_id: @run.id, step_id: @step_id)
+      (entry&.context_override || {}).deep_symbolize_keys
+    end
 
     def base
       {
@@ -46,8 +53,9 @@ module Context
     def tainted?(step_id)
       entry = @entries[step_id]
       return false unless entry
+      return true if %w[failed stale].include?(entry["status"])
 
-      entry["status"] == "failed" || %w[rewind abandon].include?(entry["disposition"])
+      %w[stale rewind abandon].include?(entry["disposition"])
     end
 
     def dig(*keys) = @results.dig(*keys)
@@ -61,6 +69,28 @@ module Context
 
       images = dig("A1", "candidates", "images")
       Array(images).filter_map { |i| i["url"] if i.is_a?(Hash) }
+    end
+
+    # C1 wants the artwork's own surface, so prefer A1's close-up/product shots over in-situ room
+    # photos (which show how the art is hung, not the art). Falls back to every image.
+    def style_reference_images
+      return [] if tainted?("A1")
+
+      images = Array(dig("A1", "candidates", "images")).select { |i| i.is_a?(Hash) }
+      closeups = images.select { |i| i["shot_type"].to_s == "closeup" }.filter_map { |i| i["url"] }
+      closeups.presence || images.filter_map { |i| i["url"] }
+    end
+
+    # A1's own description of what the reference set has in common — the "essence" C1 should evoke.
+    def reference_essence
+      return {} if tainted?("A1")
+
+      candidates = dig("A1", "candidates") || {}
+      qualities = Array(candidates["shared_qualities"]).map(&:to_s).reject(&:blank?)
+      mood = candidates["dominant_mood"].to_s.presence
+      return {} if qualities.empty? && mood.blank?
+
+      { mood: mood, qualities: qualities }.compact
     end
 
     def style_name_used
@@ -104,6 +134,7 @@ module Context
                                 wall_condition: scene_axis("B1", "wall_condition"),
                                 furniture_weight: scene_axis("B2", "furniture_weight") }
       when "B7"          then { axes: scene_axes }
+      when "C1"          then { reference_images: style_reference_images, reference_essence: reference_essence }
       else {}
       end
     end

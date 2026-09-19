@@ -1,0 +1,143 @@
+# Style Spec — style-level axes set by Track A (module 01),
+# scene axes appended by Track B (module 02).
+---
+slug: version-0.0.1
+name: Version 0.0.1
+locked_at: '2026-09-13'
+style_level:
+  mood: calm_ordered
+  content_type: minimalist_modern
+  frame_form: angular
+production_model:
+  research_focus: Faux-texture flat print of plaster or trowel texture
+  piece_count: 1
+  price_tier_usd: 50-150
+  fulfillment_type: physical
+scenes:
+  behind_sofa_light_neutral:
+    name: behind_sofa_light_neutral
+    template_ref: scene_templates/behind_sofa_light_neutral.yml
+    locked_at: '2026-09-14'
+    axes:
+      wall_condition: neutral
+      furniture_weight: light
+      room_type: seated_room
+      room_shape: none
+      space_math: single
+      color_role: line_only
+subject_research:
+  shops_sampled: 34
+  recurring_subjects:
+  - subject: bare worked plaster surface (no depicted object)
+    recurs_across_shops: 22
+  - subject: waves / flowing ridges / dune undulations
+    recurs_across_shops: 7
+  - subject: mountains / peaks / horizon landscape
+    recurs_across_shops: 7
+  - subject: geometric relief (blocks, tiles, curves, circles, arches)
+    recurs_across_shops: 6
+  - subject: lines / stripes / ridges / dot grids
+    recurs_across_shops: 5
+  - subject: single dark mark or dark all-over surface on a light field
+    recurs_across_shops: 5
+  rejected_subjects:
+  - subject: cracks / fissures / broken crust
+    recurs_across_shops: 2
+    reason: below 3-shop minimum
+  - subject: leaves / botanical relief
+    recurs_across_shops: 1
+    reason: below 3-shop minimum
+  - subject: pebbles / rounded organic blobs
+    recurs_across_shops: 1
+    reason: below 3-shop minimum
+  - subject: rounded organic forms with central hole/cutout
+    recurs_across_shops: 1
+    reason: below 3-shop minimum
+  - subject: human figure emerging from cracked wall
+    recurs_across_shops: 1
+    reason: below 3-shop minimum
+  - subject: heart
+    recurs_across_shops: 1
+    reason: below 3-shop minimum
+  - subject: folded / draped cloth
+    recurs_across_shops: 1
+    reason: below 3-shop minimum
+  - subject: deer silhouette
+    recurs_across_shops: 1
+    reason: below 3-shop minimum
+  - subject: stone / rock surface
+    recurs_across_shops: 1
+    reason: below 3-shop minimum
+scene_research:
+  shops_sampled: 21
+  scene_patterns:
+  - pattern_id: pattern-1-small-lit-body-in-wide-field
+    narrative_structure: A single compact lit form sits low and usually off-center
+      inside a much larger quiet surround, and the whole composition exists to make
+      that one small warm element legible against extensive unworked or muted material.
+    light_logic: The brightest and warmest point is exactly on the small lit form,
+      with all surrounding bands, ridges, or planes stepping down in warmth and value
+      as they move away from it.
+    temporal_quality: A threshold moment just beginning or held suspended, as if light
+      has only barely cleared an edge or is about to be crossed.
+    recurs_across_shops: 9
+  - pattern_id: pattern-2-single-drag-across-pale-field
+    narrative_structure: One broad gesture crosses the surface and the surface continues
+      to register that passage, so the scene is the immediate consequence of a directional
+      movement rather than a fixed arrangement.
+    light_logic: Low side light makes the crest of each raised ridge the palest and
+      warmest value while adjacent troughs fall into soft shadow, turning brightness
+      into a running line rather than a point.
+    temporal_quality: Mid-happening to just finished, with the sharpest edge still
+      carrying the sense that the hand lifted a beat ago.
+    recurs_across_shops: 8
+  - pattern_id: pattern-3-warm-seam-inside-dim-surround
+    narrative_structure: A broad dark field holds one narrow warm passage, positioning
+      the viewer as someone catching sight of something lit inside a mostly unlit
+      mass.
+    light_logic: All warmth and most brightness are concentrated in the single lit
+      seam, while the surrounding dark values stay close together in contrast and
+      recede into near-shadow.
+    temporal_quality: About to happen, with the dark field unresolved and the lit
+      seam acting as the first sign of emergence.
+    recurs_across_shops: 8
+  - pattern_id: pattern-4-stacked-bands-as-settled-terrain
+    narrative_structure: Layered horizontal or overlapping ridged bands stack back
+      into depth so the whole scene reads as an inferred landscape already at rest.
+    light_logic: Contrast lives at the boundaries between bands, either as a value
+      ramp from pale foreground toward darker recession or as side light catching
+      ridge crests with shadowed seams between them.
+    temporal_quality: Long finished, with the sense that settling has already occurred
+      and nothing inside the frame is still moving.
+    recurs_across_shops: 7
+  - pattern_id: pattern-5-surface-already-split-by-time
+    narrative_structure: A built smooth plane has opened into fissures and rough patches
+      on its own, making slow material change rather than a visible gesture the remaining
+      event.
+    light_logic: Diffuse near-frontal light keeps most of the field pale and even,
+      while cracks and coarse interruptions supply the few dark values that lead the
+      eye.
+    temporal_quality: Just finished and still continuing, because the making is over
+      but the surface is still aging.
+    recurs_across_shops: 6
+  - pattern_id: pattern-6-soft-material-caught-after-settling
+    narrative_structure: Continuous folded curves overlap without sharp divisions,
+      giving the impression of soft mass that has only just stopped moving and is
+      still holding its shape.
+    light_logic: Grazing side light produces smooth gradients, placing the warmest
+      pale values on fold crowns and letting hollows fall into cooler shadow without
+      a single dominant hotspot.
+    temporal_quality: Just finished with residual motion implied, as if the forms
+      settled a half-second earlier.
+    recurs_across_shops: 4
+  - pattern_id: pattern-7-repeated-combing-to-the-edge
+    narrative_structure: One tool action is repeated at even spacing until the field
+      is fully occupied, making rhythm and completion the scene rather than a single
+      focal incident.
+    light_logic: Even low-contrast illumination creates alternating pale and dark
+      cadences across repeated ridges or pressed hollows, with the eye entering at
+      any direction change or the strongest local contrast.
+    temporal_quality: Just finished, with the final pass having reached the edge of
+      the format.
+    recurs_across_shops: 5
+  rejected_patterns: []

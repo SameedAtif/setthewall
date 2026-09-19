@@ -1,0 +1,5 @@
+<div class="inline-block rounded border bg-white p-2 text-xs text-gray-700">
+  <% edits.each do |key, value| %>
+    <div><span class="font-medium"><%= key.to_s.humanize %>:</span> <%= value.is_a?(String) ? value : value.to_json %></div>
+  <% end %>
+</div>

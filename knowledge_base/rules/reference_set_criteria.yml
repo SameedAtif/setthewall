@@ -73,3 +73,14 @@ rules:
       References span multiple independent sources (per the cap above), include both in-situ
       and close-up shots, and each image is attributable to the style by more than one source
       — not assembled from a single board or shop.
+
+  mood_reconciliation:
+    rule: >
+      Group the set into the mood camps it spans, then RECONCILE them: state the qualities the
+      camps share (palette, material, surface treatment, abstraction, styling) and the single
+      dominant mood to move forward with (calm_ordered or bold_active). Return `mixed` only when
+      the camps genuinely point at different moods and cannot be reconciled.
+    why: >
+      Stylistic variation within one mood is expected — a set that shares a palette and material
+      but varies in styling is still usable. Blocking on any variation would stall every style,
+      so the block is reserved for a true unresolved split before A2 spends a full scoring pass.

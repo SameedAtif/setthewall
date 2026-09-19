@@ -15,7 +15,8 @@ module Steps
           task: "You are researching the recurring subjects of a wall-art style from real listings.",
           question: question,
           max_rounds: 8,
-          min_rounds: 4
+          min_rounds: 4,
+          stream: true
         )
 
         content  = result[:content]

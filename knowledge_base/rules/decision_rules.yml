@@ -271,17 +271,18 @@ rules:
       gate: true
       module: "01"
       verdicts:
-        clean: "validate_set returned no issues and mood_clusters_found <= 1."
+        clean: "validate_set returned no issues and the camps reconcile to one mood (or <=1 cluster)."
         flagged: "Mechanical issues present (closeup fraction, source cap, attribution, in-situ missing)."
-        unresolved_input: "mood_clusters_found > 1 — the set spans distinct mood clusters."
+        unresolved_input: "mood_clusters_found > 1 with no reconcilable common mood — dominant_mood is 'mixed' or shared_qualities is empty."
         blocked: "Search::NoSearchPerformedError."
       on_unresolved_input:
         legal: [retry, rewind, abandon]
-        retry_requires: "curated_images narrowed to ONE cluster"
+        retry_requires: "curated_images narrowed to ONE reconcilable mood (or dominant_mood resolved from shared_qualities)"
         rewind_to: A0
         reasoning: >
           Deciding at A1 is cheaper than discovering the same split after A2 spends a full
-          4-marker scoring pass (module 01 §2.1 note).
+          4-marker scoring pass (module 01 §2.1 note). Stylistic variation within one mood is
+          not a split — only an unreconcilable dominant_mood blocks.
       rewind_to: A0
       invalidates: [A2, A3, A4, A5]
 

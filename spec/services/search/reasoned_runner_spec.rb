@@ -88,6 +88,14 @@ RSpec.describe Search::ReasonedRunner do
     end
   end
 
+  it "streams when enabled and still returns the extracted content" do
+    stub_llm(content: { "summary" => "x" }, tool_calls: 1) do
+      result = described_class.call(model: "x", schema: schema, task: "t", question: "q", stream: true)
+      expect(result[:content]).to eq({ "summary" => "x" })
+      expect(result[:search_calls_made]).to eq(1)
+    end
+  end
+
   it "counts individual tool calls, not tool-call messages" do
     chat = LlmStubs::Chat.new(content: {}, tool_calls: 0)
     msg = LlmStubs::Message.new(content: nil, tool_call?: true, tool_calls: { a: 1, b: 2, c: 3 })

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_09_06_150000) do
+ActiveRecord::Schema[8.0].define(version: 2026_09_11_000006) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -35,7 +35,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_06_150000) do
     t.datetime "closed_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "track_run_id"
     t.string "reviewer_kind", default: "human", null: false
     t.jsonb "citations", default: [], null: false
     t.string "verdict"
@@ -44,43 +43,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_06_150000) do
     t.index ["piece_record_id"], name: "index_human_gates_on_piece_record_id"
     t.index ["reviewer_kind"], name: "index_human_gates_on_reviewer_kind"
     t.index ["step_id", "status"], name: "index_human_gates_on_step_id_and_status"
-    t.index ["track_run_id"], name: "index_human_gates_on_track_run_id"
-  end
-
-  create_table "ideation_surveys", force: :cascade do |t|
-    t.string "direction"
-    t.integer "candidate_count"
-    t.string "status", default: "complete", null: false
-    t.jsonb "candidates", default: [], null: false
-    t.jsonb "weak_candidates", default: [], null: false
-    t.text "survey_notes"
-    t.text "last_error"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.string "progress"
-    t.index ["created_at"], name: "index_ideation_surveys_on_created_at"
-    t.index ["status"], name: "index_ideation_surveys_on_status"
-  end
-
-  create_table "kb_proposals", force: :cascade do |t|
-    t.string "cycle_id", null: false
-    t.string "target_path", null: false
-    t.string "change_type", null: false
-    t.text "old_snippet"
-    t.text "new_snippet", null: false
-    t.text "rationale", null: false
-    t.jsonb "evidence", default: {}, null: false
-    t.string "status", default: "open", null: false
-    t.text "reviewer_edits"
-    t.text "reviewer_notes"
-    t.datetime "opened_at"
-    t.datetime "closed_at"
-    t.datetime "applied_at"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["cycle_id", "status"], name: "index_kb_proposals_on_cycle_id_and_status"
-    t.index ["status"], name: "index_kb_proposals_on_status"
-    t.index ["target_path"], name: "index_kb_proposals_on_target_path"
   end
 
   create_table "messages", force: :cascade do |t|
@@ -232,6 +194,42 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_06_150000) do
     t.index ["pipeline_run_record_id"], name: "index_qa_findings_on_pipeline_run_record_id"
   end
 
+  create_table "run_steps", force: :cascade do |t|
+    t.bigint "pipeline_run_record_id", null: false
+    t.string "step_id", null: false
+    t.integer "position", default: 0, null: false
+    t.string "status", default: "pending", null: false
+    t.text "summary"
+    t.jsonb "output", default: {}, null: false
+    t.text "message"
+    t.string "verdict"
+    t.string "disposition"
+    t.string "reviewer_kind", default: "human", null: false
+    t.jsonb "escalation", default: {}, null: false
+    t.datetime "started_at"
+    t.datetime "finished_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.jsonb "logs", default: [], null: false
+    t.jsonb "decision_options", default: [], null: false
+    t.jsonb "context_override", default: {}, null: false
+    t.index ["pipeline_run_record_id", "position"], name: "index_run_steps_on_pipeline_run_record_id_and_position"
+    t.index ["pipeline_run_record_id", "step_id"], name: "index_run_steps_on_pipeline_run_record_id_and_step_id", unique: true
+    t.index ["pipeline_run_record_id"], name: "index_run_steps_on_pipeline_run_record_id"
+  end
+
+  create_table "step_feedbacks", force: :cascade do |t|
+    t.bigint "run_step_id", null: false
+    t.string "role", default: "human", null: false
+    t.text "body"
+    t.jsonb "parsed", default: {}, null: false
+    t.boolean "applied", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["run_step_id", "created_at"], name: "index_step_feedbacks_on_run_step_id_and_created_at"
+    t.index ["run_step_id"], name: "index_step_feedbacks_on_run_step_id"
+  end
+
   create_table "tool_calls", force: :cascade do |t|
     t.string "tool_call_id", null: false
     t.string "name", null: false
@@ -244,28 +242,15 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_06_150000) do
     t.index ["tool_call_id"], name: "index_tool_calls_on_tool_call_id", unique: true
   end
 
-  create_table "track_runs", force: :cascade do |t|
-    t.string "track", null: false
-    t.string "style_slug", null: false
-    t.string "scene_template_id"
-    t.string "status", default: "running", null: false
-    t.string "current_step"
-    t.jsonb "context", default: {}, null: false
-    t.text "last_error"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["status"], name: "index_track_runs_on_status"
-    t.index ["track", "style_slug"], name: "index_track_runs_on_track_and_style_slug"
-  end
-
   add_foreign_key "chats", "models"
   add_foreign_key "human_gates", "piece_records"
-  add_foreign_key "human_gates", "track_runs"
   add_foreign_key "messages", "chats"
   add_foreign_key "messages", "models"
   add_foreign_key "messages", "tool_calls"
   add_foreign_key "performance_snapshots", "piece_records"
   add_foreign_key "pipeline_run_records", "piece_records"
   add_foreign_key "qa_findings", "pipeline_run_records"
+  add_foreign_key "run_steps", "pipeline_run_records"
+  add_foreign_key "step_feedbacks", "run_steps"
   add_foreign_key "tool_calls", "messages"
 end

@@ -1,0 +1,5 @@
+<div>
+  <time datetime="<%= entry["at"] %>" data-controller="local-time" class="text-gray-500"><%= entry["at"] %></time>
+  <span class="<%= log_level_class(entry["level"]) %>">[<%= entry["level"] %>]</span>
+  <span><%= entry["message"] %></span>
+</div>

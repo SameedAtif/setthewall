@@ -1,0 +1,26 @@
+<%= turbo_frame_tag "step_feedback_#{step.id}" do %>
+  <div class="mt-2 border rounded p-3 bg-blue-50">
+    <div class="text-xs uppercase tracking-wide text-gray-500">Proposed decision</div>
+    <div class="mt-1 font-semibold capitalize"><%= feedback.parsed["intent"] %></div>
+
+    <% if feedback.parsed["notes"].present? %>
+      <p class="mt-1 text-sm text-gray-800"><%= feedback.parsed["notes"] %></p>
+    <% end %>
+
+    <% if feedback.parsed["reason"].present? %>
+      <p class="mt-1 text-xs text-gray-600">Reason: <%= feedback.parsed["reason"] %></p>
+    <% end %>
+
+    <% if feedback.parsed["edits"].present? %>
+      <pre class="mt-2 bg-white border rounded p-2 text-xs overflow-auto"><%= JSON.pretty_generate(feedback.parsed["edits"]) %></pre>
+    <% end %>
+
+    <div class="mt-3 flex gap-2">
+      <%= button_to "Apply", decision_run_step_path(run, step), method: :post,
+            params: { feedback_id: feedback.id },
+            class: "bg-gray-900 text-white px-3 py-1 rounded text-xs hover:bg-gray-700" %>
+      <%= link_to "Discard", composer_run_step_path(run, step),
+            class: "text-xs text-gray-600 hover:underline self-center" %>
+    </div>
+  </div>
+<% end %>

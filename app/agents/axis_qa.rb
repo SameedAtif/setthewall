@@ -75,8 +75,9 @@ module Agents
                        "than defaulting to whichever was decided first.", c)] if conflicts.any?
 
       if d["override_pending"]
-        return [blocking("The minimalist_modern default (line_only, p. 97) overrides the observed " \
-                         "candidate. This is a catalog-strategy call the agent cannot make.", c)]
+        return [pass("Colour role is pending the human content-type override (minimalist_modern: " \
+                     "confirm line_only, or give a catalog-strategy reason to keep the observation).",
+                     c)]
       end
 
       [pass("Colour role #{d['color_role']} clears the B6 cross-check.", c)]

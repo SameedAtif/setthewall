@@ -1,0 +1,28 @@
+<% if step.mood_clusters.size > 1 %>
+  <div class="mt-3 rounded border border-blue-200 bg-blue-50/60 p-3">
+    <div class="text-xs font-semibold uppercase tracking-wide text-blue-800">Narrow the reference set</div>
+    <p class="mt-1 text-xs text-gray-600">
+      This set spans <%= step.mood_clusters.size %> mood clusters. Pick one to re-run
+      <%= step.step_id %> scoped to a single mood.
+    </p>
+    <%= form_with url: narrow_run_step_path(run, step), method: :post, class: "mt-2 space-y-2" do |f| %>
+      <% step.mood_clusters.each_with_index do |label, index| %>
+        <label class="flex cursor-pointer items-start gap-2">
+          <%= radio_button_tag "style_name", label, index.zero? %>
+          <span class="text-sm text-gray-800"><%= label %></span>
+        </label>
+      <% end %>
+      <div class="flex items-start gap-2">
+        <%= radio_button_tag "style_name", "", false %>
+        <span class="text-sm text-gray-800">
+          Other:
+          <%= text_field_tag "custom_style_name", nil, placeholder: "describe the mood to narrow to",
+                             autocomplete: "off",
+                             class: "ml-1 w-72 rounded border px-2 py-1 text-sm" %>
+        </span>
+      </div>
+      <%= f.submit "Narrow & re-run #{step.step_id}",
+            class: "bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700" %>
+    <% end %>
+  </div>
+<% end %>

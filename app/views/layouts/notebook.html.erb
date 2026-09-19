@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= content_for(:title) || "Setthewall notebook" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <body class="bg-white text-gray-900"
+        data-controller="lightbox"
+        data-action="click->lightbox#open keydown@window->lightbox#keydown">
+    <%= yield %>
+
+    <%# Shared image lightbox: opened by clicking any [data-lightbox-image] in a cell. %>
+    <div data-lightbox-target="modal"
+         data-action="click->lightbox#backdrop"
+         class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 p-4">
+      <button type="button" data-lightbox-target="prev" data-action="click->lightbox#previous"
+              aria-label="Previous image"
+              class="absolute left-3 top-1/2 hidden -translate-y-1/2 rounded-full bg-white/90 px-4 py-2 text-2xl leading-none text-gray-800 shadow hover:bg-white">&lsaquo;</button>
+
+      <figure class="flex max-h-full max-w-full flex-col items-center gap-2">
+        <img data-lightbox-target="image" alt=""
+             class="max-h-[85vh] max-w-[90vw] rounded object-contain shadow-lg">
+        <figcaption data-lightbox-target="counter" class="font-mono text-xs text-gray-200"></figcaption>
+      </figure>
+
+      <button type="button" data-lightbox-target="next" data-action="click->lightbox#next"
+              aria-label="Next image"
+              class="absolute right-3 top-1/2 hidden -translate-y-1/2 rounded-full bg-white/90 px-4 py-2 text-2xl leading-none text-gray-800 shadow hover:bg-white">&rsaquo;</button>
+    </div>
+  </body>
+</html>

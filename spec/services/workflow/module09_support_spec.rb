@@ -111,6 +111,23 @@ RSpec.describe Context::Assembler do
     expect(ctx[:frame_form]).to be_nil
     expect(ctx[:confirmed]).to be_nil
   end
+
+  it "treats a stale step as tainted" do
+    run = run_with([
+      { "step_id" => "A4", "status" => "stale", "data" => { "result" => { "frame_form" => "angular" } } }
+    ])
+    ctx = described_class.for("A5", run)
+    expect(ctx[:frame_form]).to be_nil
+    expect(ctx[:confirmed]).to be_nil
+  end
+
+  it "applies a per-step context override (e.g. A1 narrowed to a mood cluster)" do
+    run = run_with([])
+    create(:run_step, pipeline_run_record: run, step_id: "A1",
+                      context_override: { "style_name" => "Serene white-on-white" })
+
+    expect(described_class.for("A1", run)[:style_name]).to eq("Serene white-on-white")
+  end
 end
 
 RSpec.describe Workflow::GateCloser do

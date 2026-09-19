@@ -36,8 +36,8 @@ RSpec.describe "Module 09 speculative run → dossier → commit", type: :reques
     expect(run.dossier_markdown).to include("## Open questions")
     expect(run.step_results.size).to eq(Agents::Conductor::ORDER.size)
 
-    # Human approves via the single gate.
-    patch dossier_review_path(run.run_id), params: { decision: "approve", notes: "ship it" }
+    # Human approves from the notebook.
+    post approve_run_path(run), params: { notes: "ship it" }
     perform_enqueued_jobs
 
     expect(run.reload.status).to eq("committed")

@@ -1,0 +1,35 @@
+<aside class="w-72 shrink-0 border-r bg-gray-50 min-h-screen p-4">
+  <h1 class="text-lg font-semibold mb-3">Runs</h1>
+
+  <details class="mb-4">
+    <summary class="cursor-pointer text-sm font-medium text-blue-600">+ New run</summary>
+    <%= form_with url: runs_path, method: :post, class: "mt-2 space-y-2" do |f| %>
+      <%= f.text_field :style_slug, placeholder: "style_slug", class: "w-full border rounded px-2 py-1 text-sm" %>
+      <%= f.text_field :style_name, placeholder: "style_name (optional)", class: "w-full border rounded px-2 py-1 text-sm" %>
+      <%= f.text_field :scene_spec_id, placeholder: "scene_spec_id", class: "w-full border rounded px-2 py-1 text-sm" %>
+      <%= f.submit "Create run", class: "w-full bg-gray-900 text-white px-3 py-1.5 rounded text-sm hover:bg-gray-700" %>
+    <% end %>
+  </details>
+
+  <nav class="space-y-1">
+    <% runs.each do |run| %>
+      <%= link_to run_path(run), class: "block rounded px-2 py-1.5 text-sm #{run == current ? 'bg-white border shadow-sm' : 'hover:bg-white'}" do %>
+        <% dot = case run.status
+                 when "failed" then "bg-red-500"
+                 when "abandoned" then "bg-gray-400"
+                 when "pending" then "bg-gray-300"
+                 when "running" then "bg-sky-500 animate-pulse"
+                 else "bg-green-500"
+                 end %>
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-xs font-medium truncate"><%= run.name %></span>
+          <span class="h-2 w-2 rounded-full shrink-0 <%= dot %>"></span>
+        </div>
+        <div class="text-xs text-gray-500 truncate"><%= run.scene_spec_id %> · <%= run.status %></div>
+      <% end %>
+    <% end %>
+    <% if runs.empty? %>
+      <p class="text-xs text-gray-500">No runs yet.</p>
+    <% end %>
+  </nav>
+</aside>

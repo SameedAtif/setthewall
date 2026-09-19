@@ -1,0 +1,13 @@
+<%= turbo_stream_from run %>
+
+<div data-controller="notebook">
+  <%= render "runs/header", run: run %>
+
+  <div id="notebook_cells" class="mt-6">
+    <% run.run_steps.each_with_index do |step, index| %>
+      <%= render "run_steps/cell", run: run, step: step, index: index + 1 %>
+    <% end %>
+  </div>
+
+  <%= render "runs/dossier", run: run %>
+</div>

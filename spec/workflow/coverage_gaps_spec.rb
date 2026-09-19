@@ -1,19 +1,5 @@
 require "rails_helper"
 
-RSpec.describe Workflow::PipelineRun do
-  it "starts a daily pipeline for a locked spec" do
-    spec, = build_test_spec
-    result = nil
-    stub_singleton(Workflow::PreflightCheck, :call!,
-                   ->(*_a, **_k) { Workflow::PreflightCheck::Result.new(kb_version: "abc", dirty: false) }) do
-      result = described_class.start_daily(style_slug: spec.slug, scene_spec_id: "s1")
-    end
-    expect(result.kb_version).to eq("abc")
-    expect(result.mood).to eq("calm_ordered")
-    expect(result.status).to eq("pending")
-  end
-end
-
 RSpec.describe "Steps::Base error handling" do
   class RaisingStep < Steps::Base
     step id: "TEST_RAISE", mechanism: :lookup, ownership: "[AGENT-READY]"
@@ -70,28 +56,5 @@ RSpec.describe Pipeline::SearchCapability do
     stub_singleton(RubyLLM::Chat, :instance_methods, ->(*) { raise NameError }) do
       expect(described_class.server_side_web_search_available?).to be(false)
     end
-  end
-end
-
-RSpec.describe KbEvolution::Applier do
-  it "appends to a file" do
-    path = Rails.root.join("knowledge_base/rules/test_append_#{SecureRandom.hex(4)}.yml")
-    path.write("meta:\n  source: t\n  citation: t\n  volatility: static\nrules:\n  x: 1\n")
-    track_kb_file(path)
-
-    proposal = create(:kb_proposal, target_path: path.relative_path_from(Rails.root).to_s,
-                                   change_type: "append", new_snippet: "y: 2", status: "approved")
-    described_class.call(proposal: proposal)
-    expect(File.read(path)).to include("y: 2")
-  end
-
-  it "refuses an edit_snippet with a blank old_snippet" do
-    path = Rails.root.join("knowledge_base/rules/test_blank_#{SecureRandom.hex(4)}.yml")
-    path.write("meta:\n  source: t\n  citation: t\n  volatility: static\nrules: {}\n")
-    track_kb_file(path)
-
-    proposal = create(:kb_proposal, target_path: path.relative_path_from(Rails.root).to_s,
-                                   change_type: "edit_snippet", old_snippet: "", status: "approved")
-    expect { described_class.call(proposal: proposal) }.to raise_error(KbEvolution::ApplyError, /old_snippet/)
   end
 end

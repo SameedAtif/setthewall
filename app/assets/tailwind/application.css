@@ -1,1 +1,22 @@
 @import "tailwindcss";
+
+.markdown h1 { font-size: 1.25rem; font-weight: 600; margin: 1rem 0 0.5rem; }
+.markdown h2 { font-size: 1.1rem; font-weight: 600; margin: 1rem 0 0.5rem; }
+.markdown h3 { font-size: 1rem; font-weight: 600; margin: 0.75rem 0 0.375rem; }
+.markdown p { margin: 0.5rem 0; }
+.markdown ul { list-style: disc; margin: 0.5rem 0 0.5rem 1.25rem; }
+.markdown ol { list-style: decimal; margin: 0.5rem 0 0.5rem 1.25rem; }
+.markdown li { margin: 0.125rem 0; }
+.markdown code { background: #f3f4f6; padding: 0.05rem 0.25rem; border-radius: 0.25rem; font-size: 0.85em; }
+.markdown pre { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 0.375rem; padding: 0.75rem; overflow: auto; margin: 0.5rem 0; }
+.markdown pre code { background: transparent; padding: 0; }
+.markdown blockquote { border-left: 3px solid #e5e7eb; padding-left: 0.75rem; color: #4b5563; margin: 0.5rem 0; }
+.markdown a { color: #2563eb; text-decoration: underline; }
+.markdown img { max-width: 100%; height: auto; border-radius: 0.375rem; margin: 0.5rem 0; }
+
+/* See more / Hide label swap for collapsible text (no JS needed). */
+.details-see-more { display: inline; }
+.details-hide { display: none; }
+details[open] > summary .details-see-more { display: none; }
+details[open] > summary .details-hide { display: inline; }
+
