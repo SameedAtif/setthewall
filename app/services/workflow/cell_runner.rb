@@ -95,8 +95,20 @@ module Workflow
     def ensure_cell(step_id)
       # Query by attributes rather than through the association: the RunStep mirror callback reloads
       # the run's run_steps mid-save, which corrupts a loaded association target into duplicates.
-      RunStep.find_or_create_by!(pipeline_run_record_id: @run.id, step_id: step_id) do |step|
-        step.position = position_for(step_id)
+      step = RunStep.find_or_create_by!(pipeline_run_record_id: @run.id, step_id: step_id) do |record|
+        record.position = position_for(step_id)
+      end
+      # A run created before a step was introduced into the order has stale positions; re-anchor
+      # everything to the current order so the new cell sorts correctly.
+      resync_positions if step.previously_new_record?
+      step
+    end
+
+    def resync_positions
+      order = Workflow::RunSequencer.effective_order(@run)
+      @run.run_steps.find_each do |cell|
+        position = order.index(cell.step_id)
+        cell.update_columns(position: position) if position && cell.position != position
       end
     end
 

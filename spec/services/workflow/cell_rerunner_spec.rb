@@ -47,6 +47,21 @@ RSpec.describe Workflow::CellRerunner do
     expect(p1.reload.status).to eq("stale")
   end
 
+  it "materializes and stales a step introduced into the order after the run was created" do
+    full = create(:pipeline_run_record, scope: "full")
+    a1 = create(:run_step, pipeline_run_record: full, step_id: "A1", position: 2, status: "done")
+    a2 = create(:run_step, pipeline_run_record: full, step_id: "A2", position: 3, status: "done")
+
+    described_class.call(run_step: a1)
+
+    a1b = full.reload.run_steps.find_by(step_id: "A1b")
+    expect(a1b).to be_present
+    expect(a1b.status).to eq("stale")
+    expect(a2.reload.status).to eq("stale")
+    # positions are re-anchored to the current effective order (A1=2, A1b=3, A2=4)
+    expect([a1.reload.position, a1b.position, a2.reload.position]).to eq([2, 3, 4])
+  end
+
   it "drops stale cells from the mirrored step_results" do
     cell("C1", 0, "done")
     c2 = cell("C2", 1, "done")
