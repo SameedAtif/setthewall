@@ -44,6 +44,7 @@ module Steps
           "surface_treatment" => raw["surface_treatment"].to_s,
           "motif_vocabulary" => Array(raw["motif_vocabulary"]).map(&:to_s).reject(&:blank?),
           "styling" => raw["styling"].to_s,
+          "outlier_indices" => Array(raw["outlier_indices"]).map(&:to_i),
           "field_evidence" => Array(raw["field_evidence"])
         }
       end

@@ -18,6 +18,9 @@ module Schemas
       string :styling,
              description: "How the pieces are displayed (framing, wall, surrounding objects). " \
                           "Reported for completeness; NOT used for generation."
+      array :outlier_indices, of: :integer,
+            description: "1-based indices of reference images that are outliers for this style " \
+                         "(off-medium, off-palette, or off-motif) and must not be used for generation"
       array :field_evidence do
         object do
           string :field, enum: %w[medium palette surface_treatment motif_vocabulary styling]

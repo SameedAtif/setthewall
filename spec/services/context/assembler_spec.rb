@@ -38,6 +38,20 @@ RSpec.describe Context::Assembler do
     expect(context[:reference_images]).to eq(%w[room1.jpg])
   end
 
+  it "drops reference images A1b flagged as essence outliers" do
+    run = create(:pipeline_run_record, step_results: [
+      { "step_id" => "A1", "status" => "ok", "data" => { "candidates" => { "images" => [
+        { "url" => "keep.jpg", "shot_type" => "closeup" },
+        { "url" => "drop.jpg", "shot_type" => "closeup" }
+      ] } } },
+      { "step_id" => "A1b", "status" => "ok", "data" => { "essence" => { "outlier_indices" => [2] } } }
+    ])
+
+    context = described_class.for("C1", run)
+
+    expect(context[:reference_images]).to eq(%w[keep.jpg])
+  end
+
   it "reads the typed reference essence distilled by A1b" do
     essence = { "palette" => "warm bone to ash grey", "motif_vocabulary" => ["nested grooves"] }
     run = create(:pipeline_run_record,

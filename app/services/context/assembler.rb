@@ -77,7 +77,10 @@ module Context
     def style_reference_images
       return [] if tainted?("A1")
 
-      images = Array(dig("A1", "candidates", "images"))
+      outliers = Array(reference_essence["outlier_indices"]).map(&:to_i)
+      images = Array(dig("A1", "candidates", "images")).each_with_index
+               .reject { |_image, i| outliers.include?(i + 1) }
+               .map(&:first)
                .select { |i| i.is_a?(Hash) && i["url"].present? }
                .reject { |i| i["is_outlier"] }
       closeups = images.select { |i| i["shot_type"].to_s == "closeup" }
