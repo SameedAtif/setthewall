@@ -3,9 +3,9 @@ meta:
   citation: "how_to_arrange_pictures / at_home_with_pictures — p. 82 (accent-highlighter), p. 84 (unifier), p. 91 (color-burst, saturator), p. 97 (line-only default)"
   volatility: static
   note: >
-    This is only step 1 of B6 (observation → candidate role). Step 2 (Content Type override
-    to line_only for minimalist_modern) is a human-decided call implemented in the B6 step
-    class. Step 3 (cross-check against B1/B2) is a validation implemented in the same class.
+    This is only step 1 of B6 (observation → candidate role). Step 2 is the strategic call: the
+    run proposes the observed role and the human confirms or overrides it — no content_type forces
+    a default. Step 3 (cross-check against B1/B2) is a validation implemented in the same class.
     The full B6 logic lives across all three, not in this file alone.
 
 rules:
@@ -32,17 +32,17 @@ rules:
       citation: "p. 91"
       role_description: "Repeats and reinforces the room's existing dominant color theme."
 
-  # Not in the observation table — invoked only by step 2 (Content Type override)
-  minimalist_modern_default:
+  # A consideration the human may apply at B6's gate — never a forced default. content_type
+  # informs the proposal but does not override the observation.
+  line_only_consideration:
     candidate_role: line_only
     citation: "p. 97"
     role_description: >
-      Removes color tension entirely so line, pattern, and light/dark contrast carry the
-      piece. Black/white/gray display, minimal or no color in mat/frame — "allows the
-      lines to sing." This is the default color role for a minimalist/Japandi-type spec.
-    override_rule: >
-      If content_type is minimalist_modern, this default OVERRIDES the observation-table
-      result from step 1 UNLESS the human has a specific catalog-strategy reason to make
-      this particular scene a deliberate color statement within an otherwise monochrome
-      catalog. The override is the one genuinely strategic call in B6 and cannot be made
-      by the agent.
+      Removes colour tension entirely so tone, pattern, and light/dark contrast carry the piece.
+      Choose it deliberately when a monochrome display genuinely serves the scene; it is no longer
+      applied automatically for any content_type.
+    rule: >
+      The run proposes the role it observed (step 1); the human confirms that proposal or picks a
+      different role with a catalog-strategy reason. content_type must NOT force line_only — a
+      tonal/textured minimalist style needs its palette, and forcing line_only suppressed it. This
+      is the one strategic call in B6 and is never made by the agent.

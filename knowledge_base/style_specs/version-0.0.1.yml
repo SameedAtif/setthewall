@@ -32,10 +32,6 @@ subject_research:
     recurs_across_shops: 22
   - subject: waves / flowing ridges / dune undulations
     recurs_across_shops: 7
-  - subject: mountains / peaks / horizon landscape
-    recurs_across_shops: 7
-  - subject: geometric relief (blocks, tiles, curves, circles, arches)
-    recurs_across_shops: 6
   - subject: lines / stripes / ridges / dot grids
     recurs_across_shops: 5
   - subject: single dark mark or dark all-over surface on a light field

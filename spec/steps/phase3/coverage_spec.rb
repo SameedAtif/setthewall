@@ -44,6 +44,7 @@ RSpec.describe Steps::TrackC::GenerateArt do
         expect(records.size).to eq(2)
         expect(records.first["scene_description"]).to eq("plaster surface with soft ridges")
         expect(records.first["image_generation_prompt"]).to include("plaster surface with soft ridges")
+        expect(records.first["prompt_version"]).to be_present
         expect(records.first["ok"]).to be(true)
       ensure
         File.delete(log_path) if log_path && File.exist?(log_path)
@@ -100,7 +101,9 @@ RSpec.describe Steps::TrackC::GenerateArt do
       stub_singleton(ImageGeneration::Adapter, :build, -> { ImageGeneration::ManualAdapter.new }) do
         result = described_class.call(piece: piece, context: {
           candidate_count: 1,
-          reference_essence: { mood: "calm_ordered", qualities: ["flat printed surface imitating plaster"] }
+          reference_essence: { "medium" => "flat printed poster",
+                               "surface_treatment" => "flat printed surface imitating plaster",
+                               "motif_vocabulary" => ["nested wavy grooves"] }
         })
         log_path = result.data[:image_prompt_log]
 
@@ -117,7 +120,7 @@ RSpec.describe Steps::TrackC::GenerateArt do
     tpl = Pipeline::KB_ROOT.join("prompts", "c1_generation_prompt_synthesis.md").read
     expect(tpl).not_to include("energy and palette")
     expect(tpl).not_to include("lead with the subject matter")
-    expect(tpl).to include("PALETTE ONLY")
+    expect(tpl).to include("DO NOT invent content outside the documented traits")
   end
 
   it "passes exactly one subject and pattern to the scene synthesis prompt" do

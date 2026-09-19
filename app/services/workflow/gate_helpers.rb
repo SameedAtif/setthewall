@@ -36,6 +36,15 @@ module Workflow
       @run.update!(dossier_data: @run.dossier_data.merge("A1" => { "curated_images" => urls }))
     end
 
+    # Persist the typed reference essence (A1b) on the run's dossier_data so downstream steps and
+    # the dossier can read it even before A5 writes it into the style spec.
+    def capture_reference_essence!(result)
+      essence = result.data&.dig(:essence) || result.data&.dig("essence")
+      return if essence.blank?
+
+      @run.update!(dossier_data: @run.dossier_data.merge("A1b" => { "essence" => essence }))
+    end
+
     def record_escalation!(step_id, reason, divergence = nil)
       @run.update!(escalations: Array(@run.escalations) + [{
         "step_id" => step_id, "reason" => reason, "divergence" => divergence,

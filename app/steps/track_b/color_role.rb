@@ -29,57 +29,38 @@ module Steps
           )
         end
 
-        # === Step 2 — Content Type override (human-decided) ===
-        # Rule from color_role_observation.yml: if content_type is minimalist_modern, line_only
-        # OVERRIDES the observation candidate UNLESS the human has a specific catalog-strategy
-        # reason to keep the observation-driven role. This is the one non-mechanical call in B6, so
-        # the step pauses until the human either confirms the default (color_role_override:
-        # line_only) or supplies an override reason.
-        content_type = context.fetch(:content_type)
-        if pauses_for_override?(content_type, candidate)
-          return needs_human(
-            "B6 Content Type override: content_type is minimalist_modern, so the documented " \
-            "default (line_only, p.97) OVERRIDES the observation-driven candidate " \
-            "(#{candidate}). Confirm the override, OR provide a catalog-strategy reason to " \
-            "keep #{candidate} instead. This is the one strategic call in B6 that cannot be " \
-            "made by the agent.",
-            { observation_candidate: candidate,
-              default_override: "line_only",
-              override_citation: "p. 97, module 04 §2.2a",
-              override_pending: true, conflicts: [] }
-          )
-        end
-
+        # === Step 2 — the one strategic call: the run proposes, the human confirms ===
+        # color_role is a room-relationship decision, not a style fact, so the run proposes the
+        # role it observed and the human confirms it (or overrides with a catalog-strategy reason).
+        # Nothing is hardcoded per content_type — every style/scene proposes from its own
+        # observation.
         chosen_role = context[:color_role_override].presence || candidate
-        override_reason =
-          if chosen_role != "line_only" && context[:catalog_strategy_override].present?
-            "human catalog-strategy override: #{context[:catalog_strategy_override]}"
-          end
 
         # === Step 3 — cross-check against B1/B2 ===
         conflicts = cross_check(chosen_role, context.fetch(:wall_condition),
                                 context.fetch(:furniture_weight))
 
-        if conflicts.any?
+        if context[:color_role_override].blank?
           return needs_human(
-            "B6 step-3 cross-check flagged conflicts: #{conflicts.join('; ')}. Per the source " \
-            "rule, resolve the conflict explicitly rather than defaulting to whichever was " \
-            "decided first.",
-            { chosen_role: chosen_role, conflicts: conflicts, override_pending: false }
+            "B6 proposes color_role=#{chosen_role} (observed candidate: #{candidate}). Confirm it, " \
+            "or choose a different role with a catalog-strategy reason." \
+            "#{conflicts.any? ? " Cross-check conflicts: #{conflicts.join('; ')}." : ''}",
+            { observation_candidate: candidate, proposed_role: chosen_role,
+              conflicts: conflicts, override_pending: true }
           )
         end
 
+        override_reason =
+          if chosen_role != candidate && context[:catalog_strategy_override].present?
+            "human catalog-strategy override: #{context[:catalog_strategy_override]}"
+          end
+
         ok({ color_role: chosen_role, candidate_role: candidate,
-             override_reason: override_reason, override_pending: false, conflicts: [],
+             override_reason: override_reason, override_pending: false, conflicts: conflicts,
              observed_color_state: step1["observed_color_state"] })
       end
 
       private
-
-      def pauses_for_override?(content_type, candidate)
-        content_type == "minimalist_modern" && candidate != "line_only" &&
-          context[:color_role_override].blank? && context[:catalog_strategy_override].blank?
-      end
 
       def cross_check(role, wall_condition, furniture_weight)
         conflicts = []

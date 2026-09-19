@@ -35,7 +35,7 @@ rules:
         accent_highlighter: "colour palette that highlights a single accent tone"
         unifier: "cohesive multi-colour palette that could tie scattered tones together"
         saturator: "reinforces one dominant colour theme with variations"
-        line_only: "black, white, grey — no colour; lines and pattern carry the piece"
+        line_only: "monochrome — no hue; carry the piece with the full range of tone and value (near-white through near-black), texture and light, not with line work alone"
     - axis: frame_form
       contributes: "compositional shape hint (for how the piece will sit in the frame)"
       values:

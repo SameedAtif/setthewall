@@ -132,7 +132,8 @@ module Steps
         adapter = ImageGeneration::Adapter.build
         chat = RubyLLM.chat(model: Pipeline::TEXT_MODEL)
                       .with_schema(Schemas::TrackC::PromptSynthesisSchema)
-        synthesis = Pipeline::Streaming.ask(chat, synthesis_prompt).content
+        # Ground the scene in the reference images (vision), not just the text axes.
+        synthesis = Pipeline::Streaming.ask(chat, synthesis_prompt, with: style_references.presence).content
 
         # A streamed synthesis can come back as an unparsed string (or a hash missing the key).
         # Never hand the image API a blank/garbage prompt — that is how off-style stock imagery
@@ -176,22 +177,24 @@ module Steps
                negative_prompt: d["negative_prompt"])
       end
 
-      # A1's account of what the reference set shares (medium, palette, texture, motifs, mood). We
+      # A1b's typed account of what the reference set shares (medium, palette, surface, motifs). We
       # ask for an original piece in the same tradition — never a copy of any single reference.
+      # `styling` is intentionally excluded: it describes display, not the artwork.
       def reference_essence_clause
         essence = context[:reference_essence] || {}
-        qualities = Array(essence[:qualities]).map(&:to_s).reject(&:blank?)
-        mood = essence[:mood].to_s.presence
-        return "" if qualities.empty? && mood.blank?
+        parts = []
+        parts << "medium: #{essence['medium']}" if essence["medium"].present?
+        parts << "palette: #{essence['palette']}" if essence["palette"].present?
+        parts << "surface treatment: #{essence['surface_treatment']}" if essence["surface_treatment"].present?
+        motifs = Array(essence["motif_vocabulary"]).map(&:to_s).reject(&:blank?)
+        parts << "motif vocabulary: #{motifs.join('; ')}" if motifs.any?
+        return "" if parts.empty?
 
-        details = []
-        details << "dominant mood: #{mood}" if mood
-        details.concat(qualities)
         "Build an original piece in the same tradition as the reference set — same medium, palette, " \
-          "surface treatment, level of abstraction and motif grammar — as a NEW composition, never " \
-          "a copy of any single reference. Take only the ARTWORK from the description below, not " \
-          "how it is displayed: ignore framing, matting, styling and room context. What the " \
-          "reference artwork shares: #{details.join(' ')}"
+          "surface treatment and motif vocabulary — as a NEW composition, never a copy of any single " \
+          "reference. Take only the ARTWORK from the description, not how it is displayed: ignore " \
+          "framing, matting, styling and room context. What the reference artwork shares: " \
+          "#{parts.join('. ')}."
       end
 
       def image_prompt_directives
@@ -226,12 +229,14 @@ module Steps
           results.sort_by { |r| r[:index] }.each do |r|
             pair = pairs[r[:index]] || {}
             f.puts(JSON.generate(
+              "prompt_version" => prompt_version,
               "index" => r[:index],
               "subject" => pair[:subject] && pair[:subject]["subject"],
               "pattern_id" => pair[:pattern] && pair[:pattern]["pattern_id"],
               "scene_description" => r[:scene_description],
               "image_generation_prompt" => r[:prompt],
               "axis_contributions" => r[:contributions],
+              "reference_essence" => context[:reference_essence],
               "style_reference" => r[:style_reference],
               "urls" => r[:urls],
               "ok" => r[:ok] == true,
@@ -240,8 +245,26 @@ module Steps
           end
         end
 
-        Workflow::StepLogging.log("Image prompt log written: #{file} (#{results.size} candidate(s))")
+        Workflow::StepLogging.log(
+          "Image prompt log written: #{file} (prompt #{prompt_version}, #{results.size} candidate(s))"
+        )
         file.to_s
+      end
+
+      # Fingerprint of the prompt sources, so a logged batch is attributable to an exact prompt
+      # version when iterating on wording (a change to any of these changes the fingerprint).
+      def prompt_version
+        @prompt_version ||= begin
+          digest = Digest::SHA256.new
+          %w[c1_image_prompt.md c1_generation_prompt_synthesis_scene.md
+             c1_generation_prompt_synthesis.md].each do |name|
+            path = Pipeline::KB_ROOT.join("prompts", name)
+            digest << (File.exist?(path) ? File.read(path) : "")
+          end
+          rules = Pipeline::KB_ROOT.join("rules", "generation_prompt_template.yml")
+          digest << (File.exist?(rules) ? File.read(rules) : "")
+          digest.hexdigest[0, 12]
+        end
       end
 
       def pair_timeout = ENV.fetch("C1_PAIR_TIMEOUT", DEFAULT_PAIR_TIMEOUT).to_i
@@ -262,8 +285,13 @@ module Steps
       end
 
       def build_synthesis_prompt(pair)
+        essence = context[:reference_essence] || {}
         base = { style_name: spec.display_name, mood: piece.mood,
-                 content_type: piece.content_type, color_role: piece.color_role }
+                 content_type: piece.content_type, color_role: piece.color_role,
+                 essence_medium: essence["medium"].to_s,
+                 essence_palette: essence["palette"].to_s,
+                 essence_surface: essence["surface_treatment"].to_s,
+                 essence_motifs: Array(essence["motif_vocabulary"]).join("; ") }
 
         if pair[:subject].present? && pair[:pattern].present?
           prompt("c1_generation_prompt_synthesis_scene",

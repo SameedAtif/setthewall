@@ -112,75 +112,95 @@ RSpec.describe Steps::TrackB do
   describe "ColorRole (B6)" do
     let(:observation) { { "candidate_role" => "saturator", "observed_color_state" => "dominant theme", "reasoning" => "" } }
 
-    it "returns the observation candidate for a non-minimalist style" do
+    it "proposes the observed role and waits for the human to confirm" do
       stub_llm(content: observation) do
-        result = described_class::ColorRole.call(piece: nil, context: scene_ctx(content_type: "detailed_representational", wall_condition: "neutral", furniture_weight: "light"))
-        expect(result).to be_ok
-        expect(result.data[:color_role]).to eq("saturator")
-      end
-    end
-
-    it "asks the human for the minimalist_modern override" do
-      stub_llm(content: observation.merge("candidate_role" => "color_burst")) do
-        result = described_class::ColorRole.call(piece: nil, context: scene_ctx(content_type: "minimalist_modern", wall_condition: "neutral", furniture_weight: "light"))
+        result = described_class::ColorRole.call(
+          piece: nil,
+          context: scene_ctx(content_type: "detailed_representational",
+                             wall_condition: "neutral", furniture_weight: "light")
+        )
         expect(result).to be_awaiting_human
-        expect(result.data[:default_override]).to eq("line_only")
+        expect(result.data[:observation_candidate]).to eq("saturator")
+        expect(result.data[:proposed_role]).to eq("saturator")
+        expect(result.data[:override_pending]).to be(true)
       end
     end
 
-    it "accepts a catalog-strategy override" do
+    it "never hardcodes a default role from content_type" do
       stub_llm(content: observation.merge("candidate_role" => "color_burst")) do
-        result = described_class::ColorRole.call(piece: nil, context: scene_ctx(content_type: "minimalist_modern", wall_condition: "neutral", furniture_weight: "light", catalog_strategy_override: "seasonal color"))
+        result = described_class::ColorRole.call(
+          piece: nil,
+          context: scene_ctx(content_type: "minimalist_modern",
+                             wall_condition: "neutral", furniture_weight: "light")
+        )
+        expect(result).to be_awaiting_human
+        expect(result.data[:proposed_role]).to eq("color_burst")
+        expect(result.data).not_to have_key(:default_override)
+      end
+    end
+
+    it "returns the proposed role once the human confirms it" do
+      stub_llm(content: observation.merge("candidate_role" => "color_burst")) do
+        result = described_class::ColorRole.call(
+          piece: nil,
+          context: scene_ctx(content_type: "minimalist_modern",
+                             wall_condition: "neutral", furniture_weight: "light",
+                             color_role_override: "color_burst")
+        )
         expect(result).to be_ok
+        expect(result.data[:color_role]).to eq("color_burst")
+        expect(result.data[:override_pending]).to be(false)
+        expect(result.data[:override_reason]).to be_nil
+      end
+    end
+
+    it "records a catalog-strategy reason when the human chooses a different role" do
+      stub_llm(content: observation.merge("candidate_role" => "color_burst")) do
+        result = described_class::ColorRole.call(
+          piece: nil,
+          context: scene_ctx(content_type: "minimalist_modern",
+                             wall_condition: "neutral", furniture_weight: "light",
+                             color_role_override: "line_only",
+                             catalog_strategy_override: "monochrome statement")
+        )
+        expect(result).to be_ok
+        expect(result.data[:color_role]).to eq("line_only")
         expect(result.data[:override_reason]).to include("catalog-strategy")
       end
     end
 
-    it "completes with the documented default when the human confirms line_only" do
+    it "surfaces a color_burst / busy-wall conflict in the proposal" do
       stub_llm(content: observation.merge("candidate_role" => "color_burst")) do
-        result = described_class::ColorRole.call(piece: nil, context: scene_ctx(content_type: "minimalist_modern", wall_condition: "neutral", furniture_weight: "light", color_role_override: "line_only"))
-        expect(result).to be_ok
-        expect(result.data[:color_role]).to eq("line_only")
-        expect(result.data[:override_pending]).to be(false)
-      end
-    end
-
-    it "completes with the observed role when the human keeps it with a reason" do
-      stub_llm(content: observation.merge("candidate_role" => "color_burst")) do
-        result = described_class::ColorRole.call(piece: nil, context: scene_ctx(content_type: "minimalist_modern", wall_condition: "neutral", furniture_weight: "light", color_role_override: "color_burst", catalog_strategy_override: "one color statement per room"))
-        expect(result).to be_ok
-        expect(result.data[:color_role]).to eq("color_burst")
-        expect(result.data[:override_reason]).to include("one color statement per room")
-      end
-    end
-
-    it "flags a color_burst / busy-wall conflict" do
-      stub_llm(content: observation.merge("candidate_role" => "color_burst")) do
-        result = described_class::ColorRole.call(piece: nil, context: scene_ctx(content_type: "detailed_representational", wall_condition: "busy", furniture_weight: "light"))
+        result = described_class::ColorRole.call(
+          piece: nil,
+          context: scene_ctx(content_type: "detailed_representational",
+                             wall_condition: "busy", furniture_weight: "light")
+        )
         expect(result).to be_awaiting_human
         expect(result.data[:conflicts]).not_to be_empty
       end
     end
 
-    it "flags a unifier / plain-scene conflict" do
+    it "surfaces a unifier / plain-scene conflict in the proposal" do
       stub_llm(content: observation.merge("candidate_role" => "unifier")) do
-        result = described_class::ColorRole.call(piece: nil, context: scene_ctx(content_type: "detailed_representational", wall_condition: "neutral", furniture_weight: "light"))
+        result = described_class::ColorRole.call(
+          piece: nil,
+          context: scene_ctx(content_type: "detailed_representational",
+                             wall_condition: "neutral", furniture_weight: "light")
+        )
         expect(result).to be_awaiting_human
+        expect(result.data[:conflicts]).not_to be_empty
       end
     end
 
-    it "marks the minimalist_modern override as pending" do
-      stub_llm(content: observation.merge("candidate_role" => "color_burst")) do
-        result = described_class::ColorRole.call(piece: nil, context: scene_ctx(content_type: "minimalist_modern", wall_condition: "neutral", furniture_weight: "light"))
-        expect(result).to be_awaiting_human
-        expect(result.data[:override_pending]).to be(true)
-        expect(result.data[:conflicts]).to eq([])
-      end
-    end
-
-    it "reports no conflicts and no override on a clean read" do
+    it "returns a clean confirmed read with no conflicts" do
       stub_llm(content: observation) do
-        result = described_class::ColorRole.call(piece: nil, context: scene_ctx(content_type: "detailed_representational", wall_condition: "neutral", furniture_weight: "light"))
+        result = described_class::ColorRole.call(
+          piece: nil,
+          context: scene_ctx(content_type: "detailed_representational",
+                             wall_condition: "neutral", furniture_weight: "light",
+                             color_role_override: "saturator")
+        )
         expect(result).to be_ok
         expect(result.data[:conflicts]).to eq([])
         expect(result.data[:override_pending]).to be(false)

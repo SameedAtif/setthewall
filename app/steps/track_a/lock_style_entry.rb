@@ -32,7 +32,8 @@ module Steps
           mood:             context.fetch(:mood),
           content_type:     context.fetch(:content_type),
           frame_form:       context.fetch(:frame_form),
-          production_model: context[:production_model]
+          production_model: context[:production_model],
+          reference_essence: context[:reference_essence]
         )
 
         ok({ style_spec_path: spec.path.to_s, slug: spec.slug },

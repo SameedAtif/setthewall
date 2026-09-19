@@ -16,7 +16,7 @@ module Pipeline
 
     module_function
 
-    def ask(chat, prompt, stall_seconds: nil, attempts: nil)
+    def ask(chat, prompt, with: nil, stall_seconds: nil, attempts: nil)
       stall = Float(stall_seconds || ENV.fetch("LLM_STREAM_STALL_SECONDS", DEFAULT_STALL_SECONDS))
       tries = (attempts || ENV.fetch("LLM_STREAM_ATTEMPTS", DEFAULT_ATTEMPTS)).to_i
       last_error = nil
@@ -24,7 +24,7 @@ module Pipeline
       tries.times do |index|
         snapshot = chat.messages.dup
         begin
-          return stream_once(chat, prompt, stall)
+          return stream_once(chat, prompt, stall, with)
         rescue Stalled => e
           last_error = e
           restore_messages(chat, snapshot)
@@ -35,12 +35,12 @@ module Pipeline
       raise last_error
     end
 
-    def stream_once(chat, prompt, stall)
+    def stream_once(chat, prompt, stall, with = nil)
       queue = Queue.new
       worker = Thread.new do
         Thread.current.report_on_exception = false
         begin
-          message = chat.ask(prompt) { |_chunk| queue << :chunk }
+          message = chat.ask(prompt, with: with) { |_chunk| queue << :chunk }
           queue << [:done, message]
         rescue StandardError => e
           queue << [:error, e]

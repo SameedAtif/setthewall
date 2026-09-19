@@ -106,11 +106,13 @@ class RunStepsController < ApplicationController
 
   def rerun_color_role(step, role)
     override = { "color_role_override" => role }
-    if role != "line_only"
+    # Confirming the role the run proposed needs no justification; choosing anything else does.
+    observed = step.output["observation_candidate"].presence || step.output["proposed_role"].presence
+    if role != observed
       reason = params[:reason].to_s.strip
       if reason.blank?
         return redirect_to run_path(step.pipeline_run_record),
-                           alert: "Provide a catalog-strategy reason to keep #{role}."
+                           alert: "Provide a catalog-strategy reason to choose #{role}."
       end
       override["catalog_strategy_override"] = reason
     end

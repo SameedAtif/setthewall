@@ -25,6 +25,12 @@ phase_1:
         mechanism: llm_text
         human_gate: true
         klass: "Steps::TrackA::BuildReferenceSet"
+      - id: A1b
+        title: "Distill reference essence"
+        ownership: "[AGENT-ASSISTED — human curates]"
+        mechanism: llm_vision
+        human_gate: true
+        klass: "Steps::TrackA::DistillReferenceEssence"
       - id: A2
         title: "Sort into Mood"
         ownership: "[AGENT-ASSISTED — human confirms]"

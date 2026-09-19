@@ -3,7 +3,8 @@ module KnowledgeBase
     # `name` here is A0's research focus (a sentence, possibly with price band / size detail).
     # The buyer-facing `name` is derived from the slug; the research focus is preserved under
     # `production_model.research_focus`.
-    def self.create_or_update_style_level(slug:, name:, mood:, content_type:, frame_form:, production_model: nil)
+    def self.create_or_update_style_level(slug:, name:, mood:, content_type:, frame_form:,
+                                          production_model: nil, reference_essence: nil)
       path = Workflow::RunMode.write_root.join("style_specs", "#{slug}.yml")
 
       doc = path.exist? ? YAML.safe_load_file(path, permitted_classes: [Date]) : {}
@@ -18,6 +19,7 @@ module KnowledgeBase
       doc["production_model"] =
         (doc["production_model"] || {}).merge("research_focus" => name.to_s)
                                       .merge((production_model || {}).stringify_keys)
+      doc["reference_essence"] = reference_essence.deep_stringify_keys if reference_essence.present?
       doc["scenes"] ||= {}   # module 02 fills this; never clear it here
 
       validate_name!(doc["name"])

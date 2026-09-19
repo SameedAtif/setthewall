@@ -43,6 +43,7 @@ module Workflow
       log("Step returned #{result.status}")
       capture_ideation_pick!(result) if @step_id == "A_IDEATE"
       capture_reference_images!(result) if @step_id == "A1"
+      capture_reference_essence!(result) if @step_id == "A1b"
 
       tier = Workflow::DecisionRules.tier_for(@step_id)
       if tier == 3

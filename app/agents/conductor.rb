@@ -18,7 +18,7 @@ module Agents
       P3_1 P3_1b P3_2 P3_3 P3_4 P3_5 P3_6 P3_7 P3_8
     ].freeze
 
-    STYLE_ORDER = %w[A_IDEATE A0 A1 A2 A3 A4 A5 A6 A7 B0 B1 B2 B3 B4 B5 B6 B7].freeze
+    STYLE_ORDER = %w[A_IDEATE A0 A1 A1b A2 A3 A4 A5 A6 A7 B0 B1 B2 B3 B4 B5 B6 B7].freeze
     FULL_ORDER  = (STYLE_ORDER + ORDER).freeze
 
     SCOPES = {

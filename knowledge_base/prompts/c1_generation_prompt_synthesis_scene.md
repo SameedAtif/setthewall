@@ -15,8 +15,16 @@ this style:
 
   Subject: %{recurring_subject}
 
-Describe an ORIGINAL composition that renders this subject through this pattern, inventing all
-specifics fresh. Follow this contract exactly:
+And you are given the reference set's documented traits. These are the ground truth for this style
+— stay inside them:
+
+  Medium: %{essence_medium}
+  Palette: %{essence_palette}
+  Surface treatment: %{essence_surface}
+  Motif vocabulary (use ONLY these motifs/textures): %{essence_motifs}
+
+Describe an ORIGINAL composition that renders this subject through this pattern. Follow this
+contract exactly:
 
 MUST PRESERVE (evidence-backed — recurred across independent, unrelated sellers, so this is genre
 convention, not any single seller's property):
@@ -24,11 +32,14 @@ convention, not any single seller's property):
   - the light logic above
   - the temporal quality above
   - the given subject (do not substitute a different subject)
+  - the documented medium, palette, surface treatment and motif vocabulary above
 
-MUST INVENT FRESH (this is what makes the result original rather than a copy of any real listing):
-  - the surface treatment — the marks, ridges, layers, or material of the artwork itself
-  - the composition within the artwork — where forms sit, foreground vs. field, framing
-  - any secondary/supporting visual elements that are part of the artwork's own surface
+MAY INVENT FRESH — ONLY the composition within those documented traits:
+  - where the forms sit, the arrangement, balance and framing inside the artwork
+
+DO NOT invent content outside the documented traits:
+  - no subjects, objects, materials, colours or texture types beyond the motif vocabulary and
+    surface treatment above; no crosshatching, no tight spiral coils
 
 HARD CONSTRAINTS (the reference set is abstract surface art — staying abstract is the medium):
   - Describe ONLY the artwork's own surface and forms.

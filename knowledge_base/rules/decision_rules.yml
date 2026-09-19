@@ -286,6 +286,20 @@ rules:
       rewind_to: A0
       invalidates: [A2, A3, A4, A5]
 
+    A1b:
+      gate: true
+      module: "01"
+      verdicts:
+        clean: "Typed essence distilled with palette, surface treatment and motif vocabulary present."
+        blocked: "The vision pass returned no usable essence."
+      rewind_to: A1
+      invalidates: [A2, A3, A4, A5, A6, A7, B0, B1, B2, B3, B4, B5, B6, B7, C1, C2,
+                    "all Phase 2", "all Phase 3"]
+      authority: >
+        module 01 §2.1 — the reference set's shared traits, distilled as typed fields so generation
+        and ImageQa consume the same structured facts. Tier 3: the human curates motif_vocabulary
+        and the diversity descriptor set; the agent never closes this gate.
+
     A2:
       gate: true
       module: "01"

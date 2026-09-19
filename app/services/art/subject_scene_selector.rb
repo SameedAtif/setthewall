@@ -9,7 +9,12 @@ module Art
     end
 
     def initialize(spec, n)
-      @subjects = Array(spec.subject_research["recurring_subjects"])
+      subjects = Array(spec.subject_research["recurring_subjects"])
+      # A style may curate which of the researched subjects are reference-consistent; when present,
+      # only those are selectable (so an off-vibe subject can never drive a candidate).
+      curated = Array(spec.subject_research["curated_subjects"]).map(&:to_s).reject(&:blank?)
+      subjects = subjects.select { |s| curated.include?(s["subject"].to_s) } if curated.any?
+      @subjects = subjects
       @patterns = Array(spec.scene_research["scene_patterns"])
       @n = n
     end

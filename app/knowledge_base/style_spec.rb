@@ -30,7 +30,7 @@ module KnowledgeBase
     }.freeze
 
     attr_reader :slug, :name, :style_level, :scenes, :path, :production_model,
-                :subject_research, :scene_research
+                :subject_research, :scene_research, :reference_essence
 
     # The buyer-facing name, for listing copy. `name` is validated at lock time (A5) to be a
     # short, keyword-usable phrase; A0's full research sentence lives in production_model.
@@ -58,6 +58,7 @@ module KnowledgeBase
       @production_model = (raw["production_model"] || {}).stringify_keys
       @subject_research = (raw["subject_research"] || {}).stringify_keys
       @scene_research   = (raw["scene_research"] || {}).stringify_keys
+      @reference_essence = (raw["reference_essence"] || {}).stringify_keys
     end
 
     def scene(scene_id)

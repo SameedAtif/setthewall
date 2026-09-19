@@ -3,7 +3,7 @@ module Workflow
   # conditional branches (P2_1 → P2_2a–e, conditional P2_3) and the locked-spec shortcuts. The
   # Conductor keeps its own constants for its unattended order; this service drives CellRunner.
   class RunSequencer
-    STYLE_ORDER = %w[A_IDEATE A0 A1 A2 A3 A4 A5 A6 A7 B0 B1 B2 B3 B4 B5 B6 B7].freeze
+    STYLE_ORDER = %w[A_IDEATE A0 A1 A1b A2 A3 A4 A5 A6 A7 B0 B1 B2 B3 B4 B5 B6 B7].freeze
     SCENE_STEPS = %w[B0 B1 B2 B3 B4 B5 B6 B7].freeze
     PIECE_ORDER = %w[C1 C2 P2_0 P2_1 P2_3 P2_4 P2_4b P2_5 P2_6
                      P3_1 P3_1b P3_2 P3_3 P3_4 P3_5 P3_6 P3_7 P3_8].freeze

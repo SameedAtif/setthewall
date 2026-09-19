@@ -123,29 +123,34 @@ RSpec.describe "Run steps", type: :request do
   end
 
   describe "POST color_role" do
-    it "stores the line_only default as a context override and re-runs" do
-      expect { post color_role_run_step_path(run, step), params: { color_role: "line_only" } }
+    let(:step) do
+      create(:run_step, pipeline_run_record: run, step_id: "B6", position: 1, status: "awaiting_human",
+                        output: { "observation_candidate" => "color_burst", "proposed_role" => "color_burst" })
+    end
+
+    it "confirms the proposed role without needing a reason and re-runs" do
+      expect { post color_role_run_step_path(run, step), params: { color_role: "color_burst" } }
         .to have_enqueued_job(ExecuteRunJob).with(run_id: run.id, mode: "rerun", run_step_id: step.id)
 
-      expect(step.reload.context_override).to eq({ "color_role_override" => "line_only" })
+      expect(step.reload.context_override).to eq({ "color_role_override" => "color_burst" })
       expect(step.status).to eq("queued")
       expect(response).to redirect_to(run_path(run))
     end
 
-    it "requires a reason to keep the observed role" do
-      post color_role_run_step_path(run, step), params: { color_role: "color_burst" }
+    it "requires a reason to choose a role other than the proposed one" do
+      post color_role_run_step_path(run, step), params: { color_role: "line_only" }
 
       expect(response).to redirect_to(run_path(run))
       expect(flash[:alert]).to be_present
       expect(step.reload.context_override).to eq({})
     end
 
-    it "stores the reason when keeping the observed role" do
+    it "stores the reason when choosing a different role" do
       post color_role_run_step_path(run, step),
-           params: { color_role: "color_burst", reason: "one statement per room" }
+           params: { color_role: "line_only", reason: "monochrome statement" }
 
       expect(step.reload.context_override).to eq(
-        "color_role_override" => "color_burst", "catalog_strategy_override" => "one statement per room"
+        "color_role_override" => "line_only", "catalog_strategy_override" => "monochrome statement"
       )
     end
 

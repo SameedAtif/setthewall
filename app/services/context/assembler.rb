@@ -71,26 +71,27 @@ module Context
       Array(images).filter_map { |i| i["url"] if i.is_a?(Hash) }
     end
 
-    # C1 wants the artwork's own surface, so prefer A1's close-up/product shots over in-situ room
-    # photos (which show how the art is hung, not the art). Falls back to every image.
+    # A curated mix for C1: close-up/product shots carry the surface and medium, while in-situ
+    # shots carry palette and styling. Outliers are dropped when A1 flags them. Falls back to
+    # whatever is available.
     def style_reference_images
       return [] if tainted?("A1")
 
-      images = Array(dig("A1", "candidates", "images")).select { |i| i.is_a?(Hash) }
-      closeups = images.select { |i| i["shot_type"].to_s == "closeup" }.filter_map { |i| i["url"] }
-      closeups.presence || images.filter_map { |i| i["url"] }
+      images = Array(dig("A1", "candidates", "images"))
+               .select { |i| i.is_a?(Hash) && i["url"].present? }
+               .reject { |i| i["is_outlier"] }
+      closeups = images.select { |i| i["shot_type"].to_s == "closeup" }
+      in_situ  = images.reject { |i| i["shot_type"].to_s == "closeup" }
+      (closeups.first(3) + in_situ.first(2)).map { |i| i["url"] }.presence ||
+        images.map { |i| i["url"] }
     end
 
-    # A1's own description of what the reference set has in common — the "essence" C1 should evoke.
+    # The typed reference essence distilled by A1b — the style's shared medium/palette/surface/
+    # motif facts. No prose fallback: a style without an A1b essence simply has none.
     def reference_essence
-      return {} if tainted?("A1")
+      return {} if tainted?("A1b")
 
-      candidates = dig("A1", "candidates") || {}
-      qualities = Array(candidates["shared_qualities"]).map(&:to_s).reject(&:blank?)
-      mood = candidates["dominant_mood"].to_s.presence
-      return {} if qualities.empty? && mood.blank?
-
-      { mood: mood, qualities: qualities }.compact
+      dig("A1b", "essence") || {}
     end
 
     def style_name_used
@@ -127,9 +128,11 @@ module Context
       when "A1"          then { style_name: style_name_used }
       when "A2", "A3"    then { reference_images: reference_images }
       when "A4"          then { reference_images: reference_images, mood: mood }
+      when "A1b"         then { reference_images: reference_images }
       when "A5"          then { style_name: style_name_used, mood: mood,
                                 content_type: content_type, frame_form: frame_form,
-                                production_model: production_model }
+                                production_model: production_model,
+                                reference_essence: reference_essence }
       when "B6"          then { content_type: content_type,
                                 wall_condition: scene_axis("B1", "wall_condition"),
                                 furniture_weight: scene_axis("B2", "furniture_weight") }
