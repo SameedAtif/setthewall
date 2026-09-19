@@ -55,6 +55,43 @@ RSpec.describe Agents::ImageQa do
     end
   end
 
+  it "blocks a near-replica of a single reference" do
+    piece = create(:piece_record, candidate_urls: ["https://x/1.jpg"])
+    stub_llm(content: { "per_image" => [{ "index" => 1, "axis_mismatches" => [],
+                                          "max_reference_similarity" => 95 }],
+                        "constraint_violations" => [] }) do
+      f = described_class.call(run: run_with(piece), step_id: "C1", result: Object.new, context: {})
+      expect(f).to include(an_object_having_attributes(severity: "blocking",
+                                                       claim: a_string_including("near-replica")))
+    end
+  end
+
+  it "advisories a candidate that misses the reference essence" do
+    piece = create(:piece_record, candidate_urls: ["https://x/1.jpg"])
+    stub_llm(content: { "per_image" => [{ "index" => 1, "axis_mismatches" => [],
+                                          "palette_conforms" => false, "surface_conforms" => true,
+                                          "motif_conforms" => true }],
+                        "constraint_violations" => [] }) do
+      f = described_class.call(run: run_with(piece), step_id: "C1", result: Object.new, context: {})
+      expect(f).to include(an_object_having_attributes(severity: "advisory",
+                                                       claim: a_string_including("reference essence")))
+    end
+  end
+
+  it "advisories a batch that is not compositionally diverse" do
+    piece = create(:piece_record, candidate_urls: ["https://x/1.jpg", "https://x/2.jpg"])
+    descriptors = { "transition_position" => "centre", "transition_orientation" => "diagonal",
+                    "seam_presence" => "trace", "motif_region_shape" => "band" }
+    stub_llm(content: { "per_image" => [
+                          { "index" => 1, "axis_mismatches" => [], "descriptors" => descriptors },
+                          { "index" => 2, "axis_mismatches" => [], "descriptors" => descriptors }
+                        ], "constraint_violations" => [] }) do
+      f = described_class.call(run: run_with(piece), step_id: "C1", result: Object.new, context: {})
+      expect(f).to include(an_object_having_attributes(severity: "advisory",
+                                                       claim: a_string_including("diverse")))
+    end
+  end
+
   it "uses lifestyle photos for P3_1b" do
     piece = create(:piece_record, photos: { "a" => "https://x/p.jpg" })
     stub_llm(content: { "per_image" => [{ "index" => 1, "axis_mismatches" => [] }], "constraint_violations" => [] }) do
