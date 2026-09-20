@@ -39,30 +39,18 @@ RSpec.describe Context::Assembler do
     expect(ctx[:chosen_url]).to eq("u1")
   end
 
-  it "assembles B6 context from A3, B1, and B2" do
-    run = run_with([
-      { "step_id" => "A3", "data" => { "result" => { "content_type" => "minimalist_modern" } } },
-      { "step_id" => "B1", "data" => { "wall_condition" => "neutral" } },
-      { "step_id" => "B2", "data" => { "furniture_weight" => "light" } }
-    ])
-    ctx = described_class.for("B6", run)
-    expect(ctx).to include(content_type: "minimalist_modern", wall_condition: "neutral",
-                           furniture_weight: "light")
-  end
-
-  it "assembles B7 axes from B1-B6 and provisionally confirms the lock" do
+  it "assembles B7 axes from B1-B5 and provisionally confirms the lock" do
     run = run_with([
       { "step_id" => "B1", "data" => { "wall_condition" => "neutral" } },
       { "step_id" => "B2", "data" => { "furniture_weight" => "light" } },
       { "step_id" => "B3", "data" => { "room_type" => "seated_room" } },
       { "step_id" => "B4", "data" => { "room_shape" => "none" } },
-      { "step_id" => "B5", "data" => { "space_math" => "single" } },
-      { "step_id" => "B6", "data" => { "color_role" => "line_only" } }
+      { "step_id" => "B5", "data" => { "space_math" => "single" } }
     ])
     ctx = described_class.for("B7", run)
     expect(ctx[:axes]).to eq(wall_condition: "neutral", furniture_weight: "light",
                              room_type: "seated_room", room_shape: "none",
-                             space_math: "single", color_role: "line_only")
+                             space_math: "single")
     expect(ctx[:confirmed]).to be(true)
   end
 
@@ -95,11 +83,14 @@ RSpec.describe Context::Assembler do
 
   it "does not provisionally confirm B7 when a scene axis is tainted" do
     run = run_with([
-      { "step_id" => "B1", "data" => { "wall_condition" => "neutral" } },
-      { "step_id" => "B6", "data" => { "color_role" => "line_only" }, "disposition" => "rewind" }
+      { "step_id" => "B1", "data" => { "wall_condition" => "neutral" }, "disposition" => "rewind" },
+      { "step_id" => "B2", "data" => { "furniture_weight" => "light" } },
+      { "step_id" => "B3", "data" => { "room_type" => "seated_room" } },
+      { "step_id" => "B4", "data" => { "room_shape" => "none" } },
+      { "step_id" => "B5", "data" => { "space_math" => "single" } }
     ])
     ctx = described_class.for("B7", run)
-    expect(ctx[:axes][:color_role]).to be_nil
+    expect(ctx[:axes][:wall_condition]).to be_nil
     expect(ctx[:confirmed]).to be_nil
   end
 

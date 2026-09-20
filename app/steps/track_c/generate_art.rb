@@ -161,19 +161,17 @@ module Steps
       end
 
       # The final image-generation prompt is assembled deterministically: the LLM supplies only the
-      # scene description, while the axis directives and negative clause come from
-      # generation_prompt_template.yml via knowledge_base/prompts/c1_image_prompt.md. Tuning the
-      # prompt is a KB file edit, not a code change, and the negatives can never be dropped.
-      # NOTE: content_type's rendering directive is deliberately omitted from the image prompt for
-      # now (A/B test). image_prompt_directives still resolves it, so re-adding is one template edit.
+      # scene description; the colour character comes from the A1b reference essence
+      # (`palette_character`); the mood palette and negative clause come from
+      # generation_prompt_template.yml via knowledge_base/prompts/c1_image_prompt.md. The scene
+      # contributes no colour or line-orientation (that moved to Phase 2 arrangement).
       def build_image_prompt(scene)
         d = image_prompt_directives
         prompt("c1_image_prompt",
                scene: scene,
                reference_essence: reference_essence_clause,
-               color_treatment: d["color_role"],
+               palette_character: d["palette_character"],
                palette: d["mood"],
-               line_constraint: room_shape_constraint.presence || "",
                negative_prompt: d["negative_prompt"])
       end
 
@@ -201,9 +199,8 @@ module Steps
         directives = rules("generation_prompt_template").rules
         axes = Array(directives["directive_axes"]).index_by { |axis| axis["axis"] }
         {
-          "content_type" => axes.dig("content_type", "values", piece.content_type) || piece.content_type.to_s,
-          "color_role"   => axes.dig("color_role", "values", piece.color_role) || piece.color_role.to_s,
-          "mood"         => axes.dig("mood", "values", piece.mood) || piece.mood.to_s,
+          "palette_character" => (context[:reference_essence] || {})["palette_character"].to_s,
+          "mood" => axes.dig("mood", "values", piece.mood) || piece.mood.to_s,
           "negative_prompt" => directives.dig("constraints", "negative_prompt").to_s.strip
         }
       end
@@ -211,9 +208,8 @@ module Steps
       def image_prompt_contributions
         d = image_prompt_directives
         [
-          { axis: "color_role", phrase_added: d["color_role"] },
-          { axis: "mood", phrase_added: d["mood"] },
-          { axis: "room_shape", phrase_added: room_shape_constraint.presence }
+          { axis: "palette_character", phrase_added: d["palette_character"] },
+          { axis: "mood", phrase_added: d["mood"] }
         ].reject { |c| c[:phrase_added].blank? }
       end
 
@@ -299,19 +295,9 @@ module Steps
                  recurring_subject: pair[:subject]["subject"],
                  narrative_structure: pair[:pattern]["narrative_structure"],
                  light_logic: pair[:pattern]["light_logic"],
-                 temporal_quality: pair[:pattern]["temporal_quality"],
-                 room_shape_constraint: room_shape_constraint)
+                 temporal_quality: pair[:pattern]["temporal_quality"])
         else
-          prompt("c1_generation_prompt_synthesis", **base, room_shape: piece.room_shape)
-        end
-      end
-
-      def room_shape_constraint
-        case piece.room_shape
-        when "narrow"          then "compose with strong vertical lines."
-        when "low_ceilinged"   then "compose with strong horizontal lines."
-        when "small_closed_in" then "keep the composition open and uncluttered, with visual breathing room."
-        else ""
+          prompt("c1_generation_prompt_synthesis", **base)
         end
       end
     end

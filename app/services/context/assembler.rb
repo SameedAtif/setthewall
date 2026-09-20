@@ -121,8 +121,7 @@ module Context
         furniture_weight: scene_axis("B2", "furniture_weight"),
         room_type: scene_axis("B3", "room_type"),
         room_shape: scene_axis("B4", "room_shape"),
-        space_math: scene_axis("B5", "space_math"),
-        color_role: scene_axis("B6", "color_role")
+        space_math: scene_axis("B5", "space_math")
       }
     end
 
@@ -136,9 +135,6 @@ module Context
                                 content_type: content_type, frame_form: frame_form,
                                 production_model: production_model,
                                 reference_essence: reference_essence }
-      when "B6"          then { content_type: content_type,
-                                wall_condition: scene_axis("B1", "wall_condition"),
-                                furniture_weight: scene_axis("B2", "furniture_weight") }
       when "B7"          then { axes: scene_axes }
       when "C1"          then { reference_images: style_reference_images, reference_essence: reference_essence }
       else {}

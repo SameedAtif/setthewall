@@ -23,14 +23,13 @@ RSpec.describe "scene axis validation" do
             room_type: #{axes.fetch(:room_type, "seated_room")}
             room_shape: #{axes.fetch(:room_shape, "none")}
             space_math: #{axes.fetch(:space_math, "single")}
-            color_role: #{axes.fetch(:color_role, "line_only")}
     YAML
     track_kb_file(path)
     slug
   end
 
   it "rejects a blank scene axis" do
-    slug = spec_with_scene_axes(color_role: "")
+    slug = spec_with_scene_axes(room_type: "")
     expect { KnowledgeBase::StyleSpec.load(slug).validate! }
       .to raise_error(KnowledgeBase::IncompleteSpecError, /blank/)
   end

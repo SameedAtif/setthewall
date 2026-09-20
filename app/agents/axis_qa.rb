@@ -1,9 +1,9 @@
 module Agents
-  # A2, A3, A4, B1–B6 — the classification steps. Its job is largely to *refuse*: catch a mixed
-  # mood (unresolved_input), a failed contour cross-check, a no-safe-default room type, and the
-  # B6 override/conflict signals, rather than letting a wrong value propagate downstream.
+  # A2, A3, A4, B1–B5 — the classification steps. Its job is largely to *refuse*: catch a mixed
+  # mood (unresolved_input), a failed contour cross-check, and a no-safe-default room type, rather
+  # than letting a wrong value propagate downstream.
   class AxisQa < Base
-    agent id: "axis_qa", covers: %w[A2 A3 A4 B1 B2 B3 B4 B5 B6]
+    agent id: "axis_qa", covers: %w[A2 A3 A4 B1 B2 B3 B4 B5]
 
     def evaluate
       d = data
@@ -13,7 +13,6 @@ module Agents
       when "A3" then content_type(r)
       when "A4" then frame_form(r)
       when "B3" then room_type(r)
-      when "B6" then color_role(d)
       else           borderline(r)
       end
     end
@@ -66,21 +65,6 @@ module Agents
         "wrong composite at P2_6.", c)] if r["room_type"] == "ambiguous"
 
       [pass("Room type #{r['room_type']} read unambiguously.", c)]
-    end
-
-    def color_role(d)
-      c = [cite("color_role_observation.rules"), cite("decision_rules.rules.steps.B6")]
-      conflicts = Array(d["conflicts"])
-      return [blocking("Cross-check conflicts: #{conflicts.join('; ')}. Resolve explicitly rather " \
-                       "than defaulting to whichever was decided first.", c)] if conflicts.any?
-
-      if d["override_pending"]
-        return [pass("Colour role is pending the human content-type override (minimalist_modern: " \
-                     "confirm line_only, or give a catalog-strategy reason to keep the observation).",
-                     c)]
-      end
-
-      [pass("Colour role #{d['color_role']} clears the B6 cross-check.", c)]
     end
 
     def borderline(r)

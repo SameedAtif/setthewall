@@ -109,109 +109,10 @@ RSpec.describe Steps::TrackB do
     end
   end
 
-  describe "ColorRole (B6)" do
-    let(:observation) { { "candidate_role" => "saturator", "observed_color_state" => "dominant theme", "reasoning" => "" } }
-
-    it "proposes the observed role and waits for the human to confirm" do
-      stub_llm(content: observation) do
-        result = described_class::ColorRole.call(
-          piece: nil,
-          context: scene_ctx(content_type: "detailed_representational",
-                             wall_condition: "neutral", furniture_weight: "light")
-        )
-        expect(result).to be_awaiting_human
-        expect(result.data[:observation_candidate]).to eq("saturator")
-        expect(result.data[:proposed_role]).to eq("saturator")
-        expect(result.data[:override_pending]).to be(true)
-      end
-    end
-
-    it "never hardcodes a default role from content_type" do
-      stub_llm(content: observation.merge("candidate_role" => "color_burst")) do
-        result = described_class::ColorRole.call(
-          piece: nil,
-          context: scene_ctx(content_type: "minimalist_modern",
-                             wall_condition: "neutral", furniture_weight: "light")
-        )
-        expect(result).to be_awaiting_human
-        expect(result.data[:proposed_role]).to eq("color_burst")
-        expect(result.data).not_to have_key(:default_override)
-      end
-    end
-
-    it "returns the proposed role once the human confirms it" do
-      stub_llm(content: observation.merge("candidate_role" => "color_burst")) do
-        result = described_class::ColorRole.call(
-          piece: nil,
-          context: scene_ctx(content_type: "minimalist_modern",
-                             wall_condition: "neutral", furniture_weight: "light",
-                             color_role_override: "color_burst")
-        )
-        expect(result).to be_ok
-        expect(result.data[:color_role]).to eq("color_burst")
-        expect(result.data[:override_pending]).to be(false)
-        expect(result.data[:override_reason]).to be_nil
-      end
-    end
-
-    it "records a catalog-strategy reason when the human chooses a different role" do
-      stub_llm(content: observation.merge("candidate_role" => "color_burst")) do
-        result = described_class::ColorRole.call(
-          piece: nil,
-          context: scene_ctx(content_type: "minimalist_modern",
-                             wall_condition: "neutral", furniture_weight: "light",
-                             color_role_override: "line_only",
-                             catalog_strategy_override: "monochrome statement")
-        )
-        expect(result).to be_ok
-        expect(result.data[:color_role]).to eq("line_only")
-        expect(result.data[:override_reason]).to include("catalog-strategy")
-      end
-    end
-
-    it "surfaces a color_burst / busy-wall conflict in the proposal" do
-      stub_llm(content: observation.merge("candidate_role" => "color_burst")) do
-        result = described_class::ColorRole.call(
-          piece: nil,
-          context: scene_ctx(content_type: "detailed_representational",
-                             wall_condition: "busy", furniture_weight: "light")
-        )
-        expect(result).to be_awaiting_human
-        expect(result.data[:conflicts]).not_to be_empty
-      end
-    end
-
-    it "surfaces a unifier / plain-scene conflict in the proposal" do
-      stub_llm(content: observation.merge("candidate_role" => "unifier")) do
-        result = described_class::ColorRole.call(
-          piece: nil,
-          context: scene_ctx(content_type: "detailed_representational",
-                             wall_condition: "neutral", furniture_weight: "light")
-        )
-        expect(result).to be_awaiting_human
-        expect(result.data[:conflicts]).not_to be_empty
-      end
-    end
-
-    it "returns a clean confirmed read with no conflicts" do
-      stub_llm(content: observation) do
-        result = described_class::ColorRole.call(
-          piece: nil,
-          context: scene_ctx(content_type: "detailed_representational",
-                             wall_condition: "neutral", furniture_weight: "light",
-                             color_role_override: "saturator")
-        )
-        expect(result).to be_ok
-        expect(result.data[:conflicts]).to eq([])
-        expect(result.data[:override_pending]).to be(false)
-      end
-    end
-  end
-
   describe "LockSceneEntry (B7)" do
     let(:axes) do
       { wall_condition: "neutral", furniture_weight: "light", room_type: "seated_room",
-        room_shape: "none", space_math: "single", color_role: "line_only" }
+        room_shape: "none", space_math: "single" }
     end
 
     it "asks for confirmation before locking" do
@@ -227,7 +128,7 @@ RSpec.describe Steps::TrackB do
 
       result = described_class::LockSceneEntry.call(piece: nil, context: scene_ctx(axes: axes, scene_name: "S1", template_ref: "t.yml", confirmed: true))
       expect(result).to be_ok
-      expect(KnowledgeBase::StyleSpec.load("b-test").scene("b-s1").color_role).to eq("line_only")
+      expect(KnowledgeBase::StyleSpec.load("b-test").scene("b-s1").room_type).to eq("seated_room")
     end
   end
 end

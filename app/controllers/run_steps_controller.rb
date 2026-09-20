@@ -51,25 +51,6 @@ class RunStepsController < ApplicationController
     redirect_to run_path(step.pipeline_run_record, anchor: focus_anchor(step.pipeline_run_record))
   end
 
-  # Resolve B6's content-type override: confirm the documented default (line_only) or keep the
-  # observed role with a catalog-strategy reason. Stored as a context override, then B6 re-runs.
-  COLOR_ROLES = %w[line_only color_burst accent_highlighter unifier saturator].freeze
-
-  def color_role
-    step = RunStep.find(params[:id])
-    choice = params[:color_role].to_s
-
-    return rerun_color_role(step, choice) if COLOR_ROLES.include?(choice)
-
-    case choice
-    when "rewind", "abandon"
-      Workflow::GateApplier.call(run_step: step, interpretation: disposition_interpretation(choice))
-      redirect_to run_path(step.pipeline_run_record, anchor: focus_anchor(step.pipeline_run_record))
-    else
-      redirect_to run_path(step.pipeline_run_record), alert: "Choose a color role."
-    end
-  end
-
   # Record a plain reviewer note without changing the run's state.
   def note
     step = RunStep.find(params[:id])
@@ -103,26 +84,6 @@ class RunStepsController < ApplicationController
   end
 
   private
-
-  def rerun_color_role(step, role)
-    override = { "color_role_override" => role }
-    # Confirming the role the run proposed needs no justification; choosing anything else does.
-    observed = step.output["observation_candidate"].presence || step.output["proposed_role"].presence
-    if role != observed
-      reason = params[:reason].to_s.strip
-      if reason.blank?
-        return redirect_to run_path(step.pipeline_run_record),
-                           alert: "Provide a catalog-strategy reason to choose #{role}."
-      end
-      override["catalog_strategy_override"] = reason
-    end
-
-    step.update!(context_override: override, status: "queued")
-    Workflow::NotebookBroadcaster.cell(step.pipeline_run_record, step)
-    ExecuteRunJob.perform_later(run_id: step.pipeline_run_record_id, mode: "rerun",
-                                run_step_id: step.id)
-    redirect_to run_path(step.pipeline_run_record), notice: "Re-running B6 with color role \"#{role}\"."
-  end
 
   def disposition_interpretation(intent)
     Llm::FeedbackInterpreter::Result.new(intent: intent, notes: nil, edits: {}, reason: nil, raw: {})

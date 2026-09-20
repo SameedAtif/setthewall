@@ -5,22 +5,21 @@ module Steps
 
       # context: { style_slug:, scene_template_id:, scene_name:, template_ref:,
       #            axes: { wall_condition:, furniture_weight:, room_type:, room_shape:,
-      #                    space_math:, color_role: },
+      #                    space_math: },
       #            confirmed: }
       def perform
         axes = context.fetch(:axes)
 
         unless context[:confirmed]
           return needs_human(
-            "Lock these six values as final for this scene template?\n" \
+            "Lock these five values as final for this scene template?\n" \
             "  wall_condition:   #{axes[:wall_condition]}\n" \
             "  furniture_weight: #{axes[:furniture_weight]}\n" \
             "  room_type:        #{axes[:room_type]}\n" \
             "  room_shape:       #{axes[:room_shape]}\n" \
-            "  space_math:       #{axes[:space_math]}\n" \
-            "  color_role:       #{axes[:color_role]}\n\n" \
+            "  space_math:       #{axes[:space_math]}\n\n" \
             "Validation (from the source doc): could someone who has never seen the scene photo " \
-            "make correct placement/frame decisions from these six values alone? If not, a value " \
+            "make correct placement/frame decisions from these five values alone? If not, a value " \
             "is under-specified — go back and sharpen it.",
             { axes: axes }
           )

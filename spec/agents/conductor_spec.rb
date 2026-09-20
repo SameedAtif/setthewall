@@ -188,7 +188,6 @@ RSpec.describe Agents::Conductor do
       expect(piece).to be_a(PieceRecord)
       expect(piece.mood).to eq("bold_active")
       expect(piece.room_type).to eq("seated_room")
-      expect(piece.color_role).to eq("color_burst")
     end
 
     it "returns nil when the spec is not locked" do

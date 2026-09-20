@@ -15,7 +15,9 @@
 module KnowledgeBase
   class StyleSpec
     STYLE_LEVEL_AXES = %i[mood content_type frame_form].freeze
-    SCENE_AXES = %i[wall_condition furniture_weight room_type room_shape space_math color_role].freeze
+    # color_role is NOT a scene axis — it is a style-level observation derived at A1b (see
+    # docs/color-role-and-scene-decoupling-plan.md).
+    SCENE_AXES = %i[wall_condition furniture_weight room_type room_shape space_math].freeze
 
     ALLOWED = {
       mood:             %w[calm_ordered bold_active],

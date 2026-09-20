@@ -24,7 +24,6 @@ scenes:
       room_type: seated_room
       room_shape: none
       space_math: single
-      color_role: line_only
 subject_research:
   shops_sampled: 34
   recurring_subjects:

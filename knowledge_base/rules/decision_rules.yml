@@ -426,25 +426,6 @@ rules:
       rewind_to: B0
       invalidates: [P2_1, P2_2a, P2_2b, P2_2c, P2_2d, P2_2e]
 
-    B6:
-      gate: true
-      module: "02"
-      verdicts:
-        clean: "Observation candidate stands; no override fired; cross-check clean."
-        contradicted:
-          - "content_type == minimalist_modern and the p. 97 line_only default overrides the observed candidate"
-          - "step-3 cross-check against B1/B2 flagged conflicts"
-      on_contradicted:
-        legal: [edit, retry, rewind, abandon]
-        edit_requires: catalog_strategy_override
-        forbidden: [approve]
-        reasoning: >
-          Resolve the conflict explicitly rather than defaulting to whichever was decided first
-          (module 02 §6.7, verbatim intent).
-      rewind_to: [B1, B2]
-      invalidates: [P2_4b, C1]
-      authority: "p. 97 minimalist_modern default; module 04 §2.2a"
-
     B7:
       gate: true
       module: "02"

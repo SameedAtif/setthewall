@@ -27,7 +27,7 @@ RSpec.describe PieceRecord do
     expect(described_class.published.trustworthy.count).to eq(1)
   end
 
-  it "denormalizes the nine axes via apply_spec!" do
+  it "denormalizes the axes via apply_spec!" do
     spec, scene = build_test_spec
     piece = build(:piece_record, style_spec_slug: spec.slug, scene_spec_id: "s1")
     piece.apply_spec!(spec, scene)
@@ -36,7 +36,20 @@ RSpec.describe PieceRecord do
     expect(piece.content_type).to eq("minimalist_modern")
     expect(piece.frame_form).to eq("angular")
     expect(piece.wall_condition).to eq("neutral")
-    expect(piece.color_role).to eq("line_only")
+    expect(piece.room_type).to eq("seated_room")
+  end
+
+  it "sources color_role from the style spec's reference essence" do
+    spec, scene = build_test_spec
+    KnowledgeBase::StyleSpecWriter.create_or_update_style_level(
+      slug: spec.slug, name: "Test", mood: "calm_ordered",
+      content_type: "minimalist_modern", frame_form: "angular",
+      reference_essence: { "color_role" => "saturator" }
+    )
+    piece = build(:piece_record, style_spec_slug: spec.slug, scene_spec_id: "s1")
+    piece.apply_spec!(KnowledgeBase::StyleSpec.load(spec.slug), scene)
+
+    expect(piece.color_role).to eq("saturator")
   end
 
   it "appends an audit entry via log_step!" do

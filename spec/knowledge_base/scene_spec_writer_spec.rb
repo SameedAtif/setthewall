@@ -3,7 +3,7 @@ require "rails_helper"
 RSpec.describe KnowledgeBase::SceneSpecWriter do
   def valid_axes
     { wall_condition: "neutral", furniture_weight: "light", room_type: "seated_room",
-      room_shape: "none", space_math: "single", color_role: "line_only" }
+      room_shape: "none", space_math: "single" }
   end
 
   def locked_spec
@@ -35,7 +35,7 @@ RSpec.describe KnowledgeBase::SceneSpecWriter do
 
     expect(scene.id).to eq("s1")
     expect(scene.wall_condition).to eq("neutral")
-    expect(scene.color_role).to eq("line_only")
+    expect(scene.room_type).to eq("seated_room")
     expect { KnowledgeBase::StyleSpec.load(slug).validate! }.not_to raise_error
   end
 
@@ -54,7 +54,7 @@ RSpec.describe KnowledgeBase::SceneSpecWriter do
     expect do
       described_class.write_scene_axes(
         style_slug: slug, scene_id: "s3", scene_name: "S3",
-        template_ref: "x.yml", axes: valid_axes.merge(color_role: nil)
+        template_ref: "x.yml", axes: valid_axes.merge(room_type: nil)
       )
     end.to raise_error(KnowledgeBase::IncompleteSpecError)
   end

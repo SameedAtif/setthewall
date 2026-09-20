@@ -48,8 +48,6 @@ HARD CONSTRAINTS (the reference set is abstract surface art — staying abstract
   - Do NOT write camera, lens, or photography language — this is a print, not a photo.
   - No text, watermark, or signature.
 
-%{room_shape_constraint}
-
 Write ONE continuous, coherent description of a single moment on the artwork's surface — not a
 bulleted list of separate facts stapled together.
 

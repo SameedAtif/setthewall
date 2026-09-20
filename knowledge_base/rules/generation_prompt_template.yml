@@ -28,28 +28,11 @@ rules:
       values:
         calm_ordered: "calm, ordered, softened palette, restrained composition"
         bold_active: "bold, high-energy, saturated palette, dynamic composition"
-    - axis: color_role
-      contributes: "colour treatment specific to the scene role"
-      values:
-        color_burst: "one saturated hero colour, otherwise restrained"
-        accent_highlighter: "colour palette that highlights a single accent tone"
-        unifier: "cohesive multi-colour palette that could tie scattered tones together"
-        saturator: "reinforces one dominant colour theme with variations"
-        line_only: "monochrome — no hue; carry the piece with the full range of tone and value (near-white through near-black), texture and light, not with line work alone"
     - axis: frame_form
       contributes: "compositional shape hint (for how the piece will sit in the frame)"
       values:
         angular: "composition suited to a straight-edged, angular frame"
         rounded: "composition tolerant of or suited to a rounded frame"
-
-  space_tips_modifier:
-    citation: "p. 51 (module 04 §2.5a)"
-    rule: >
-      If the scene's room_shape is narrow / low_ceilinged / small_closed_in, add the
-      corresponding line-orientation constraint from module 04's rules/space_tips.yml —
-      generation should respect the constraint or downstream weight-balance in module 04
-      Step 5 will fail.
-    applied_by: llm_synthesis   # the meta-prompt handles this lookup
 
   do_not_specify:
     # These are decided in Phase 2 by module 04 after the piece exists, not baked into the

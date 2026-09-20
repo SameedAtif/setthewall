@@ -3,9 +3,10 @@ meta:
   citation: "p. 82 (accent), p. 84 (unifier + mat intensity + wall/light), p. 88 (complementary vs. tension), p. 91 (color-burst, saturator), p. 97 (line-only)"
   volatility: static
   note: >
-    This is the ROLE→SUPPORTING-TECHNIQUE table plus three embedded prose rules from §2.2a.
-    The observation-side (how B6 assigns the role) lives in module 02's color_role_observation.yml —
-    this file is what Phase 2 does with the role once it's set.
+    This is the ROLE→SUPPORTING-TECHNIQUE table plus three embedded prose rules from §2.2a. The
+    colour role is now derived as a style-level observation at A1b (the modal role across the
+    reference candidates, with a human tie-break) — not assigned per scene. This file is what
+    Phase 2 does with the role once it is set.
 
 rules:
   role:

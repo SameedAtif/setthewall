@@ -26,7 +26,6 @@ Rails.application.routes.draw do
         post :decide
         post :decision
         post :narrow
-        post :color_role
         post :note
         get  :composer
       end

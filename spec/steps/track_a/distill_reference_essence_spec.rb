@@ -27,4 +27,61 @@ RSpec.describe Steps::TrackA::DistillReferenceEssence do
       expect(result.data[:image_count]).to eq(1)
     end
   end
+
+  it "derives color_role by majority vote and carries palette_character" do
+    ref = build_art_image.to_s
+    content = {
+      "palette" => "warm",
+      "palette_character" => "warm-neutral tonal range, no saturated hue",
+      "image_color_roles" => [
+        { "index" => 1, "color_role" => "saturator" },
+        { "index" => 2, "color_role" => "saturator" },
+        { "index" => 3, "color_role" => "color_burst" }
+      ]
+    }
+
+    stub_llm(content: content) do
+      result = described_class.call(piece: nil, context: { reference_images: [ref] })
+      essence = result.data[:essence]
+      expect(essence["color_role"]).to eq("saturator")
+      expect(essence["color_role_ambiguous"]).to be(false)
+      expect(essence["color_role_tally"]).to eq("saturator" => 2, "color_burst" => 1)
+      expect(essence["palette_character"]).to eq("warm-neutral tonal range, no saturated hue")
+    end
+  end
+
+  it "flags an ambiguous color_role for the human when the vote ties" do
+    ref = build_art_image.to_s
+    content = {
+      "palette" => "mixed",
+      "image_color_roles" => [
+        { "index" => 1, "color_role" => "saturator" },
+        { "index" => 2, "color_role" => "color_burst" }
+      ]
+    }
+
+    stub_llm(content: content) do
+      result = described_class.call(piece: nil, context: { reference_images: [ref] })
+      expect(result.data[:essence]["color_role"]).to be_nil
+      expect(result.data[:essence]["color_role_ambiguous"]).to be(true)
+      expect(result.message).to match(/AMBIGUOUS/)
+    end
+  end
+
+  it "excludes outlier images from the color_role vote" do
+    ref = build_art_image.to_s
+    content = {
+      "palette" => "warm",
+      "outlier_indices" => [2],
+      "image_color_roles" => [
+        { "index" => 1, "color_role" => "saturator" },
+        { "index" => 2, "color_role" => "color_burst" }
+      ]
+    }
+
+    stub_llm(content: content) do
+      result = described_class.call(piece: nil, context: { reference_images: [ref] })
+      expect(result.data[:essence]["color_role"]).to eq("saturator")
+    end
+  end
 end

@@ -52,22 +52,4 @@ RSpec.describe "Notebook", type: :system do
     # A context-identical retry is not offered.
     expect(page).not_to have_text("Re-run this step")
   end
-
-  it "presents B6's color-role decision as a single radio group" do
-    run = create(:pipeline_run_record, run_id: "run_notebook_b6", style_slug: "japandi", scene_spec_id: "s1")
-    create(:run_step, pipeline_run_record: run, step_id: "B6", position: 0, status: "awaiting_human",
-                      message: "B6 proposes color_role=color_burst.", verdict: "clean",
-                      output: { "observation_candidate" => "color_burst",
-                                "proposed_role" => "color_burst",
-                                "override_pending" => true, "conflicts" => [] })
-
-    visit run_path(run)
-
-    expect(page).to have_text(/confirm the color role/i)
-    expect(page).to have_text("Confirm color_burst")
-    expect(page).to have_text("Go back to an earlier step")
-    expect(page).to have_text("Abandon this run")
-    expect(page).to have_button("Apply decision")
-    expect(page).not_to have_button("Apply & re-run B6")
-  end
 end

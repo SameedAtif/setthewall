@@ -161,23 +161,6 @@ RSpec.describe "QA agents" do
       expect(f).to include(an_object_having_attributes(severity: "pass"))
     end
 
-    it "does not block B6 when the override is pending a human decision" do
-      f = described_class.call(run: run, step_id: "B6", result: result(data: { override_pending: true, conflicts: [] }), context: {})
-      expect(f).not_to include(an_object_having_attributes(severity: "blocking"))
-      expect(f).to include(an_object_having_attributes(severity: "pass"))
-    end
-
-    it "blocks B6 on cross-check conflicts" do
-      f = described_class.call(run: run, step_id: "B6", result: result(data: { conflicts: ["x"], override_pending: false }), context: {})
-      expect(f).to include(an_object_having_attributes(severity: "blocking"))
-    end
-
-    it "passes a clean B6 colour role" do
-      f = described_class.call(run: run, step_id: "B6",
-                               result: result(data: { color_role: "line_only", conflicts: [], override_pending: false }), context: {})
-      expect(f).to include(an_object_having_attributes(severity: "pass"))
-    end
-
     it "advisories a borderline B1 read" do
       f = described_class.call(run: run, step_id: "B1", result: result(data: { wall_condition: "neutral", borderline: true }), context: {})
       expect(f).to include(an_object_having_attributes(severity: "advisory"))

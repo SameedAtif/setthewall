@@ -34,7 +34,8 @@ class PieceRecord < ApplicationRecord
       room_type: scene.room_type,
       room_shape: scene.room_shape,
       space_math: scene.space_math,
-      color_role: scene.color_role,
+      # Color role is a style-level observation (A1b reference essence), not a scene axis.
+      color_role: spec.reference_essence["color_role"],
       fulfillment_type: spec.production_model["fulfillment_type"]
     )
   end
