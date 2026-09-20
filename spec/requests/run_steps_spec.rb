@@ -145,6 +145,37 @@ RSpec.describe "Run steps", type: :request do
     end
   end
 
+  describe "POST references" do
+    let(:step) do
+      create(:run_step, pipeline_run_record: run, step_id: "C1", position: 0, status: "done")
+    end
+
+    it "stores the selected references and re-runs C1" do
+      expect { post references_run_step_path(run, step),
+                    params: { reference_images: %w[https://x/a.jpg https://x/b.jpg] } }
+        .to have_enqueued_job(ExecuteRunJob).with(run_id: run.id, mode: "rerun", run_step_id: step.id)
+
+      expect(step.reload.context_override).to eq("reference_images" => %w[https://x/a.jpg https://x/b.jpg])
+      expect(step.status).to eq("queued")
+    end
+
+    it "merges pasted extra URLs and de-duplicates" do
+      post references_run_step_path(run, step),
+           params: { reference_images: "https://x/a.jpg",
+                     extra_references: "https://x/b.jpg, https://x/a.jpg" }
+
+      expect(step.reload.context_override["reference_images"]).to eq(%w[https://x/a.jpg https://x/b.jpg])
+    end
+
+    it "refuses an empty reference set" do
+      post references_run_step_path(run, step), params: { reference_images: [] }
+
+      expect(response).to redirect_to(run_path(run))
+      expect(flash[:alert]).to be_present
+      expect(step.reload.context_override).to eq({})
+    end
+  end
+
   describe "GET composer" do
     it "returns to the feedback composer" do
       get composer_run_step_path(run, step)

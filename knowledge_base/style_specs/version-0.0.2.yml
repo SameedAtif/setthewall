@@ -109,7 +109,17 @@ reference_essence:
     unifier: 1
   color_role: line_only
   color_role_ambiguous: false
-scenes: {}
+scenes:
+  behind_sofa_light_neutral:
+    name: behind_sofa_light_neutral
+    template_ref: scene_templates/behind_sofa_light_neutral.yml
+    locked_at: '2026-09-20'
+    axes:
+      wall_condition: neutral
+      furniture_weight: light
+      room_type: seated_room
+      room_shape: none
+      space_math: single
 subject_research:
   shops_sampled: 39
   recurring_subjects:

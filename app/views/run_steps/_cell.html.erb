@@ -41,6 +41,10 @@
       </div>
     <% end %>
 
+    <% if step.step_id == "C1" %>
+      <%= render "run_steps/references", run: run, step: step %>
+    <% end %>
+
     <% if step.awaiting_human? %>
       <%= render "run_steps/decision", run: run, step: step %>
     <% else %>

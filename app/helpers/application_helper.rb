@@ -27,6 +27,23 @@ module ApplicationHelper
     Dossier::Builder.step_titles[step_id.to_s] || step_id.to_s
   end
 
+  # A1's reference images with a flag for whether C1 currently uses each one. `included` reflects
+  # the C1 cell's pending override if set, otherwise the effective (close-up + in-situ) set.
+  def c1_reference_options(run, step)
+    a1 = Array(run.step_results).find { |r| r["step_id"] == "A1" }
+    images = Array(a1&.dig("data", "candidates", "images"))
+             .select { |i| i.is_a?(Hash) && i["url"].present? }
+    current = (step.context_override["reference_images"].presence ||
+               Array(Context::Assembler.for("C1", run)[:reference_images]))
+
+    images.map do |image|
+      { url: image["url"], src: image["url"], included: current.include?(image["url"]),
+        label: "#{image['shot_type']} · #{image['source_name']}" }
+    end
+  rescue StandardError
+    []
+  end
+
   # Render the dossier markdown as sanitized HTML.
   def render_markdown(text)
     return "" if text.blank?

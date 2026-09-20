@@ -1,0 +1,33 @@
+<% options = c1_reference_options(run, step) %>
+<div class="mt-3 rounded border border-gray-200 bg-gray-50/40 p-3">
+  <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">Reference images for C1</div>
+  <p class="mt-1 text-xs text-gray-600">
+    Toggle which of A1's images C1 uses, or add extra URLs. Saving re-runs C1 (and marks C2 stale).
+  </p>
+
+  <%= form_with url: references_run_step_path(run, step), method: :post, class: "mt-2 space-y-2" do |f| %>
+    <% if options.any? %>
+      <div class="flex flex-wrap gap-3">
+        <% options.each do |option| %>
+          <label class="w-32 cursor-pointer">
+            <%= check_box_tag "reference_images[]", option[:url], option[:included] %>
+            <%= image_tag option[:src], class: "mt-1 h-20 w-32 rounded border object-cover", loading: "lazy" %>
+            <span class="mt-1 block text-[10px] leading-tight text-gray-500"><%= option[:label] %></span>
+          </label>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-xs text-gray-400 italic">No A1 reference images found.</p>
+    <% end %>
+
+    <div>
+      <%= label_tag "extra_references", "Add reference URL(s)",
+            class: "block text-xs text-gray-600" %>
+      <%= text_area_tag "extra_references", nil, rows: 2, placeholder: "https://…",
+            class: "mt-1 w-full rounded border p-2 text-xs" %>
+    </div>
+
+    <%= f.submit "Save references & re-run C1",
+          class: "bg-gray-900 text-white px-3 py-1.5 rounded text-sm hover:bg-gray-700" %>
+  <% end %>
+</div>
