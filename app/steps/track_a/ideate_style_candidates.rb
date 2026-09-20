@@ -31,7 +31,8 @@ module Steps
                 "print business — a broad, shallow pass, not a deep validation of any one style.",
           question: question,
           max_rounds: 10,   # broader survey than A0's single-style deep dive, so a larger budget
-          on_progress: context[:on_progress]
+          on_progress: context[:on_progress],
+          stream: true
         )
 
         candidates = Array(result[:content]["candidates"]).select { |c| c.is_a?(Hash) }

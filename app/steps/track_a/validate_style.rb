@@ -17,7 +17,8 @@ module Steps
           max_rounds: 8,  # A0's methodology needs: 1 style search + 2-3 adjacent terms +
           # 1 cross-check platform + competition-density lookups
           min_rounds: 4,  # search floor — the cross-check + competition lookups are not optional
-          scripted: scripted_queries
+          scripted: scripted_queries,
+          stream: true
         )
 
         content = result[:content]
