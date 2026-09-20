@@ -21,7 +21,8 @@ module Steps
           question: text,
           max_rounds: 8,  # remaining blog/adjacent searches after the scripted retailer+Pinterest pass
           min_rounds: 5,
-          scripted: scripted_queries
+          scripted: scripted_queries,
+          stream: true
         )
         result = search_result[:content]
         issues = validate_set(result)
