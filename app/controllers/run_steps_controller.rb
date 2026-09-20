@@ -76,6 +76,23 @@ class RunStepsController < ApplicationController
                 notice: "Re-running #{step.step_id} scoped to \"#{style_name}\"."
   end
 
+  # Resolve an ambiguous A1b colour-role vote: the reviewer picks one of the tied roles from the
+  # per-image tally, stored as a context override, and A1b re-runs to record it in the essence.
+  def color_role_pick
+    step = RunStep.find(params[:id])
+    role = params[:color_role].to_s.strip
+    if role.blank?
+      return redirect_to run_path(step.pipeline_run_record), alert: "Choose a colour role."
+    end
+
+    step.update!(context_override: { "color_role_override" => role }, status: "queued")
+    Workflow::NotebookBroadcaster.cell(step.pipeline_run_record, step)
+    ExecuteRunJob.perform_later(run_id: step.pipeline_run_record_id, mode: "rerun",
+                                run_step_id: step.id)
+    redirect_to run_path(step.pipeline_run_record),
+                notice: "Re-running A1b with colour role \"#{role}\"."
+  end
+
   # Discard a preview and return to the composer.
   def composer
     step = RunStep.find(params[:id])

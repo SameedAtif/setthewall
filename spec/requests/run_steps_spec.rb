@@ -122,6 +122,29 @@ RSpec.describe "Run steps", type: :request do
     end
   end
 
+  describe "POST color_role_pick" do
+    let(:step) do
+      create(:run_step, pipeline_run_record: run, step_id: "A1b", position: 0, status: "awaiting_human")
+    end
+
+    it "stores the chosen role as a context override and re-runs A1b" do
+      expect { post color_role_pick_run_step_path(run, step), params: { color_role: "saturator" } }
+        .to have_enqueued_job(ExecuteRunJob).with(run_id: run.id, mode: "rerun", run_step_id: step.id)
+
+      expect(step.reload.context_override).to eq("color_role_override" => "saturator")
+      expect(step.status).to eq("queued")
+      expect(response).to redirect_to(run_path(run))
+    end
+
+    it "rejects a blank role" do
+      post color_role_pick_run_step_path(run, step), params: { color_role: "" }
+
+      expect(response).to redirect_to(run_path(run))
+      expect(flash[:alert]).to be_present
+      expect(step.reload.context_override).to eq({})
+    end
+  end
+
   describe "GET composer" do
     it "returns to the feedback composer" do
       get composer_run_step_path(run, step)

@@ -122,3 +122,24 @@ RSpec.describe Steps::Phase2::UnifyByTheme do
     end
   end
 end
+
+RSpec.describe Steps::Phase2::MeasureScene do
+  it "reports the space-tip technique for the room shape" do
+    piece = create(:piece_record, space_math: "single", room_shape: "narrow")
+    result = described_class.call(piece: piece, context: {})
+
+    expect(result).to be_ok
+    expect(result.data[:space_tip]).to include("technique" => "horizontal_lines")
+  end
+end
+
+RSpec.describe Steps::Phase2::ColorFunctionCheck do
+  it "records mat intensity and pairing from the style-derived colour role" do
+    piece = create(:piece_record, color_role: "saturator", mood: "calm_ordered")
+    result = described_class.call(piece: piece, context: {})
+
+    expect(result).to be_ok
+    expect(result.data[:mat_intensity]).to be_present
+    expect(piece.reload.color_role_confirmed).to eq("saturator")
+  end
+end

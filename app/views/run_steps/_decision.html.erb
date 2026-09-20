@@ -6,7 +6,10 @@
 
   <%= render "run_steps/narrow", run: run, step: step %>
 
-  <% options = step.decision_options.presence || Llm::DecisionOptions.fallback_for(step) %>
+  <% pick_color_role = step.step_id == "A1b" && step.output.dig("essence", "color_role_ambiguous") %>
+  <%= render "run_steps/color_role_pick", run: run, step: step if pick_color_role %>
+
+  <% options = pick_color_role ? [] : (step.decision_options.presence || Llm::DecisionOptions.fallback_for(step)) %>
   <% if step.mood_unresolved? %>
     <%# An unresolved set can't be approved — re-run to reconcile, narrow, or rewind/abandon. %>
     <% options = options.select { |o| %w[retry rewind abandon].include?(o["intent"]) } %>

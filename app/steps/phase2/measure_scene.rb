@@ -20,8 +20,18 @@ module Steps
         # just confirm the intended coverage isn't in the forbidden mid-band.
         # Actual coverage_fraction check runs in the compositor once dimensions are known.
 
+        # Space tips (module 04 §2.5a) are an ARRANGEMENT concern and belong here in Phase 2, not
+        # in art generation. Look up the technique/line-orientation hint for this room shape; it is
+        # reported alongside the placement branch for the compositor/arrangement step.
+        space_tip = rules("space_tips").rules.dig("by_room_shape", piece.room_shape) || {}
+        if space_tip.present?
+          Workflow::StepLogging.log("Space tip (#{piece.room_shape}): #{space_tip['technique']} — " \
+                                    "#{space_tip['detail']}")
+        end
+
         piece.update!(placement_branch: piece.space_math)
-        ok({ placement_branch: piece.space_math, next_step: branch_rule["step_2x"] })
+        ok({ placement_branch: piece.space_math, next_step: branch_rule["step_2x"],
+             space_tip: space_tip })
       end
 
       private
