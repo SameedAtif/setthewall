@@ -15,26 +15,39 @@ production_model:
   price_tier_usd: 16-39
   fulfillment_type: physical
 reference_essence:
-  medium: 'Framed prints on paper: flat matte paper prints of botanical subjects (pressed-plant
-    / herbarium specimens and vintage botanical illustrations), each mounted behind
-    a mat or full-bleed on the sheet and housed in a simple frame; the artwork surface
-    itself is smooth paper, not canvas or paint.'
-  palette: 'Muted, desaturated naturals: warm cream, ivory and beige paper grounds;
-    sage, olive and grey-green foliage; dusty blue, lavender-violet and periwinkle
-    florals; soft blush pink, mauve and pale yellow accents; dried-plant browns, taupe
-    and sepia. Overall low-saturation, mid-to-light value range with only occasional
-    small saturated notes (blue, purple, pink) confined to the flowers.'
-  styling: Hung in coordinated multi-piece groupings (rows of three or four, 2x2 grids,
-    gallery walls of six) on neutral walls — white, warm greige, or sage green — above
-    linen/cream sofas with beige and sage cushions; frames are thin natural wood,
-    carved light wood, gold gilt, or simple black, usually with a wide off-white mat;
-    surrounding decor is soft neutral textiles, wooden coffee tables, ceramic vases
-    with dried grasses.
+  medium: flat printed poster / print of botanical specimens (pressed-plant and vintage
+    herbarium-plate imagery) on matte paper, displayed in frames with mats
+  palette: aged cream and ivory paper grounds; sage, olive and muted grey-greens for
+    foliage; dusty blue, lavender-violet, soft rose-pink, pale yellow and ochre for
+    blooms; sepia, taupe and warm brown for stems, roots and dried specimens
+  palette_character: 'soft, desaturated naturalist palette on warm neutral paper:
+    muted greens and earth browns dominate, with gentle cool accents of dusty blue,
+    lilac and violet plus faint rose and ochre; low-to-medium saturation, gentle tonal
+    contrast, antique faded quality rather than vivid colour'
+  surface_treatment: flat matte print surface with no impasto or relief; value carried
+    by the delicate silhouette of the specimen against a plain pale ground, faint
+    paper ageing/foxing and slight mottling on some sheets; light falls evenly with
+    soft ambient shadow, no gloss or sheen
+  motif_vocabulary:
+  - single pressed flower or plant specimen centered on plain ground
+  - slender stems with leaves and branching sprigs
+  - clustered blossom heads (hydrangea-like domes, star-shaped florets, daisy-like
+    composites)
+  - grid arrangements of multiple small specimens per sheet
+  - handwritten cursive species annotations and small Latin labels
+  - vintage herbarium label blocks, decorative borders and collection stamps
+  - aged cream paper ground with subtle foxing/toning
+  styling: hung in matched sets (pairs, trios, quartets and six-piece gallery grids)
+    in simple wood, carved wood, gold or black frames with wide off-white mats, on
+    neutral white, beige or sage walls above linen sofas in calm neutral living rooms
+  outlier_indices:
+  - 3
   field_evidence:
   - field: medium
     image_indices:
     - 1
     - 2
+    - 3
     - 4
     - 5
     - 6
@@ -62,7 +75,6 @@ reference_essence:
     image_indices:
     - 1
     - 2
-    - 3
     - 4
     - 5
     - 6
@@ -74,30 +86,29 @@ reference_essence:
     - 2
     - 3
     - 4
-    - 5
-    - 6
     - 7
     - 8
-  outlier_indices:
-  - 3
-  motif_vocabulary:
-  - single centered pressed-plant specimen (stem, leaves, flower head) on a plain
-    ground
-  - gridded array of multiple small pressed specimens / botanical fragments on one
-    sheet
-  - loose cluster or scatter of pressed petals and blossoms
-  - hydrangea-style clustered flower head with broad serrated leaves
-  - sprig of compound leaves or foliage branch studied alone
-  - dried seed heads and feathery grass silhouettes
-  - handwritten cursive species caption at the sheet's lower edge
-  - printed herbarium label / institutional stamp block in a corner
-  - aged cream paper ground with faint foxing and tonal stains
-  surface_treatment: Flat, matte paper surface with no impasto or relief; value changes
-    come only from the printed specimen silhouettes against an even, lightly aged
-    ground (subtle cream toning, faint foxing/stains in the herbarium sheets). Light
-    falls evenly and diffusely across the sheet; delicate fine-line detail in stems,
-    leaf veins and seed heads, with handwritten script captions and small printed
-    labels/stamps on some sheets. No gloss, no visible brushwork.
+  image_color_roles:
+  - index: 1
+    color_role: accent_highlighter
+  - index: 2
+    color_role: line_only
+  - index: 4
+    color_role: accent_highlighter
+  - index: 5
+    color_role: line_only
+  - index: 6
+    color_role: line_only
+  - index: 7
+    color_role: line_only
+  - index: 8
+    color_role: unifier
+  color_role_tally:
+    accent_highlighter: 2
+    line_only: 4
+    unifier: 1
+  color_role: line_only
+  color_role_ambiguous: false
 scenes: {}
 subject_research:
   shops_sampled: 39

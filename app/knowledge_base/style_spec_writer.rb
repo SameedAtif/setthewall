@@ -68,6 +68,25 @@ module KnowledgeBase
       end
     end
 
+    # Persist (or replace) the typed reference essence on an existing style spec, e.g. when A1b is
+    # re-run to add `color_role` / `palette_character` without re-locking the style axes.
+    def self.write_reference_essence(slug, reference_essence)
+      path = Workflow::RunMode.write_root.join("style_specs", "#{slug}.yml")
+      unless path.exist?
+        raise IncompleteSpecError, "Style spec '#{slug}' not found. Run Track A A5 first."
+      end
+
+      doc = YAML.safe_load_file(path, permitted_classes: [Date])
+      doc["reference_essence"] = reference_essence.deep_stringify_keys
+      path.write(<<~HEADER + doc.to_yaml.sub(/\A---\n/, ""))
+        # Style Spec — style-level axes set by Track A (module 01),
+        # scene axes appended by Track B (module 02).
+        ---
+      HEADER
+
+      StyleSpec.load(slug)
+    end
+
     def self.write_subject_research(slug, subject_research)
       write_research_block(slug, "subject_research", subject_research)
     end
