@@ -1,0 +1,206 @@
+# Style Spec — style-level axes set by Track A (module 01),
+# scene axes appended by Track B (module 02).
+---
+slug: version-0.0.2
+name: Version 0.0.2
+locked_at: '2026-09-20'
+style_level:
+  mood: calm_ordered
+  content_type: portrait_still_life
+  frame_form: angular
+production_model:
+  research_focus: S1 — Scanned reproduction of real pressed herbarium specimen, flat
+    physical print, size ladder 5x7→16x20
+  piece_count: 1
+  price_tier_usd: 16-39
+  fulfillment_type: physical
+reference_essence:
+  medium: 'Framed prints on paper: flat matte paper prints of botanical subjects (pressed-plant
+    / herbarium specimens and vintage botanical illustrations), each mounted behind
+    a mat or full-bleed on the sheet and housed in a simple frame; the artwork surface
+    itself is smooth paper, not canvas or paint.'
+  palette: 'Muted, desaturated naturals: warm cream, ivory and beige paper grounds;
+    sage, olive and grey-green foliage; dusty blue, lavender-violet and periwinkle
+    florals; soft blush pink, mauve and pale yellow accents; dried-plant browns, taupe
+    and sepia. Overall low-saturation, mid-to-light value range with only occasional
+    small saturated notes (blue, purple, pink) confined to the flowers.'
+  styling: Hung in coordinated multi-piece groupings (rows of three or four, 2x2 grids,
+    gallery walls of six) on neutral walls — white, warm greige, or sage green — above
+    linen/cream sofas with beige and sage cushions; frames are thin natural wood,
+    carved light wood, gold gilt, or simple black, usually with a wide off-white mat;
+    surrounding decor is soft neutral textiles, wooden coffee tables, ceramic vases
+    with dried grasses.
+  field_evidence:
+  - field: medium
+    image_indices:
+    - 1
+    - 2
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+  - field: palette
+    image_indices:
+    - 1
+    - 2
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+  - field: surface_treatment
+    image_indices:
+    - 1
+    - 2
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+  - field: motif_vocabulary
+    image_indices:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+  - field: styling
+    image_indices:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+  outlier_indices:
+  - 3
+  motif_vocabulary:
+  - single centered pressed-plant specimen (stem, leaves, flower head) on a plain
+    ground
+  - gridded array of multiple small pressed specimens / botanical fragments on one
+    sheet
+  - loose cluster or scatter of pressed petals and blossoms
+  - hydrangea-style clustered flower head with broad serrated leaves
+  - sprig of compound leaves or foliage branch studied alone
+  - dried seed heads and feathery grass silhouettes
+  - handwritten cursive species caption at the sheet's lower edge
+  - printed herbarium label / institutional stamp block in a corner
+  - aged cream paper ground with faint foxing and tonal stains
+  surface_treatment: Flat, matte paper surface with no impasto or relief; value changes
+    come only from the printed specimen silhouettes against an even, lightly aged
+    ground (subtle cream toning, faint foxing/stains in the herbarium sheets). Light
+    falls evenly and diffusely across the sheet; delicate fine-line detail in stems,
+    leaf veins and seed heads, with handwritten script captions and small printed
+    labels/stamps on some sheets. No gloss, no visible brushwork.
+scenes: {}
+subject_research:
+  shops_sampled: 39
+  recurring_subjects:
+  - subject: single fern frond or fern leaf
+    recurs_across_shops: 14
+  - subject: multi-specimen set or grid of pressed plants and leaves
+    recurs_across_shops: 10
+  - subject: pressed or dried seed pod
+    recurs_across_shops: 9
+  - subject: eucalyptus branch or stem with rounded leaves
+    recurs_across_shops: 9
+  - subject: herbarium specimen sheet with whole plant, roots, and collection label
+    recurs_across_shops: 8
+  - subject: named individual wildflower or pressed flower head
+    recurs_across_shops: 6
+  - subject: antique engraved or illustrated botanical book plate with printed species
+      name
+    recurs_across_shops: 5
+  - subject: non-fern foliage sprig such as leaf, vine, or plantain-type leaves
+    recurs_across_shops: 4
+  rejected_subjects:
+  - subject: pine or conifer branch with needle clusters
+    recurs_across_shops: 1
+    reason: below 3-shop minimum
+  - subject: cyanotype fern print
+    recurs_across_shops: 1
+    reason: below 3-shop minimum
+  - subject: vase or still-life object combined with botanicals
+    recurs_across_shops: 1
+    reason: below 3-shop minimum
+scene_research:
+  shops_sampled: 33
+  scene_patterns:
+  - pattern_id: sheet-just-laid-flat-for-study
+    narrative_structure: A whole specimen spread flat on a large pale field with annotation
+      tucked low and generous empty margins; a record completed and set down, its
+      maker withdrawn.
+    light_logic: Completely flat and shadowless; the pale paper is the brightest and
+      warmest element, with the specimen as a lower-contrast mid-tone island and the
+      script darker again.
+    temporal_quality: 'Just finished: mounted, annotated, laid out, and no one touching
+      it.'
+    recurs_across_shops: 10
+  - pattern_id: quiet-sprig-floating-in-calm-space
+    narrative_structure: One small sprig placed small inside a large unmarked field,
+      often repeated as matching panels; the emptiness around the mark is the subject.
+    light_logic: Diffuse, directionless, very low contrast; the cream ground is the
+      brightest and only faintly warm plane while the sprig is a soft mid-tone mark
+      without highlights or shadows.
+    temporal_quality: Static and at rest, deliberately uneventful; nothing implied
+      as happening.
+    recurs_across_shops: 10
+  - pattern_id: glimpsing-a-lit-point-inside-dark-surround
+    narrative_structure: Foliage emerging from a deep ground with one small illuminated
+      cluster; the event is light arriving on that point rather than the object itself.
+    light_logic: Strong value separation with soft edges; the single warmest point
+      is one lit rim, blossom, or gap, and everything else grades down in long falloff
+      into an absorbing dark ground.
+    temporal_quality: 'Mid-happening: light is currently falling and moving across
+      the foliage.'
+    recurs_across_shops: 9
+  - pattern_id: sheet-held-under-glass-on-pale-wall
+    narrative_structure: A specimen sealed behind glass in a warm frame and hung on
+      a light wall; a fragile object protected and put on display rather than a plant
+      in a place.
+    light_logic: Layered value bands stepping down from wall to mat to paper to specimen;
+      the frame edge or glass glint is the warmest highlight.
+    temporal_quality: 'Just finished: framed, closed, hung; nothing about to move.'
+    recurs_across_shops: 8
+  - pattern_id: set-hung-in-row-stepped-back-from
+    narrative_structure: Matching sheets arranged in a straight line or tidy grid
+      on a bare wall and viewed at eye level; the hanging is complete and the run
+      is read as one rhythm.
+    light_logic: Soft even light hitting every frame equally; the wall is brightest,
+      each sheet is a warmer step down, and the repetition becomes the visual event.
+    temporal_quality: 'Just finished: hung, levelled, and now compared as a group.'
+    recurs_across_shops: 7
+  - pattern_id: shaded-ground-stepped-into
+    narrative_structure: A dimensional shaded environment with foreground elements
+      and a lit middle distance; a place one has walked up to rather than a specimen
+      laid out.
+    light_logic: Brightest warmth sits in the middle distance where light reaches
+      the centre, while foreground and corners fall into deep shadow.
+    temporal_quality: 'Mid-happening: filtered light in still air, with the scene
+      continuing beyond the frame.'
+    recurs_across_shops: 5
+  - pattern_id: pale-form-reversed-out-of-deep-blue-adjacent
+    narrative_structure: One or several pale forms isolated on a deep saturated field,
+      sometimes with an annotation line; a record made by light rather than by pigment.
+    light_logic: 'Inverted: no external light source is shown; the pale form is the
+      brightest point, the field darkens uniformly toward the edges, and annotation
+      is the second-lightest note.'
+    temporal_quality: 'Just finished: exposure ended, print washed and dried.'
+    recurs_across_shops: 5
+  rejected_patterns:
+  - pattern_id: specimen-pinned-up-mid-making-low-recurrence
+    narrative_structure: A sheet held temporarily to a pale surface by clips, or several
+      sheets laid overlapping with edges visible; a provisional in-progress arrangement.
+    light_logic: Flat bright even light with the bare wall or table brightest; the
+      clips are the only hard-edged high-contrast objects and the specimen is the
+      only colour.
+    temporal_quality: 'Mid-happening and temporary: up to dry, settle, or be compared,
+      and will be taken down again.'
+    recurs_across_shops: 2
+    reason: below 3-shop minimum

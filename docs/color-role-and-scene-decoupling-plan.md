@@ -119,43 +119,40 @@ is captured as an open question.
 1. **`color_role` is an observation, not a human decision.** It should be derived from the
    reference set, not arbitrated by an operator.
 2. **Derive it at A1b from the A1 candidates by mode.** A1b classifies each candidate image's
-   colour role; the role carried by the **most candidates wins** (a vote, not a hand-pick).
+   colour role; the role carried by the **most candidates wins** (a vote, not a hand-pick). A
+   **tie is a human decision** at the A1b gate, shown with a per-role tally and examples.
 3. **B6 is retired** as a result; the role becomes style-level rather than a scene axis.
 4. **Line orientation / space tips leave generation.** They belong to Phase 2 arrangement; C1
    should not take a `room_shape` composition hint.
 5. **No fallback and no hardcoding.** The role is derived from data for every style; the pipeline
    must not special-case any content type.
-6. **Add a separate `palette_character` axis for the art.** A new style-level field, derived at A1b
-   from the same candidate images, gives generation and QA a vocabulary for the art's colour (see
-   "New axis: `palette_character`"). `color_role` is not overloaded to carry it.
+6. **Add a separate `palette_character` field for the art.** A new style-level, **open-ended**
+   field, derived as free text at A1b from the same candidate images, gives generation and QA a
+   description of the art's colour (see "New axis: `palette_character`"). It is not an enum and
+   `color_role` is not overloaded to carry it.
 7. **Generation's colour instruction comes from `palette_character`, not `color_role`.** This
    resolves the original room-vs-palette mismatch: an art axis describes the art's colour, and
    `color_role` only feeds Phase 2 mat/framing.
 
-## Open questions (need an owner's call)
+## Resolved decisions (owner's call)
 
-1. **Model choice:** "art = style, scene = staging" (this plan) vs "art = style base + room
-   modulation" (keep a room→art colour link, e.g. B6 as a non-blocking observation). This
-   determines whether B6 is deleted or kept-as-advisory.
-2. **Tie-breaker** when no role has a strict majority. Proposal: (a) strict majority wins;
-   (b) tie → prefer the role carried by the close-up/product images (they show the art, not the
-   room); (c) still tied → fall back to the role implied by the derived palette (`monochrome →
-   line_only`; neutral/muted → `saturator`; cohesive multi-colour → `unifier`; one dominant
-   saturated hue → `color_burst`; one accent → `accent_highlighter`).
-3. **Where the derived values live** — this plan assumes inside `reference_essence` (alongside
-   `palette`), i.e. `reference_essence.color_role` and `reference_essence.palette_character`. A
-   distinct top-level style field is the alternative.
-4. **`palette_character` value set** — the proposed set below is a starting point; the exact enum
-   needs an owner's sign-off. Unlike `color_role`, it has no book to cite — it is a new,
-   project-authored taxonomy.
-5. **B6 as advisory?** If the model is "style base + room modulation", keep B6 as a non-blocking
-   agent check (no human gate) that flags a room clash.
+1. **Model: "art = style, scene = staging."** The scene does not modulate the art. **B6 is removed
+   entirely** — not kept as an advisory check.
+2. **Tie-breaker is human.** When the per-image vote has no strict majority, A1b flags the role as
+   ambiguous and the A1b review gate presents the human with each candidate role, its tally, and
+   **examples** (the images that carried it) so they can choose. The A1b gate is the decision point
+   — no automated fallback precedence.
+3. **Values live in `reference_essence`** — `reference_essence.color_role` and
+   `reference_essence.palette_character`, alongside `palette`, not a separate top-level field.
+4. **`palette_character` is open-ended and derived, not a preset enum.** A1b writes a free-text
+   description of the art's colour character straight from the reference images. The pipeline must
+   not bound it to a fixed list or to any value already in the codebase.
 
 ## New axis: `palette_character`
 
-A **style-level** field, derived from the reference candidates at A1b, describing the artwork's
-colour character. It is a project-authored taxonomy (no book citation), kept deliberately separate
-from the arrangement book's room-function `color_role`.
+A **style-level, open-ended** field, derived from the reference candidates at A1b, describing the
+artwork's colour character as free text. It is deliberately separate from the arrangement book's
+enumerated, room-function `color_role`.
 
 ### Why a new axis instead of extending `color_role`
 
@@ -164,40 +161,30 @@ values there would (a) mix two different questions in one axis, (b) break the KB
 discipline, and (c) require editing ~8 enum sites for the wrong vocabulary. A distinct axis can be
 authored and evolved on its own.
 
-### Proposed values
+### Shape: open-ended, not an enum
 
-| Value | Means | Example signals |
-|---|---|---|
-| `monochrome` | no hue; black/white/grey (or a single ink) | greyscale, ink-only line art |
-| `tonal_neutral` | neutral range, no saturated hue | white/cream/beige/oatmeal/grey (this style) |
-| `earth_tone` | muted warm naturals | clay, umber, terracotta, olive |
-| `muted_pastel` | desaturated light hues | sage, blush, powder blue |
-| `single_hue` | one dominant hue family with variations | all-blue, all-green |
-| `duotone` | two dominant hues in contrast | black + gold, navy + rust |
-| `multi_colour` | several distinct hues, cohesive | a curated multi-colour palette |
-| `saturated` | high-chroma, vivid colour | bold brights, colour-field |
+Unlike `color_role` (five cited room-function values), `palette_character` is a **free-text,
+derived description** of the artwork's colour character — e.g. "a warm-neutral tonal range of bone,
+oatmeal and soft grey with no saturated hue", or "muted sage and blush pastels", or "bold
+high-chroma primaries". It is deliberately unbounded so the pipeline never has to force a style
+into a value that doesn't fit it, and it is derived from the reference images rather than chosen
+from a list in code.
 
-The set is intentionally one-dimensional (colour character); temperature (warm/cool/neutral) and
-saturation level are folded into the chosen value rather than added as more axes.
+### Derivation
 
-### Derivation (same method as `color_role`)
-
-1. The A1b vision call tags each non-outlier candidate image with one `palette_character` value,
-   aligned to the image order (traceable).
-2. The step takes the **mode** across images.
-3. Tie-breaker, in order: (a) strict majority wins; (b) prefer the value carried by the
-   **close-up/product** images (they show the art); (c) fall back to a deterministic mapping from
-   the derived `palette` sentence (e.g. "black/white/grey" → `monochrome`; "neutral … white/cream/
-   beige" → `tonal_neutral`; "warm … clay/umber" → `earth_tone`; else the closest match).
-4. Stored as `reference_essence.palette_character` (+ `palette_character_tally`); A5 writes it into
-   the spec with the rest of the essence.
+1. The A1b vision call writes the `palette_character` description from the reference images (and
+   records which images informed it), alongside `palette`.
+2. Stored as `reference_essence.palette_character`; A5 writes it into the spec with the rest of the
+   essence.
+3. Because it is free text there is no mode/tie-break for it — the vote and the human tie-breaker
+   apply only to the enumerated `color_role`.
 
 ### Consumption
 
-- **C1 generation**: `palette_character` drives the art's colour clause, replacing the
-  `color_role`-derived `%{color_treatment}`. Rendered from `generation_prompt_template.yml`'s
-  `palette_character` directives — e.g. `tonal_neutral → "a neutral, tonal range with no saturated
-  hue — build depth from value and texture, not chroma"`.
+- **C1 generation**: the `palette_character` text drives the art's colour clause, replacing the
+  `color_role`-derived `%{color_treatment}`. Because it is free text it is inserted directly (no
+  enum→phrase mapping) — e.g. "a warm-neutral tonal range with no saturated hue; build depth from
+  value and texture, not chroma".
 - **ImageQa**: a `palette_character` conformance check alongside palette/surface/motif.
 - **Phase 2/3**: unchanged; they keep using `color_role` (mat intensity) and the essence palette.
 
@@ -271,9 +258,9 @@ saturation level are folded into the chosen value rather than added as more axes
   `app/services/workflow/decision_rules.rb` — remove B6.
 - `knowledge_base/prompts/c1_image_prompt.md`, `c1_generation_prompt_synthesis_scene.md`,
   `c1_generation_prompt_synthesis.md` — drop `%{line_constraint}` / `room_shape`.
-- `knowledge_base/rules/generation_prompt_template.yml` — drop the `space_tips_modifier`; add
-  `palette_character` directives; retire the `color_role` generation directives (the role stays for
-  Phase 2 mat/framing via `color_role.yml`).
+- `knowledge_base/rules/generation_prompt_template.yml` — drop the `space_tips_modifier`; retire
+  the `color_role` generation directives (the role stays for Phase 2 mat/framing via
+  `color_role.yml`). `palette_character` needs no directives — its free text is inserted directly.
 - Views/controllers — remove `_color_role.html.erb`, `_decision`'s color-role branch, and the
   `color_role` action.
 
