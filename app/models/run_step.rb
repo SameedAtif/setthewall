@@ -35,15 +35,15 @@ class RunStep < ApplicationRecord
   # Mood clusters the A1 reference set spans (labels only). More than one means the set has
   # stylistic variation; whether that is a problem depends on the reconciliation.
   def mood_clusters
-    Array(output.dig("candidates", "mood_clusters_found")).filter_map do |cluster|
+    Array(candidates_data["mood_clusters_found"]).filter_map do |cluster|
       cluster["label"] if cluster.is_a?(Hash)
     end
   end
 
   # A1's post-reconciliation dominant mood (calm_ordered / bold_active / mixed), if reported.
-  def dominant_mood = output.dig("candidates", "dominant_mood").presence
+  def dominant_mood = candidates_data["dominant_mood"].presence
 
-  def shared_qualities = Array(output.dig("candidates", "shared_qualities"))
+  def shared_qualities = Array(candidates_data["shared_qualities"])
 
   # True only when the reference set spans camps that could NOT be reconciled into one mood.
   # Legacy cells without a dominant_mood fall back to "any split is unresolved" for display, but
@@ -84,6 +84,14 @@ class RunStep < ApplicationRecord
   end
 
   private
+
+  # A1 stores its reference-set payload under `candidates` as a Hash. Other steps (e.g. A_IDEATE)
+  # also use a `candidates` key but as an Array, so the A1-shaped accessors above must never assume
+  # the shape — a mismatched `output.dig("candidates", ...)` raises TypeError during render.
+  def candidates_data
+    value = output.is_a?(Hash) ? output["candidates"] : nil
+    value.is_a?(Hash) ? value : {}
+  end
 
   def mirror_to_run
     pipeline_run_record.mirror_step_results!

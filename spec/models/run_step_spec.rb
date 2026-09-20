@@ -32,6 +32,14 @@ RSpec.describe RunStep do
     it "is empty when there is no reference set" do
       expect(build(:run_step, output: {}).mood_clusters).to eq([])
     end
+
+    it "does not raise when a step stores `candidates` as an array (e.g. A_IDEATE)" do
+      step = build(:run_step, output: { "candidates" => [{ "label" => "x" }] })
+
+      expect(step.mood_clusters).to eq([])
+      expect(step.dominant_mood).to be_nil
+      expect(step.mood_unresolved?).to be(false)
+    end
   end
 
   describe "#mood_unresolved?" do
