@@ -22,9 +22,9 @@
         <% entry = ranking.find { |r| r["url"] == url } %>
         <label class="w-40 cursor-pointer rounded border bg-white p-1">
           <% if stage2 %>
-            <%= radio_button_tag "chosen_url", url %>
+            <%= radio_button_tag "chosen_url", url, recommendation["chosen"] == url %>
           <% else %>
-            <%= check_box_tag "finalist_urls[]", url %>
+            <%= check_box_tag "finalist_urls[]", url, Array(recommendation["finalists"]).include?(url) %>
           <% end %>
           <%= image_tag reference_image_src(url), class: "mt-1 h-24 w-40 rounded object-cover", loading: "lazy" %>
           <% if entry %>
