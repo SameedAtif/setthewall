@@ -35,7 +35,6 @@ RSpec.describe Steps::TrackC::GenerateArt do
         expect(result).to be_awaiting_human
         prompts = result.data[:prompts]
         expect(prompts.size).to eq(2)
-        expect(prompts.first).to include("plaster surface with soft ridges")
         expect(prompts.first).to include("no watermark, no signature") # negative clause from the rule file
 
         log_path = result.data[:image_prompt_log]
@@ -43,7 +42,7 @@ RSpec.describe Steps::TrackC::GenerateArt do
         records = File.readlines(log_path).map { |line| JSON.parse(line) }
         expect(records.size).to eq(2)
         expect(records.first["scene_description"]).to eq("plaster surface with soft ridges")
-        expect(records.first["image_generation_prompt"]).to include("plaster surface with soft ridges")
+        expect(records.first["image_generation_prompt"]).to include("no watermark, no signature")
         expect(records.first["prompt_version"]).to be_present
         expect(records.first["ok"]).to be(true)
       ensure
@@ -110,6 +109,32 @@ RSpec.describe Steps::TrackC::GenerateArt do
         expect(result).to be_awaiting_human
         expect(result.data[:prompts].first).to include("same tradition as the reference set")
         expect(result.data[:prompts].first).to include("flat printed surface imitating plaster")
+      end
+    end
+  ensure
+    File.delete(log_path) if log_path && File.exist?(log_path)
+  end
+
+  it "re-derives the reference essence from the references C1 actually uses" do
+    piece = build_piece
+    piece.save!
+    ref = build_art_image.to_s
+    log_path = nil
+    content = { "scene_description" => "surface",
+                "medium" => "from-c1-medium", "palette" => "from-c1-palette",
+                "surface_treatment" => "flat", "motif_vocabulary" => ["from-c1-motif"] }
+    stub_llm(content: content) do
+      stub_singleton(ImageGeneration::Adapter, :build, -> { ImageGeneration::ManualAdapter.new }) do
+        result = described_class.call(piece: piece, context: {
+          candidate_count: 1,
+          reference_images: [ref],
+          reference_essence: { "medium" => "style-level-medium" }
+        })
+        log_path = result.data[:image_prompt_log]
+
+        expect(result).to be_awaiting_human
+        expect(result.data[:prompts].first).to include("from-c1-medium")
+        expect(result.data[:prompts].first).not_to include("style-level-medium")
       end
     end
   ensure

@@ -27,13 +27,18 @@ module Steps
         # call never sees a list to blend.
         pairs = Art::SubjectSceneSelector.pairs(spec, want)
 
+        # The references C1 actually uses (curated subset / context override). The essence is
+        # re-derived from THESE — not the style-level A1b essence — so the synthesis grounding and
+        # the final image prompt describe the references in play, not the original A1 set.
+        style_references = style_reference_images
+        @reference_essence = reference_essence_for(style_references)
+
         # Build every synthesis prompt up front — reading the spec/piece happens only on the main
         # thread — then run the independent candidates concurrently. Each candidate is a long
         # streaming synthesis followed by one image call, so a bounded pool collapses the wall time
         # without changing any prompt, model, or schema (quality is untouched; we still never show
         # the synthesis call a list to blend).
         synthesis_prompts = pairs.map { |pair| build_synthesis_prompt(pair) }
-        style_references = style_reference_images
         results = synthesize_and_generate(synthesis_prompts, style_references)
         prompt_log = write_prompt_log(pairs, results)
 
@@ -82,7 +87,8 @@ module Steps
                axis_contributions: contributions, prompts: gen_prompts,
                requested: want, generated: urls.size,
                failures: failed.map { |r| { index: r[:index], error: r[:error] } },
-               image_prompt_log: prompt_log, style_reference: style_references })
+               image_prompt_log: prompt_log, style_reference: style_references,
+               reference_essence: @reference_essence })
         end
       end
 
@@ -175,11 +181,29 @@ module Steps
                negative_prompt: d["negative_prompt"])
       end
 
-      # A1b's typed account of what the reference set shares (medium, palette, surface, motifs). We
-      # ask for an original piece in the same tradition — never a copy of any single reference.
-      # `styling` is intentionally excluded: it describes display, not the artwork.
+      # Re-derive the reference essence from the references C1 actually uses, so the grounding and
+      # the image prompt match the curated set in play (the A1b essence reflects the original A1
+      # set). Falls back to the style-level A1b essence when there are no references or it fails.
+      def reference_essence_for(style_references)
+        fallback = context[:reference_essence] || {}
+        return fallback if style_references.empty?
+
+        result = Steps::TrackA::DistillReferenceEssence.call(
+          piece: nil, context: { reference_images: style_references }
+        )
+        return result.data[:essence] if result.status == :ok && result.data[:essence].present?
+
+        fallback
+      rescue StandardError => e
+        Workflow::StepLogging.log("C1 essence re-derivation failed: #{e.message}", level: :warn)
+        fallback
+      end
+
+      # The (C1-derived) typed account of what the reference set shares (medium, palette, surface,
+      # motifs). We ask for an original piece in the same tradition — never a copy of any single
+      # reference. `styling` is intentionally excluded: it describes display, not the artwork.
       def reference_essence_clause
-        essence = context[:reference_essence] || {}
+        essence = @reference_essence || {}
         parts = []
         parts << "medium: #{essence['medium']}" if essence["medium"].present?
         parts << "palette: #{essence['palette']}" if essence["palette"].present?
@@ -199,7 +223,7 @@ module Steps
         directives = rules("generation_prompt_template").rules
         axes = Array(directives["directive_axes"]).index_by { |axis| axis["axis"] }
         {
-          "palette_character" => (context[:reference_essence] || {})["palette_character"].to_s,
+          "palette_character" => (@reference_essence || {})["palette_character"].to_s,
           "mood" => axes.dig("mood", "values", piece.mood) || piece.mood.to_s,
           "negative_prompt" => directives.dig("constraints", "negative_prompt").to_s.strip
         }
@@ -232,7 +256,7 @@ module Steps
               "scene_description" => r[:scene_description],
               "image_generation_prompt" => r[:prompt],
               "axis_contributions" => r[:contributions],
-              "reference_essence" => context[:reference_essence],
+              "reference_essence" => @reference_essence,
               "style_reference" => r[:style_reference],
               "urls" => r[:urls],
               "ok" => r[:ok] == true,
@@ -281,7 +305,7 @@ module Steps
       end
 
       def build_synthesis_prompt(pair)
-        essence = context[:reference_essence] || {}
+        essence = @reference_essence || {}
         base = { style_name: spec.display_name, mood: piece.mood,
                  content_type: piece.content_type, color_role: piece.color_role,
                  essence_medium: essence["medium"].to_s,

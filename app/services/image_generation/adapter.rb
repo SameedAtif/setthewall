@@ -1,6 +1,4 @@
 module ImageGeneration
-  Result = Struct.new(:urls, :provider, :model, :estimated_cost_usd, :raw_response, keyword_init: true)
-
   class Adapter
     # Every concrete adapter implements these three methods, nothing else.
     def name = raise(NotImplementedError)

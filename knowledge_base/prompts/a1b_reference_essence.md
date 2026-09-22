@@ -3,6 +3,12 @@ as the ground truth when generating new pieces in that style. Base every field O
 attached reference images actually show — do not describe an imagined or generic version of the
 style.
 
+Each reference is a SINGLE framed artwork. Some images show more than one framed piece at once (a
+gallery wall, a row, a set, a two-by-two grid): analyse EACH frame in such an image as its own
+separate artwork and read them individually. Never blend several frames into one description, and
+never treat the room, wall, furniture or the arrangement itself as the artwork. Every field below
+describes the characteristics of a SINGLE piece.
+
 Return exactly these fields:
 
 - medium: the physical medium/format the pieces are made as (for example a flat printed poster, a
