@@ -149,7 +149,9 @@ module Context
       case @step_id
       when "A5" then axes_clean? ? { confirmed: true } : {}
       when "B7" then scene_axes.values.all?(&:present?) ? { confirmed: true } : {}
-      when "C2" then c2_context
+      # The provisional C2 cull only auto-fills in a speculative (unattended) run. In the notebook
+      # (committed mode) C2 pauses so the human reviews the agent's recommendation and picks.
+      when "C2" then Workflow::RunMode.speculative? ? c2_context : {}
       else {}
       end
     end

@@ -1,3 +1,5 @@
+%{scene}
+
 %{reference_essence}
 
 Keep one coherent texture and motif family across the whole piece — no crosshatching, no tight spiral coils, and no texture types that fall outside the motif vocabulary described above.

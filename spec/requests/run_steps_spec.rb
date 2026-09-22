@@ -176,6 +176,42 @@ RSpec.describe "Run steps", type: :request do
     end
   end
 
+  describe "POST cull" do
+    let(:piece) { create(:piece_record, candidate_urls: %w[a b c]) }
+    let(:cull_run) { create(:pipeline_run_record, piece_record: piece) }
+    let(:cull_step) do
+      create(:run_step, pipeline_run_record: cull_run, step_id: "C2", position: 0, status: "awaiting_human")
+    end
+
+    it "stores finalists and the chosen and re-runs C2" do
+      expect { post cull_run_step_path(cull_run, cull_step), params: { finalist_urls: %w[a b], chosen_url: "a" } }
+        .to have_enqueued_job(ExecuteRunJob).with(run_id: cull_run.id, mode: "rerun", run_step_id: cull_step.id)
+
+      expect(cull_step.reload.context_override).to eq("finalist_urls" => %w[a b], "chosen_url" => "a")
+      expect(cull_step.status).to eq("queued")
+    end
+
+    it "requires at least one finalist" do
+      post cull_run_step_path(cull_run, cull_step), params: { finalist_urls: [] }
+
+      expect(flash[:alert]).to be_present
+      expect(cull_step.reload.context_override).to eq({})
+    end
+
+    it "rejects finalists that are not candidates" do
+      post cull_run_step_path(cull_run, cull_step), params: { finalist_urls: %w[a x] }
+
+      expect(flash[:alert]).to be_present
+      expect(cull_step.reload.context_override).to eq({})
+    end
+
+    it "rejects a chosen that is not one of the finalists" do
+      post cull_run_step_path(cull_run, cull_step), params: { finalist_urls: %w[a b], chosen_url: "c" }
+
+      expect(flash[:alert]).to be_present
+    end
+  end
+
   describe "GET composer" do
     it "returns to the feedback composer" do
       get composer_run_step_path(run, step)

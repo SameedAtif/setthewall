@@ -44,6 +44,18 @@ module ApplicationHelper
     []
   end
 
+  # A browser-loadable src for a candidate image: remote URLs pass through; local files under the
+  # app are served through MediaController.
+  def reference_image_src(url)
+    value = url.to_s
+    return value if value.match?(%r{\Ahttps?://}i)
+
+    absolute = File.expand_path(value, Rails.root.to_s)
+    media_path(Pathname.new(absolute).relative_path_from(Rails.root).to_s)
+  rescue StandardError
+    value
+  end
+
   # Render the dossier markdown as sanitized HTML.
   def render_markdown(text)
     return "" if text.blank?

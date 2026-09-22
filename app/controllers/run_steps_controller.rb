@@ -76,6 +76,38 @@ class RunStepsController < ApplicationController
                 notice: "Re-running #{step.step_id} scoped to \"#{style_name}\"."
   end
 
+  # C2 cull: the reviewer picks the finalists and the chosen piece (guided by the agent's
+  # recommendation). Stored as a context override; once a chosen_url is present C2 completes.
+  def cull
+    step = RunStep.find(params[:id])
+    run = step.pipeline_run_record
+    candidates = Array(run.piece_record&.candidate_urls)
+
+    finalists = Array(params[:finalist_urls]).map(&:to_s).reject(&:blank?)
+    chosen = params[:chosen_url].to_s.strip
+
+    if finalists.empty?
+      return redirect_to run_path(run), alert: "Select at least one finalist."
+    end
+    if (finalists - candidates).any?
+      return redirect_to run_path(run), alert: "Finalists must be candidates from this batch."
+    end
+
+    override = { "finalist_urls" => finalists }
+    if chosen.present?
+      unless finalists.include?(chosen)
+        return redirect_to run_path(run), alert: "The chosen piece must be one of your finalists."
+      end
+
+      override["chosen_url"] = chosen
+    end
+
+    step.update!(context_override: override, status: "queued")
+    Workflow::NotebookBroadcaster.cell(run, step)
+    ExecuteRunJob.perform_later(run_id: run.id, mode: "rerun", run_step_id: step.id)
+    redirect_to run_path(run), notice: "Re-running C2 with #{finalists.size} finalist(s)."
+  end
+
   # Edit the reference set C1 uses (toggle A1's images on/off, add URLs) and re-run C1. Stored as a
   # context override that Context::Assembler merges last, then cleared when the cell runs.
   def references

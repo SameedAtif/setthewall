@@ -5,6 +5,8 @@ RSpec.describe Steps::TrackC::CullToFinalists do
     create(:piece_record, candidate_urls: candidates)
   end
 
+  before { allow(Llm::CullRecommender).to receive(:call).and_return({}) }
+
   it "fails when there are no candidates" do
     expect(described_class.call(piece: piece_with([]), context: {})).to be_failed
   end

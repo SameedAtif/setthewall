@@ -30,13 +30,22 @@ RSpec.describe Context::Assembler do
                            content_type: "minimalist_modern", frame_form: "angular")
   end
 
-  it "provisionally picks C2 finalists and chosen" do
+  it "provisionally picks C2 finalists and chosen in a speculative run" do
     piece = create(:piece_record, candidate_urls: %w[u1 u2 u3 u4 u5])
     run = PipelineRunRecord.create!(run_id: "run-#{SecureRandom.hex(4)}", kb_version: "test",
                                     style_slug: "s", scene_spec_id: "sc", piece_record: piece)
-    ctx = described_class.for("C2", run)
+    ctx = Workflow::RunMode.with("speculative", run_id: run.run_id) { described_class.for("C2", run) }
     expect(ctx[:finalist_urls]).to eq(%w[u1 u2 u3])
     expect(ctx[:chosen_url]).to eq("u1")
+  end
+
+  it "does not auto-fill C2 in the committed notebook (it pauses for the human cull)" do
+    piece = create(:piece_record, candidate_urls: %w[u1 u2 u3])
+    run = PipelineRunRecord.create!(run_id: "run-#{SecureRandom.hex(4)}", kb_version: "test",
+                                    style_slug: "s", scene_spec_id: "sc", piece_record: piece)
+    ctx = described_class.for("C2", run)
+    expect(ctx[:finalist_urls]).to be_nil
+    expect(ctx[:chosen_url]).to be_nil
   end
 
   it "assembles B7 axes from B1-B5 and provisionally confirms the lock" do

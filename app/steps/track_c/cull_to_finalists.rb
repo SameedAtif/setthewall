@@ -21,13 +21,16 @@ module Steps
 
         # === Stage 1: propose finalists ===
         if finalists_requested.empty?
+          recommendation = Llm::CullRecommender.call(piece: piece)
+          reason = recommendation["reasoning"].to_s
           return needs_human(
             "Cull the batch of #{candidates.size} to at most #{rules_data['finalist_cull']['max_finalists_per_scene']} " \
-            "finalists (absolute max #{rules_data['finalist_cull']['absolute_max']}). Set " \
-            "finalist_urls on the piece.",
+            "finalists (absolute max #{rules_data['finalist_cull']['absolute_max']}). " \
+            "#{reason.presence || 'Pick the strongest candidates to carry forward.'}",
             { candidates: candidates,
               cull_target: rules_data["finalist_cull"]["max_finalists_per_scene"],
-              cull_absolute_max: rules_data["finalist_cull"]["absolute_max"] }
+              cull_absolute_max: rules_data["finalist_cull"]["absolute_max"],
+              recommendation: recommendation }
           )
         end
 
@@ -50,10 +53,12 @@ module Steps
 
         # === Stage 2: pick one chosen ===
         if chosen.blank?
+          recommendation = Llm::CullRecommender.call(piece: piece, urls: finalists_requested)
           return needs_human(
             "Pick ONE finalist as the day's chosen piece. This becomes PieceRecord.chosen_url " \
-            "and flows into Phase 2 — no more finalists carry forward.",
-            { finalists: finalists_requested }
+            "and flows into Phase 2 — no more finalists carry forward. " \
+            "#{recommendation['reasoning'].presence}",
+            { finalists: finalists_requested, recommendation: recommendation }
           )
         end
 

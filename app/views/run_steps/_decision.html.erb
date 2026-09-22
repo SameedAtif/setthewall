@@ -9,7 +9,11 @@
   <% pick_color_role = step.step_id == "A1b" && step.output.dig("essence", "color_role_ambiguous") %>
   <%= render "run_steps/color_role_pick", run: run, step: step if pick_color_role %>
 
+  <% cull_cell = step.step_id == "C2" %>
+  <%= render "run_steps/cull", run: run, step: step if cull_cell %>
+
   <% options = pick_color_role ? [] : (step.decision_options.presence || Llm::DecisionOptions.fallback_for(step)) %>
+  <% options = options.select { |o| %w[rewind abandon].include?(o["intent"]) } if cull_cell %>
   <% if step.mood_unresolved? %>
     <%# An unresolved set can't be approved — re-run to reconcile, narrow, or rewind/abandon. %>
     <% options = options.select { |o| %w[retry rewind abandon].include?(o["intent"]) } %>
