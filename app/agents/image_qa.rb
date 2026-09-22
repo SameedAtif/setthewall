@@ -173,7 +173,11 @@ module Agents
 
     def candidate_urls
       case @step_id
-      when "C1", "C2_finalists" then Array(@run.piece_record&.candidate_urls)
+      when "C1" then Array(@run.piece_record&.candidate_urls)
+      when "C2", "C2_finalists"
+        # At the cull, evaluate the finalists that carry forward (fall back to the batch).
+        finalists = Array(@run.piece_record&.finalist_urls)
+        finalists.presence || Array(@run.piece_record&.candidate_urls)
       when "P3_1b" then (@run.piece_record&.photos || {}).values.compact
       else []
       end
