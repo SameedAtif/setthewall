@@ -4,22 +4,21 @@ image_path: "scene_templates/assets/behind_sofa_light_neutral.png"
 
 # Physical measurements in the scene image, in pixels.
 #
-# GENERATED MOCKUP (1408x768, gemini-3.1-flash-image). image_width_px / image_height_px are
-# real (read from the file); every other value below is an UNVERIFIED ESTIMATE and must be
-# calibrated by hand against the actual image before Phase 2 Step 6 runs pixel math on it
-# (see scene_templates/README.md). Track B only classifies the scene; it does not use these.
+# GENERATED MOCKUP (1408x768, gemini-3.1-flash-image). Measurements calibrated by eye against the
+# image: pixels_per_inch is derived from the sofa (assumed ~84" three-seater, ~670 px wide =>
+# ~8 px/in); furniture edge and wall zone read directly off the image. Refine if a real photo
+# replaces this mockup. (see scene_templates/README.md)
 measurements:
   image_width_px: 1408
   image_height_px: 768
 
-  # Pixels per inch, calibrated against a known-size object in the scene (e.g. sofa ~84" wide).
-  # calibrated: false blocks Phase 2 Step 6 pixel math until a human calibrates this value.
-  pixels_per_inch: 24
-  calibrated: false
+  # Pixels per inch, calibrated against a known-size object in the scene (sofa ~84" wide).
+  pixels_per_inch: 8
+  calibrated: true
 
-  # Anchor rectangles used by Step 6. Only the ones relevant to this scene type are populated.
-  furniture_top_edge_y_px: 500        # TODO: top of the sofa — for the 8-10" gap rule
-  furniture_width_px: 900             # TODO: sofa width — for the 2/3-3/4 fill + group-width rules
-  wall_zone: { x: 180, y: 80, width: 1050, height: 400 }   # TODO: placement region above the sofa
-  seated_eye_level_y_px: 460          # TODO: only for room_type: seated_room
-  standing_eye_level_y_px: 380        # TODO: only for room_type: hallway or no_furniture_wall
+  # Anchor rectangles used by Step 6.
+  furniture_top_edge_y_px: 455        # top of the sofa back — for the 8-10" gap rule
+  furniture_width_px: 670             # sofa width — for the 2/3-3/4 fill + group-width rules
+  wall_zone: { x: 385, y: 110, width: 670, height: 320 }   # placement region above the sofa
+  seated_eye_level_y_px: 365          # seated eye level (~45" above the floor) — room_type: seated_room
+  standing_eye_level_y_px: 245        # standing eye level (~60" above the floor) — hallway / no_furniture_wall
