@@ -45,10 +45,21 @@ RSpec.describe Steps::Phase3::SelectAndOrderPhotos do
   end
 
   it "recommends a hero photo" do
-    piece = create(:piece_record, photos: { "studio" => "s", "lifestyle" => "l" })
-    stub_llm(content: { "recommended_hero" => "s", "reasoning" => "clear", "ordering" => ["s", "l"], "photo_count" => 2 }) do
+    piece = create(:piece_record, photos: { "studio" => "s.jpg", "lifestyle" => "l.jpg" })
+    stub_llm(content: { "recommended_hero" => "studio", "reasoning" => "clear",
+                        "ordering" => %w[studio lifestyle], "photo_count" => 2 }) do
       result = described_class.call(piece: piece, context: {})
       expect(result).to be_awaiting_human
+    end
+  end
+
+  it "resolves the model's photo types back to the actual photos" do
+    piece = create(:piece_record, photos: { "studio" => "s.jpg", "lifestyle" => "l.jpg" })
+    stub_llm(content: { "recommended_hero" => "lifestyle", "reasoning" => "clear",
+                        "ordering" => %w[lifestyle studio], "photo_count" => 2 }) do
+      result = described_class.call(piece: piece, context: {})
+      expect(result.data["hero"]).to eq("l.jpg")
+      expect(result.data["ordered_photos"]).to eq(%w[l.jpg s.jpg])
     end
   end
 
