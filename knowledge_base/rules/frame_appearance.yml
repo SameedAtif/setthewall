@@ -1,0 +1,53 @@
+meta:
+  source: "Phase 2 §2.1–§2.4 — deterministic frame/mat rendering for the P2_6 composite"
+  citation: "p. 16-24, p. 28-29"
+  volatility: static
+  note: >
+    Appearance constants only. The DECISION of which frame a piece gets lives in
+    frame_material.yml / frame_form_contour.yml / matting.yml (applied at P2_4). This file turns
+    those attributes into pixels so the lifestyle composite shows the piece framed like the
+    studio/detail shots do. Colours are approximations of real materials, not brand swatches.
+
+rules:
+  # Border widths as a fraction of the artwork's width. mat > frame keeps the p.21 reading
+  # ("mat visibly wider than the frame") true by construction.
+  border_fractions:
+    frame: 0.035
+    mat: 0.09
+
+  # Rounded-contour only: outer corner radius as a fraction of the framed image's short side.
+  corner_radius_fraction: 0.03
+
+  # Mat colours. colored_mat has no accent-colour source yet, so it falls back to a warm neutral;
+  # double_stepped_mat reveals the inner colour by a fraction of the mat width.
+  mat:
+    neutral: "#F4F1E8"
+    inner: "#E6DFD0"
+    colored: "#D9C7A3"
+    double_step_reveal_fraction: 0.4
+
+  # Frame colour by material category (metal keys off its finish). A null colour means "draw no
+  # frame" (e.g. a canvas print). follows_accent_color has no accent source yet, so it falls back
+  # to the black-metal neutral.
+  frame:
+    metal:
+      gold: "#C7A24A"
+      silver_aluminum: "#B9BEC2"
+      black_metal: "#26261F"
+      follows_accent_color: "#26261F"
+    wood: "#6E4A2E"
+    ornate_carved: "#A9803F"
+    no_frame_canvas: null
+    clip_frame: "#DAD9D4"
+    colored_painted: "#B04A4A"
+    novelty_whimsical: "#3B2E2A"
+
+  # How a matting technique renders. Anything not listed defaults to a single neutral mat.
+  mat_technique:
+    no_mat: { mat: false }
+    close_framing: { mat: false }
+    standard_single_mat: { layers: 1 }
+    double_stepped_mat: { layers: 2 }
+    colored_mat: { layers: 1, color: colored }
+    shape_cut_mat: { layers: 1, note: "rendered as a rectangular mat in v1" }
+    multi_opening_mat: { layers: 1, note: "single piece, so rendered as a rectangular mat in v1" }

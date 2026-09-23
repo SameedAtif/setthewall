@@ -11,8 +11,8 @@ module Compositor
     end
 
     def call
-      art = load_art_image
-      art_dims = compute_art_dimensions
+      art = Compositor::Frame.apply(art: load_art_image, piece: @piece)
+      art_dims = compute_art_dimensions(art)
 
       pos = compute_position(art_dims)
       x, y = clamp_to_bounds(art_dims, pos[:x], pos[:y])
@@ -79,7 +79,7 @@ module Compositor
       dst.to_s
     end
 
-    def compute_art_dimensions
+    def compute_art_dimensions(art_native)
       m      = @template.fetch("measurements")
       pixels_per_inch # validates ppi / calibration
 
@@ -98,7 +98,6 @@ module Compositor
       # width, record that so QA can tell a genuinely small piece from a wall-constrained one.
       band_h = vertical_band[:height]
 
-      art_native = Vips::Image.new_from_file(local_path_for(@piece.chosen_url))
       ratio = art_native.height.to_f / art_native.width
 
       if band_h.positive? && preferred_w.positive? && (preferred_w * ratio) > band_h
@@ -267,8 +266,17 @@ module Compositor
         ceiling_gap_px: ceiling_y.present? ? (y - ceiling_y.to_i) : nil,
         ceiling_clearance_inches: ceiling_clearance_inches,
         band_top_px: pos[:band_top_px],
-        band_bottom_px: pos[:band_bottom_px]
+        band_bottom_px: pos[:band_bottom_px],
+        framed: framed?,
+        frame_material_category: attr(:frame_material_category),
+        frame_material_finish: attr(:frame_material_finish),
+        frame_contour: attr(:frame_contour),
+        matting_technique: attr(:matting_technique)
       }
     end
+
+    def framed? = attr(:frame_material_category).present?
+
+    def attr(name) = @piece.respond_to?(name) ? @piece.public_send(name) : nil
   end
 end
