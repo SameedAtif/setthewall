@@ -12,8 +12,9 @@ module Steps
         photo_rules = rules("etsy_photos").rules
         required    = photo_rules["required_types"]   # [studio, lifestyle, detail]
         photos      = piece.photos || {}
-        # Lifestyle already exists from Phase 2
-        photos["lifestyle"] ||= piece.composite_url
+        # Lifestyle IS the Phase 2 composite. Always refresh it from the current composite_url —
+        # if P2_6 is re-run (new frame etc.) the stored lifestyle must not go stale.
+        photos["lifestyle"] = piece.composite_url if piece.composite_url.present?
 
         # Merge any human-provided URLs
         photos.merge!(context.fetch(:provided_urls, {}))

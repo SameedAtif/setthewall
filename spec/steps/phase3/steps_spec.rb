@@ -17,6 +17,15 @@ RSpec.describe Steps::Phase3::GeneratePhotoTypes do
     end
   end
 
+  it "refreshes a stale lifestyle photo from the current composite" do
+    piece = create(:piece_record, composite_url: "http://new-composite",
+                                  photos: { "lifestyle" => "http://old-composite",
+                                            "studio" => "s", "detail" => "d" })
+    result = described_class.call(piece: piece, context: {})
+    expect(result).to be_awaiting_human
+    expect(piece.reload.photos["lifestyle"]).to eq("http://new-composite")
+  end
+
   it "completes when confirmed" do
     piece = create(:piece_record, composite_url: "http://comp")
     result = described_class.call(piece: piece, context: { confirmed: true })
