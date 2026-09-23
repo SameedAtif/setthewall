@@ -1,6 +1,7 @@
 module Agents
   class Registry
-    SPECIALISTS = [ResearchQa, AxisQa, ImageQa, PlacementQa, ListingQa, CustomerSafetyQa].freeze
+    SPECIALISTS = [ResearchQa, AxisQa, ImageQa, PlacementQa, CompositeQa, ListingQa,
+                   CustomerSafetyQa].freeze
 
     def self.for(step_id) = SPECIALISTS.select { |a| a.covers.include?(step_id) }
 

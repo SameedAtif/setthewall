@@ -80,31 +80,62 @@ module Compositor
     end
 
     def compute_art_dimensions
-      m   = @template.fetch("measurements")
+      m      = @template.fetch("measurements")
       pixels_per_inch # validates ppi / calibration
 
       zone   = m["wall_zone"] || {}
       furn_w = m["furniture_width_px"]
 
-      # Preferred width: 2/3–3/4 of the furniture width (§2.5), or half the wall zone without
-      # furniture.
-      max_w = if furn_w.present?
-                (furn_w * 0.7).to_i
+      # Preferred width: 2/3–3/4 of the furniture width (§2.5), or half the wall zone otherwise.
+      preferred_w = if furn_w.present?
+                      (furn_w * 0.7).to_i
       else
-                (zone["width"].to_i * 0.5).to_i
+                      (zone["width"].to_i * 0.5).to_i
       end
-      # Never taller than the placement zone — an art that exceeds the wall overflows onto the
-      # ceiling and the furniture. Fit inside (max_w × zone height) preserving the art's aspect.
-      max_h = [zone["height"].to_i, 1].max
+      # The usable band (ceiling clearance at the top, furniture gap at the bottom) is the hard
+      # height limit. Fit the piece inside (preferred_w × band height) preserving its own aspect so
+      # it never reaches the ceiling or the furniture. When the band — not the furniture — caps the
+      # width, record that so QA can tell a genuinely small piece from a wall-constrained one.
+      band_h = vertical_band[:height]
 
       art_native = Vips::Image.new_from_file(local_path_for(@piece.chosen_url))
       ratio = art_native.height.to_f / art_native.width
 
-      if max_w.positive? && (max_w * ratio) > max_h
-        { w: (max_h / ratio).to_i, h: max_h }
+      if band_h.positive? && preferred_w.positive? && (preferred_w * ratio) > band_h
+        w = [(band_h / ratio).to_i, 1].max
+        { w: w, h: band_h, width_limited_by_wall: true, max_group_width_px: w }
       else
-        { w: max_w, h: (max_w * ratio).to_i }
+        { w: preferred_w, h: (preferred_w * ratio).to_i,
+          width_limited_by_wall: false, max_group_width_px: preferred_w }
       end
+    end
+
+    # The vertical band the art may occupy for this room: from the ceiling clearance down to the
+    # furniture gap. Falls back to the wall zone for rooms/measurements without a ceiling anchor.
+    def vertical_band
+      m    = @template.fetch("measurements")
+      zone = m["wall_zone"] || {}
+      ppi  = pixels_per_inch
+
+      ceiling_y = m["ceiling_y_px"]
+      sofa_top  = m["furniture_top_edge_y_px"]
+
+      if ceiling_y.present? && sofa_top.present? && @piece.room_type == "seated_room"
+        top    = ceiling_y.to_i + (ceiling_clearance_inches * ppi).to_i
+        bottom = sofa_top.to_i - (gap_inches * ppi).to_i
+      else
+        top    = zone["y"].to_i
+        bottom = zone["y"].to_i + zone["height"].to_i
+      end
+
+      { top: top, bottom: bottom, height: [bottom - top, 0].max }
+    end
+
+    def gap_inches = 9.0
+
+    def ceiling_clearance_inches
+      KnowledgeBase::RuleSet.load("eye_level")
+                            .rules.dig("ceiling_clearance", "formula_inches").to_f
     end
 
     def compute_position(art_dims)
@@ -144,15 +175,20 @@ module Compositor
       gap_px = nil
       if @piece.room_type == "seated_room"
         gap_px = anchor_y.to_i - (y + art_dims[:h])
-        gap_inches = gap_px.to_f / ppi
-        if gap_inches < 8 || gap_inches > 10
-          target_gap_px = (9.0 * ppi).to_i
+        gap_in = gap_px.to_f / ppi
+        if gap_in < 8 || gap_in > 10
+          target_gap_px = (gap_inches * ppi).to_i
           y = anchor_y.to_i - target_gap_px - art_dims[:h]
           gap_px = target_gap_px
         end
       end
 
-      { x: x, y: y, gap_px: gap_px, drop_inches: drop_inches }
+      # Never let the piece ride up into the ceiling clearance: keep it inside the band.
+      band = vertical_band
+      y = y.clamp(band[:top], [band[:bottom] - art_dims[:h], band[:top]].max)
+
+      { x: x, y: y, gap_px: gap_px, drop_inches: drop_inches,
+        band_top_px: band[:top], band_bottom_px: band[:bottom] }
     end
 
     def paste_art_on_template(art, x:, y:, w:, h:)
@@ -212,6 +248,7 @@ module Compositor
       m = @template["measurements"]
       wall_area = m["wall_zone"]["width"].to_i * m["wall_zone"]["height"].to_i
       art_area  = art_dims[:w] * art_dims[:h]
+      ceiling_y = m["ceiling_y_px"]
       {
         art_width_px:  art_dims[:w],
         art_height_px: art_dims[:h],
@@ -222,8 +259,15 @@ module Compositor
         eye_level_anchor: m[KnowledgeBase::RuleSet.load("eye_level").rules["by_room_type"][@piece.room_type]["anchor"]],
         furniture_width_px: m["furniture_width_px"],
         group_width_px: art_dims[:w],
+        group_width_limited_by_wall: art_dims[:width_limited_by_wall],
+        max_group_width_px: art_dims[:max_group_width_px],
         furniture_gap_px: pos[:gap_px],
-        drop_applied_inches: pos[:drop_inches]
+        drop_applied_inches: pos[:drop_inches],
+        ceiling_y_px: ceiling_y,
+        ceiling_gap_px: ceiling_y.present? ? (y - ceiling_y.to_i) : nil,
+        ceiling_clearance_inches: ceiling_clearance_inches,
+        band_top_px: pos[:band_top_px],
+        band_bottom_px: pos[:band_bottom_px]
       }
     end
   end

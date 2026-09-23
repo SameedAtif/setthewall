@@ -54,14 +54,28 @@ module Agents
         end
       end
 
-      # Group width vs furniture — p. 63.
+      # Ceiling clearance — p. 63. A piece touching the ceiling reads as hung too high.
+      if m["ceiling_y_px"] && !m["ceiling_gap_px"].nil? && m["ceiling_gap_px"].to_f <= 0
+        findings << blocking(
+          "The art reaches the ceiling (top clearance #{m['ceiling_gap_px']}px). It must clear the " \
+          "ceiling, not touch it.",
+          [cite("eye_level.rules.ceiling_clearance")])
+      end
+
+      # Group width vs furniture — p. 63. "At least half its length" is the floor, but a short wall
+      # can cap the width below half; there the best the wall allows is the effective floor.
       if m["group_width_px"] && m["furniture_width_px"]
-        ratio = m["group_width_px"].to_f / m["furniture_width_px"].to_f
-        unless ratio.between?(0.5, 1.0)
+        furn  = m["furniture_width_px"].to_f
+        ratio = m["group_width_px"].to_f / furn
+        floor = 0.5
+        if m["group_width_limited_by_wall"] && m["max_group_width_px"]
+          floor = [0.5, m["max_group_width_px"].to_f / furn].min
+        end
+        unless ratio.between?(floor, 1.0)
           findings << blocking(
             "Group width is #{(ratio * 100).round}% of the furniture below. It must be no wider " \
-            "than the furniture and at least half its length.",
-            [cite("spacing.rules")], { ratio: ratio.round(3) })
+            "than the furniture and at least #{(floor * 100).round}% of its length.",
+            [cite("spacing.rules")], { ratio: ratio.round(3), floor: floor.round(3) })
         end
       end
 

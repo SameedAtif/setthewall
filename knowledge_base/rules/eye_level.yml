@@ -26,3 +26,12 @@ rules:
       Whatever height you land on, drop it 3-4″ — most people hang pictures too high.
     formula_inches: -3.5             # midpoint of the 3-4" drop
     applied_by: compositor           # Step 6 applies this on top of the anchor
+
+  # Prose rule P2-P14 (upper bound) — the art must never touch the ceiling. The compositor sizes
+  # the piece to the wall band that remains between this clearance and the furniture gap, so a
+  # piece that would otherwise reach the ceiling is scaled down instead of hung too high.
+  ceiling_clearance:
+    citation: "p. 63"
+    rule: "Keep art clear of the ceiling — a piece touching the ceiling reads as hung too high."
+    formula_inches: 4
+    applied_by: compositor

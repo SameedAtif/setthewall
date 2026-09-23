@@ -155,6 +155,53 @@ RSpec.describe Agents::PlacementQa do
     f = described_class.call(run: run_with(piece), step_id: "P2_6", result: result_for(measurements), context: {})
     expect(f.map(&:severity)).not_to include("blocking")
   end
+
+  it "passes a wall-constrained piece narrower than half the furniture" do
+    piece = create(:piece_record, room_type: "seated_room")
+    m = measurements("group_width_px" => 313, "furniture_width_px" => 670,
+                     "group_width_limited_by_wall" => true, "max_group_width_px" => 313,
+                     "ceiling_y_px" => 38, "ceiling_gap_px" => 32)
+    f = described_class.call(run: run_with(piece), step_id: "P2_6", result: result_for(m), context: {})
+    expect(f.map(&:severity)).not_to include("blocking")
+  end
+
+  it "blocks when the art reaches the ceiling" do
+    piece = create(:piece_record, room_type: "seated_room")
+    m = measurements("ceiling_y_px" => 38, "ceiling_gap_px" => 0)
+    f = described_class.call(run: run_with(piece), step_id: "P2_6", result: result_for(m), context: {})
+    expect(f).to include(an_object_having_attributes(severity: "blocking", claim: a_string_including("ceiling")))
+  end
+end
+
+RSpec.describe Agents::CompositeQa do
+  def run_with(piece = nil)
+    PipelineRunRecord.create!(run_id: "run-#{SecureRandom.hex(4)}", kb_version: "test", piece_record: piece)
+  end
+
+  def result_for(url)
+    Struct.new(:data, :status, keyword_init: true).new(data: { "composite_url" => url }, status: :ok)
+  end
+
+  it "blocks when there is no composite to inspect" do
+    f = described_class.call(run: run_with, step_id: "P2_6", result: result_for(nil), context: {})
+    expect(f).to include(an_object_having_attributes(severity: "blocking"))
+  end
+
+  it "passes a clear, centered composite" do
+    stub_llm(content: { "overlaps_ceiling" => false, "overlaps_furniture" => false,
+                        "centered" => true, "notes" => "well placed" }) do
+      f = described_class.call(run: run_with, step_id: "P2_6", result: result_for("/tmp/x.png"), context: {})
+      expect(f).to include(an_object_having_attributes(severity: "pass"))
+    end
+  end
+
+  it "blocks when the art touches the ceiling" do
+    stub_llm(content: { "overlaps_ceiling" => true, "overlaps_furniture" => false,
+                        "centered" => true, "notes" => "touches ceiling" }) do
+      f = described_class.call(run: run_with, step_id: "P2_6", result: result_for("/tmp/x.png"), context: {})
+      expect(f).to include(an_object_having_attributes(severity: "blocking", claim: a_string_including("ceiling")))
+    end
+  end
 end
 
 RSpec.describe Agents::Registry do
