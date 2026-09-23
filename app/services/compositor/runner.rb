@@ -81,27 +81,30 @@ module Compositor
 
     def compute_art_dimensions
       m   = @template.fetch("measurements")
-      ppi = pixels_per_inch
+      pixels_per_inch # validates ppi / calibration
 
-      # === Group width vs. furniture rule (§2.11) ===
-      # Group no wider than furniture; if narrower, at least half.
+      zone   = m["wall_zone"] || {}
       furn_w = m["furniture_width_px"]
 
-      target_w = if furn_w.present?
-                   # 2/3 to 3/4 of furniture width is the "single-piece fills" rule (§2.5)
-                   (furn_w * 0.7).to_i
+      # Preferred width: 2/3–3/4 of the furniture width (§2.5), or half the wall zone without
+      # furniture.
+      max_w = if furn_w.present?
+                (furn_w * 0.7).to_i
       else
-                   # No furniture (hallway/split-wall/etc.) — use wall_zone width
-                   (m.dig("wall_zone", "width").to_i * 0.5)
+                (zone["width"].to_i * 0.5).to_i
       end
+      # Never taller than the placement zone — an art that exceeds the wall overflows onto the
+      # ceiling and the furniture. Fit inside (max_w × zone height) preserving the art's aspect.
+      max_h = [zone["height"].to_i, 1].max
 
-      # Naïvely square unless the source art has a known aspect ratio; leave the art's own
-      # aspect ratio in place by scaling proportionally.
       art_native = Vips::Image.new_from_file(local_path_for(@piece.chosen_url))
       ratio = art_native.height.to_f / art_native.width
-      target_h = (target_w * ratio).to_i
 
-      { w: target_w.to_i, h: target_h }
+      if max_w.positive? && (max_w * ratio) > max_h
+        { w: (max_h / ratio).to_i, h: max_h }
+      else
+        { w: max_w, h: (max_w * ratio).to_i }
+      end
     end
 
     def compute_position(art_dims)
@@ -159,7 +162,20 @@ module Compositor
     end
 
     def clamp_to_bounds(art_dims, x, y)
-      m = @template["measurements"]
+      m    = @template["measurements"]
+      zone = m["wall_zone"] || {}
+      zx = zone["x"].to_i
+      zy = zone["y"].to_i
+      zw = zone["width"].to_i
+      zh = zone["height"].to_i
+
+      # Keep the art inside the placement zone (never the ceiling/furniture above/below it).
+      if zw.positive? && zh.positive?
+        max_x = zx + [zw - art_dims[:w], 0].max
+        max_y = zy + [zh - art_dims[:h], 0].max
+        return [x.clamp(zx, max_x), y.clamp(zy, max_y)]
+      end
+
       tw = m["image_width_px"].to_i
       th = m["image_height_px"].to_i
       return [x, y] if tw <= 0 || th <= 0

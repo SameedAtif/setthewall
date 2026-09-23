@@ -19,6 +19,9 @@ measurements:
   # Anchor rectangles used by Step 6.
   furniture_top_edge_y_px: 455        # top of the sofa back — for the 8-10" gap rule
   furniture_width_px: 670             # sofa width — for the 2/3-3/4 fill + group-width rules
-  wall_zone: { x: 385, y: 110, width: 670, height: 320 }   # placement region above the sofa
+  # Placement region: from just under the ceiling (y=38) down to 9" above the sofa back
+  # (455 - 9*8 = 383), so the art is bounded and both the 8-10" gap and group-width
+  # (>= half the furniture) rules can be satisfied.
+  wall_zone: { x: 405, y: 38, width: 670, height: 345 }
   seated_eye_level_y_px: 365          # seated eye level (~45" above the floor) — room_type: seated_room
   standing_eye_level_y_px: 245        # standing eye level (~60" above the floor) — hallway / no_furniture_wall
