@@ -208,7 +208,7 @@ phase_2:
       klass: "Steps::Phase2::WeightBalance"
     - id: P2_6
       title: "Composite into the scene"
-      ownership: "[NOT AN AGENT/LLM TASK — deterministic template tool required]"
+      ownership: "[DETERMINISTIC PLACEMENT + AI PHOTOREAL PASS — placement math is never delegated to a model]"
       mechanism: deterministic_tool
       human_gate: false
       klass: "Steps::Phase2::Composite"
