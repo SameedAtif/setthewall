@@ -7,17 +7,16 @@ module Steps
       def perform
         tag_rules = rules("etsy_tags").rules
 
-        result = RubyLLM.chat(model: Pipeline::TEXT_MODEL)
-                        .with_schema(Schemas::Phase3::TagsSchema)
-                        .ask(prompt("p3_step4_tags",
-                                    style_name: spec.display_name,
-                                    demand_terms: TrackAResearch.demand_terms_text,
-                                    content_type: piece.content_type,
-                                    mood: piece.mood,
-                                    color_role: piece.color_role_confirmed,
-                                    room_type: piece.room_type,
-                                    product_type: context.fetch(:product_type, "wall art print")))
-                        .content
+        chat = RubyLLM.chat(model: Pipeline::TEXT_MODEL)
+                      .with_schema(Schemas::Phase3::TagsSchema)
+        result = streamed_json(chat, prompt("p3_step4_tags",
+                                            style_name: spec.display_name,
+                                            demand_terms: TrackAResearch.demand_terms_text,
+                                            content_type: piece.content_type,
+                                            mood: piece.mood,
+                                            color_role: piece.color_role_confirmed,
+                                            room_type: piece.room_type,
+                                            product_type: context.fetch(:product_type, "wall art print")))
 
         tags = Array(result["tags"])
         errors = []

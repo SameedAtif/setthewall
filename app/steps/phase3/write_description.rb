@@ -27,22 +27,21 @@ module Steps
           )
         end
 
-        result = RubyLLM.chat(model: Pipeline::TEXT_MODEL)
-                        .with_schema(Schemas::Phase3::DescriptionSchema)
-                        .ask(prompt("p3_step6_description",
-                                    style_name: spec.display_name,
-                                    content_type: piece.content_type,
-                                    mood: piece.mood,
-                                    color_role: piece.color_role_confirmed,
-                                    product_type: context.fetch(:product_type, "wall art print"),
-                                    dimensions: dimensions,
-                                    sizes: sizes,
-                                    included: context.fetch(:included, "Print only"),
-                                    fulfillment_type: context.fetch(:fulfillment_type, piece.fulfillment_type.presence || "physical"),
-                                    turnaround_days: context.fetch(:turnaround_days, 3),
-                                    positioning_target: context.fetch(:positioning_target, default_positioning_target),
-                                    trend_evidence: trend_evidence))
-                        .content
+        chat = RubyLLM.chat(model: Pipeline::TEXT_MODEL)
+                      .with_schema(Schemas::Phase3::DescriptionSchema)
+        result = streamed_json(chat, prompt("p3_step6_description",
+                                            style_name: spec.display_name,
+                                            content_type: piece.content_type,
+                                            mood: piece.mood,
+                                            color_role: piece.color_role_confirmed,
+                                            product_type: context.fetch(:product_type, "wall art print"),
+                                            dimensions: dimensions,
+                                            sizes: sizes,
+                                            included: context.fetch(:included, "Print only"),
+                                            fulfillment_type: context.fetch(:fulfillment_type, piece.fulfillment_type.presence || "physical"),
+                                            turnaround_days: context.fetch(:turnaround_days, 3),
+                                            positioning_target: context.fetch(:positioning_target, default_positioning_target),
+                                            trend_evidence: trend_evidence))
 
         # Validate keyword-stuffing: no tag phrase used more than 2× in the description
         stuffing_violations = check_keyword_stuffing(result["full_description"], piece.listing_tags)

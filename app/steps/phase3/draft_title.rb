@@ -44,9 +44,9 @@ module Steps
                  "Correct this specific issue and try again."
         end
 
-        RubyLLM.chat(model: Pipeline::TEXT_MODEL)
-               .with_schema(Schemas::Phase3::TitleSchema)
-               .ask(text).content
+        chat = RubyLLM.chat(model: Pipeline::TEXT_MODEL)
+                      .with_schema(Schemas::Phase3::TitleSchema)
+        streamed_json(chat, text)
       end
 
       def validate_title(title, rules)

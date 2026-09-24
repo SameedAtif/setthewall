@@ -48,6 +48,23 @@ module Steps
     # Subclasses implement this and return a StepResult.
     def perform = raise NotImplementedError
 
+    # Run a RubyLLM call through the no-progress watchdog and normalize the response to a Hash.
+    # A plain blocking `ask` on a thinking model can hang with no data and no timeout; streaming
+    # keeps it alive and lets the watchdog abort/retry a stall. Qwen's compatible endpoint can
+    # return a schema'd response as an unparsed string when streamed, so normalize it.
+    def streamed_json(chat, prompt, with: nil)
+      Pipeline::Json.normalize(Pipeline::Streaming.ask(apply_thinking_budget(chat), prompt, with: with).content)
+    end
+
+    # Bound a Qwen reasoning model's thinking (kept enabled) so it can't reason unboundedly. A no-op
+    # for providers/fakes that don't accept extra params.
+    def apply_thinking_budget(chat)
+      budget = Pipeline::QWEN_THINKING_BUDGET.to_i
+      return chat unless budget.positive? && chat.respond_to?(:with_params)
+
+      chat.with_params(enable_thinking: true, thinking_budget: budget)
+    end
+
     def ok(data = {}, message: nil)  = StepResult.new(status: :ok, data:, message:)
     def needs_human(reason, data = {}) = StepResult.new(status: :awaiting_human, data:, message: reason)
     def fail_step(reason, data = {})   = StepResult.new(status: :failed, data:, message: reason)

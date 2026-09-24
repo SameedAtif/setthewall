@@ -15,9 +15,9 @@ module Steps
 
         urls = photos.values
 
-        result = RubyLLM.chat(model: Pipeline::VISION_MODEL)
-                        .with_schema(Schemas::Phase3::HeroPhotoSchema)
-                        .ask(prompt_for(photos.keys), with: urls).content
+        chat = RubyLLM.chat(model: Pipeline::VISION_MODEL)
+                      .with_schema(Schemas::Phase3::HeroPhotoSchema)
+        result = streamed_json(chat, prompt_for(photos.keys), with: urls)
 
         hero_url = resolve(result["recommended_hero"], photos) || urls.first
         ordered  = Array(result["ordering"]).filter_map { |label| resolve(label, photos) }

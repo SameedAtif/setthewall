@@ -22,7 +22,7 @@ module Pipeline
       last_error = nil
 
       tries.times do |index|
-        snapshot = chat.messages.dup
+        snapshot = (chat.messages.dup if chat.respond_to?(:messages))
         begin
           return stream_once(chat, prompt, stall, with)
         rescue Stalled => e
