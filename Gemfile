@@ -49,7 +49,7 @@ gem "thruster", require: false
 # `schematist` whose `to_json_schema` returns a Draft 2020-12 document that ruby_llm's
 # `with_schema` does not consume).
 gem "ruby_llm"
-gem "ruby_llm-schema", "~> 0.4"
+gem "ruby_llm-schema", "~> 1.0"
 
 # Local env var loading
 gem "dotenv-rails", groups: [:development, :test]
