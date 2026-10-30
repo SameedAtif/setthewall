@@ -11,6 +11,9 @@
 /.env*
 !/.env.example
 
+# Ignore the Rails master key; it decrypts config/credentials.yml.enc.
+/config/master.key
+
 # Ignore all logfiles and tempfiles.
 /log/*
 /tmp/*
